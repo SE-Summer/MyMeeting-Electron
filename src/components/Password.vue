@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <v-card
-        class="teal lighten-5 register-card"
+        class="teal lighten-5 password-card"
         shaped
         elevation="10"
     >
@@ -91,7 +91,7 @@ export default {
   text-align: center;
   margin-bottom: 20px;
 }
-.register-card{
+.password-card{
 //margin-top: 20%;
   padding: 5% 10%;
 //width: 60%;

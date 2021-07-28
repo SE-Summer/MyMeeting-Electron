@@ -1,10 +1,21 @@
 <template>
   <div class="login-page">
+    <v-snackbar
+    top
+    color="teal lighten-1 white--text"
+    timeout="1600"
+    light
+    v-model="snack">
+    {{snackText}}
+    </v-snackbar>
     <v-card
         class="teal lighten-5 login-card"
         elevation="10"
         shaped
       >
+      <v-form
+      ref="form"
+      v-model="valid">
       <v-container>
         <v-row>
           <v-col class="title1 teal--text">
@@ -44,7 +55,7 @@
                 class="mr-4"
                 @click="login"
                 :loading="loading"
-                :disabled="loading"
+                :disabled="loading || !valid"
                 large
             >
               登 录
@@ -61,11 +72,13 @@
           </v-col>
         </v-row>
       </v-container>
+      </v-form>
     </v-card>
   </div>
 </template>
 
 <script>
+import axios from 'axios'
 
 export default {
   name: "Login",
@@ -73,9 +86,12 @@ export default {
   },
   data(){
     return{
-      email : "",
-      password : "",
+      email : "cen-le@sjtu.edu.cn",
+      password : "123456",
       loading : false,
+      snackText: "",
+      snack : false,
+      valid : true,
       emailRules: [
         v => !!v || '请输入邮箱地址',
         v => /.+@.+\..+/.test(v) || '邮箱地址格式错误',
@@ -90,30 +106,33 @@ export default {
     register(){
       this.$emit('register');
     },
-    login(){
+    async login(){
       this.loading = true;
-      fetch('http://se-summer.cn:4446/login',
-       {
-         mode : 'no-cors',
-         method : 'POST',
-         body : {
-           'email': this.email,
-           'password': this.password,
-         }
-       }).then(
-         (response)=>{
-           console.log(response);
-          if(response.status === 401){
-            alert(response.body.error);
-          }else if(response.status === 200){
-            alert(response.body);
-            this.$emit('logined');
-          }else{
-            alert("Unknown Error");
+      try{
+        const response =await axios(
+        {
+          method : 'post',
+          url : 'http://se-summer.cn:4446/login',
+          data : {
+            'email' : this.email,
+            'password' : this.password,
           }
-          this.loading = false
-         }
-       )
+        })
+        this.snackText = '登录成功';
+        this.snack = true;
+        this.loading = false;
+        console.log(response);
+        setTimeout(()=>{this.$emit('login');},1000)
+      }catch(error){
+        if (error.response){
+         this.snackText = error.response.data.error;
+        }
+        else{
+          this.snackText = '无法连接至服务器'
+        }
+        this.snack = true;
+        this.loading = false;
+      }
     }
   }
 }

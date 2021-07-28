@@ -2,7 +2,7 @@
   <v-app class="mymeeting-app">
 
     <v-main>
-      <cube></cube>
+      <cube @click="account = true" @back="account = false" account="account"></cube>
     </v-main>
 
     <v-footer padless>
@@ -26,9 +26,15 @@ export default {
     cube,
   },
 
-  data: () => ({
-    //
-  }),
+  data(){
+    return{
+      accont : true,
+    }
+  },
+
+  methods :{
+
+  }
 };
 </script>
 <style>
