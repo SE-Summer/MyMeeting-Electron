@@ -11,7 +11,6 @@
     <v-card
         class="teal lighten-5 login-card"
         elevation="10"
-        shaped
       >
       <v-form
       ref="form"
@@ -86,7 +85,7 @@ export default {
   },
   data(){
     return{
-      email : "cen-le@sjtu.edu.cn",
+      email : "785490479@qq.com",
       password : "123456",
       loading : false,
       snackText: "",
@@ -118,6 +117,7 @@ export default {
             'password' : this.password,
           }
         })
+        this.GLOBAL.userinfo = response.data.user;
         this.snackText = '登录成功';
         this.snack = true;
         this.loading = false;

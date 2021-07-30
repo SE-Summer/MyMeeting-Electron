@@ -1,10 +1,20 @@
 <template>
   <div class="login-page">
+    <v-snackbar
+        top
+        color="teal lighten-1 white--text"
+        timeout="1600"
+        light
+        v-model="snack">
+      {{snackText}}
+    </v-snackbar>
     <v-card
         class="teal lighten-5 register-card"
-        shaped
         elevation="10"
     >
+      <v-form
+          ref="form"
+          v-model="valid">
       <v-container>
         <v-row>
           <v-col class="title1 teal--text">
@@ -40,7 +50,7 @@
                 class="mr-4"
                 @click="sendEmail"
                 :loading="loading"
-                :disabled="loading"
+                :disabled="loading ||!valid"
                 large
             >
               {{btnText}}
@@ -48,11 +58,14 @@
           </v-col>
         </v-row>
       </v-container>
+      </v-form>
     </v-card>
   </div>
 </template>
 
 <script>
+
+import axios from "axios";
 
 export default {
   name: "Login",
@@ -63,6 +76,9 @@ export default {
       email : "",
       btnText : "发送验证邮件",
       loading : false,
+      snack : false,
+      snackText : "",
+      valid : false,
       emailRules: [
         v => !!v || '请输入邮箱地址',
         v => /.+@.+\..+/.test(v) || '邮箱地址格式错误',
@@ -73,12 +89,35 @@ export default {
     back(){
       this.$emit('back');
     },
-    sendEmail(){
+    async sendEmail(){
       this.loading = true;
-      setTimeout(() => {
-        this.loading = false;
+      try{
+        const response =await axios(
+            {
+              method : 'post',
+              url : 'http://se-summer.cn:4446/email',
+              data : {
+                'email' : this.email,
+              }
+            })
+        this.GLOBAL.email = this.email
+        this.snackText = '发送成功';
+        this.snack = true;
         this.btnText = '再次发送邮件';
-        this.$emit('next')}, 2000);
+        this.loading = false;
+        console.log(response);
+        setTimeout(()=>{this.$emit('next');},1000)
+      }catch(error){
+        if (error.response){
+          this.snackText = error.response.data.error;
+        }
+        else{
+          this.snackText = '无法连接至服务器'
+        }
+        this.snack = true;
+        this.btnText = '再次发送邮件';
+        this.loading = false;
+      }
     },
   }
 }

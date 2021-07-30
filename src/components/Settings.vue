@@ -3,19 +3,53 @@
     <v-card
         class="teal lighten-5 settings-card"
         elevation="10"
-        shaped
       >
       <v-container>
         <v-row>
           <v-col class="title1 teal--text">
-              设 置
+              用 户
           </v-col>
-
+        </v-row>
+        <v-row no-gutters>
+          <v-col>
+            <v-avatar
+                size="100px"
+                class="teal lighten-4"
+            >
+              <v-icon
+              size="64px">
+                mdi-account
+              </v-icon>
+            </v-avatar>
+          </v-col>
+          <v-col>
+            <p class="nickname">{{GLOBAL.userinfo.nickname}}</p>
+            <p class="userid">ID: {{GLOBAL.userinfo.id}}</p>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col align="center">
+          <v-avatar
+              slot="icon"
+              size="40"
+              color="teal"
+          >
+            <v-icon
+                icon="mdi-lock"
+                color="white"
+            >
+              mdi-cogs
+            </v-icon>
+          </v-avatar>
+          </v-col>
+          <v-col>
+            <p class="userid">会议设置</p>
+          </v-col>
         </v-row>
         <v-row>
           <v-col align="center">
             <v-btn
-                color="teal accent-4 white--text"
+                color="red accent-4 white--text"
                 class="mr-4"
                 @click="logout"
                 :loading="loading"
@@ -27,11 +61,11 @@
           </v-col>
           <v-col align="center">
             <v-btn
-                class="mr-4"
+                class="mr-4 teal white--text"
                 @click="back"
                 large
             >
-              返 回 >
+              会 议 >
             </v-btn>
           </v-col>
         </v-row>
@@ -50,7 +84,7 @@ export default {
     return{
       email : "",
       password : "",
-      loading: false,
+      loading: false
     }
   },
   methods:{
@@ -58,9 +92,9 @@ export default {
       this.$emit('logout');
     },
     back(){
-        this.$emit('back');
+      this.$emit('back');
     }
-  }
+  },
 }
 </script>
 
@@ -74,8 +108,22 @@ export default {
 
 .settings-card{
   //margin-top: 20%;
-  padding: 5% 10%;
+  padding: 5% 5%;
   //width: 60%;
-  margin: 20% 15%;
+  margin: 15% 10%;
+}
+.userid{
+  font-family: "Microsoft YaHei UI", serif;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 5px;
+}
+.nickname{
+  font-family: "Microsoft YaHei UI", serif;
+  font-size: 40px;
+  font-weight: bold;
+  text-align: left;
+  margin-bottom: 10px;
 }
 </style>

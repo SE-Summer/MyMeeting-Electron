@@ -1,15 +1,37 @@
 <template>
   <div class="login-page">
+    <v-snackbar
+        top
+        color="teal lighten-1 white--text"
+        timeout="1600"
+        light
+        v-model="snack">
+      {{snackText}}
+    </v-snackbar>
     <v-card
         class="teal lighten-5 password-card"
-        shaped
         elevation="10"
     >
+      <v-form
+          ref="form"
+          v-model="valid">
       <v-container>
         <v-row>
           <v-col class="title1 teal--text">
             设 定
           </v-col>
+        </v-row>
+        <v-row>
+          <v-text-field
+              v-model="nickname"
+              append-icon="mdi-dialpad"
+              label="昵称"
+              :rules="nicknameRules"
+              background-color="teal lighten-5"
+              clearable
+              required
+              color="teal darken-1"
+          ></v-text-field>
         </v-row>
         <v-row>
           <v-text-field
@@ -42,7 +64,7 @@
                 class="mr-4"
                 @click="setPassword"
                 :loading="loading"
-                :disabled="loading"
+                :disabled="loading || !valid || password !== password2"
                 large
             >
               确 认
@@ -50,11 +72,14 @@
           </v-col>
         </v-row>
       </v-container>
+      </v-form>
     </v-card>
   </div>
 </template>
 
 <script>
+
+import axios from "axios";
 
 export default {
   name: "Login",
@@ -64,21 +89,50 @@ export default {
     return{
       email : "",
       loading : false,
+      nickname: "",
       password: "",
       password2 : "",
+      snack : false,
+      snackText : "",
+      valid : false,
       passwordRules: [
         v => !!v || '请输入密码',
         v => /^[a-zA-Z0-9_]{6,18}$/.test(v) || '密码是六到十八位字母、数字或下划线',
       ],
+      nicknameRules: [
+        v => v.length < 2 || '昵称太短',
+      ],
     }
   },
   methods:{
-    setPassword(){
+    async setPassword(){
       this.loading = true;
-      setTimeout(() => {
+      try{
+        const response = await axios(
+            {
+              method : 'post',
+              url : 'http://se-summer.cn:4446/register',
+              data : {
+                'token' : this.GLOBAL.email,
+                'nickname' : this.nickname,
+                'password' : this.password
+              }
+            })
+        this.snackText = '设置成功';
+        this.snack = true;
         this.loading = false;
-        this.$emit('finish');
-      }, 2000);
+        console.log(response);
+        setTimeout(()=>{this.$emit('finish');},1000)
+      }catch(error){
+        if (error.response){
+          this.snackText = error.response.data.error;
+        }
+        else{
+          this.snackText = '无法连接至服务器'
+        }
+        this.snack = true;
+        this.loading = false;
+      }
     },
   }
 }
