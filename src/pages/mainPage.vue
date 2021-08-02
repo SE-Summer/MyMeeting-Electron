@@ -28,7 +28,7 @@
       <v-spacer></v-spacer>
 
       <div id="appBarContent">
-        <p style="color: grey; font-size: small">会议号 : 1</p>
+        <p style="color: grey; font-size: small">会议号 : {{GLOBAL.roomInfo.id}}</p>
       </div>
 
       <v-spacer></v-spacer>
@@ -63,7 +63,7 @@
             color="grey darken-1"
             size="36"
         >
-          <v-img src="../assets/kendrick.jpg">
+          <v-img :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait">
             <template v-slot:placeholder>
               <div style="margin-top: 7px">
                 <v-progress-circular
@@ -140,7 +140,8 @@
               color="green darken-3"
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
-              clearable></v-text-field>
+              clearable
+              v-model="filterText"></v-text-field>
         </div>
       </v-sheet>
 
@@ -149,11 +150,11 @@
           shaped
       >
         <v-list-item
-            v-for="n in 5"
-            :key="n"
+            v-for="(user, index) in this.filteredUsers"
+            :key="index"
         >
           <v-list-item-avatar>
-            <v-img src="../assets/snoopdogg.jpg">
+            <v-img :src="user.getPeerInfo().avatar">
               <template v-slot:placeholder>
                 <div style="margin-top: 7px; margin-left: 8px">
                   <v-progress-circular
@@ -166,7 +167,7 @@
             </v-img>
           </v-list-item-avatar>
           <v-list-item-content style="font-size: small">
-            aaaa
+            {{user.getPeerInfo().displayName}}
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
             <v-menu
@@ -184,7 +185,7 @@
                 <v-list-item
                   v-for="(item, index) in menuItems"
                   :key="index"
-                  @click="switchMenuFunc(index, n)">
+                  @click="switchMenuFunc(index, user.getPeerDetails().id)">
                   <v-list-item-icon>
                     <v-icon :color="item.color">
                       {{item.icon}}
@@ -216,8 +217,8 @@
     >
       <v-list>
         <v-list-item
-            v-for="n in 4"
-            :key="n"
+            v-for="(user, index) in this.subFollowUsers"
+            :key="index"
             link
         >
           <v-list-item-content>
@@ -226,7 +227,7 @@
                   height="150px"
                   outlined
                   elevation="13">
-                <video src="../assets/xiangxi.mp4">
+                <video :srcObject="new MediaStream(user.getTracks())">
                 </video>
                 <template>
                   <v-expand-transition>
@@ -235,15 +236,15 @@
                         class="d-flex transition-fast-in-fast-out white black--text v-card--reveal"
                         style="height: 20%;">
                       <p id="rightSideBarText">
-                        TEXT
+                        {{user.getPeerInfo().displayName}}
                       </p>
                       <v-spacer></v-spacer>
-                      <v-btn icon>
+                      <v-btn icon @click="sub2Main(index)">
                         <v-icon color="blue lighten-2">
                           mdi-account-star
                         </v-icon>
                       </v-btn>
-                      <v-btn icon>
+                      <v-btn icon @click="removeSubFollowUser(index)">
                         <v-icon color="yellow darken-3">
                           mdi-close
                         </v-icon>
@@ -260,7 +261,7 @@
 
     <v-main style="text-align: center">
       <div id="mainVideo">
-        <video style="height: 100%; width: 100%" @click="play" id="video" autoplay></video>
+        <video style="height: 100%; width: 100%" src="../assets/dark-knight.mp4"></video>
       </div>
       <div id="chatOverlay" v-if="chatOverlay">
         <v-container id="chatContainer">
@@ -301,6 +302,20 @@
         height="72"
         inset
     >
+      <div @click="switchChat(null)" style="margin-right: 5px">
+        <v-btn icon>
+          <v-fab-transition>
+          <v-badge
+               v-if="!chatOverlay"
+               :color="this.chatBadge"
+               light
+               dot>
+            <v-icon>mdi-chat-outline</v-icon>
+          </v-badge>
+          <v-icon v-else>mdi-chat-remove-outline</v-icon>
+          </v-fab-transition>
+        </v-btn>
+      </div>
       <v-text-field
           background-color="grey lighten-4"
           dense
@@ -308,23 +323,35 @@
           rounded
           outlined
           label="发送消息"
-          @focus="showChat(true)"
+          @focus="switchChat(true)"
+          @keypress.13="sendMsg"
+          v-model="inputMsg"
       >
-        <template v-slot:prepend>
-          <div @click="showChat(!chatOverlay)">
-            <v-badge
-                color="green"
-                light
-                dot>
-              <v-icon>mdi-comment-multiple-outline</v-icon>
-            </v-badge>
-          </div>
-        </template>
       </v-text-field>
       <div>
-        <v-icon color="yellow darken-3" :disabled="!chatOverlay" style="margin-left:5px;margin-right: 5px;">mdi-emoticon-outline</v-icon>
+          <v-menu
+              v-model="showEmojiPicker"
+              absolute
+              offset-x
+              transition="scale-transition"
+              :close-on-content-click="false">
+            <template v-slot:activator="{on, attrs}">
+              <v-icon
+                  color="yellow darken-3"
+                  :disabled="!chatOverlay"
+                  style="margin-left:5px;margin-right: 5px;"
+                  @click="showEmojiPicker = !showEmojiPicker"
+                  v-bind="attrs"
+                  v-on="on">
+                mdi-emoticon-outline</v-icon>
+            </template>
+            <v-emoji-picker
+                :emojiSize="24"
+                :emojisByRow="5"
+                @select="selectEmoji"></v-emoji-picker>
+          </v-menu>
         <v-icon color="blue" style="margin-right: 5px;">mdi-file</v-icon>
-        <v-icon color="green" :disabled="!chatOverlay">mdi-send</v-icon>
+        <v-icon color="green" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
       </div>
     </v-footer>
   </v-app>
@@ -332,13 +359,17 @@
 </template>
 
 <script>
-import { ipcRenderer } from 'electron';
-import AgoraRTC from "agora-rtc-sdk-ng";
+import {VEmojiPicker} from 'v-emoji-picker'
+import {MediaService} from '../service/MediaService'
 
 export default {
   name: "mainPage.vue",
+  components : {
+    VEmojiPicker
+  },
   data () {
     return {
+      mediaService : null,
       drawer: null,
       videoIcon : {
         icon : 'mdi-video-outline',
@@ -352,6 +383,7 @@ export default {
         icon : 'mdi-laptop',
         color : 'green'
       },
+      chatBadge : 'green',
       chatOverlay : false,
       menuItems : [
         {
@@ -372,16 +404,17 @@ export default {
           text : '添加至侧关注',
           function: 'subView'
         },
-      ]
+      ],
+      showEmojiPicker : false,
+      filterText : '',
+      inputMsg : '',
+      allMsgs : [],
+      allUsers : [],
+      mainFollowUser : null,
+      subFollowUsers : []
     }
   },
   methods: {
-    async play() {
-      document.getElementById('video').srcObject =  await this.getCamStream();
-    },
-    stop() {
-      document.getElementById('video').srcObject = null;
-    },
     videoSwitch () {
       if (this.videoIcon.icon === 'mdi-video-outline') {
         this.videoIcon.icon = 'mdi-video-off'
@@ -409,8 +442,23 @@ export default {
         this.screenIcon.color = 'green'
       }
     },
-    showChat (boolean) {
-      this.chatOverlay = boolean
+    switchChat (boolean) {
+      let toStat;
+      if (boolean == null) {
+        toStat = !this.chatOverlay
+      } else {
+        toStat = boolean
+      }
+
+      if (!toStat) {
+        this.chatOverlay = false
+        this.chatIcon.icon = 'mdi-comment-multiple-outline'
+        this.chatIcon.color = 'green'
+      } else {
+        this.chatOverlay = true
+        this.chatIcon.icon = 'mdi-comment-multiple'
+        this.chatIcon.color = 'red'
+      }
     },
     switchMenuFunc (index, n) {
       switch (index) {
@@ -438,39 +486,45 @@ export default {
     privateChat (n) {
       console.log('private chat', n)
     },
-    mainView (n) {
+    mainVideo (n) {
       console.log('main view', n)
     },
-    subView (n) {
+    subVideo (n) {
       console.log('sub view', n)
     },
-    minimizeWin(){
-      ipcRenderer.send('window-min')
+    sendMsg () {
+      this.inputMsg = ''
+      console.log('send msgs')
     },
-    maximizeWin(){
-      ipcRenderer.send('window-max')
+    selectEmoji (emoji) {
+        this.inputMsg += emoji.data
     },
-    closeWin(){
-      ipcRenderer.send('window-close')
+    sub2Main (index) {
+      let user = this.subFollowUsers[index]
+      this.subFollowUsers.splice(index, 1)
+      this.mainFollowUser = user
     },
-    async getCamStream()
-    {
-      let stream = null;
-
-      try {
-        const iVideoTrack = await AgoraRTC.createCameraVideoTrack();
-        await iVideoTrack.setBeautyEffect(true, {
-          lighteningContrastLevel: 1,
-          lighteningLevel: 0.7,
-          rednessLevel: 0.1,
-          smoothnessLevel: 0.5
-        });
-        stream = new MediaStream([iVideoTrack.getMediaStreamTrack()]);
-      } catch (err) {
-        console.error(err);
-      }
-      return stream;
+    removeSubFollowUser (index) {
+      this.subFollowUsers.splice(index, 1)
     }
+  },
+  mounted() {
+    this.mediaService = new MediaService()
+    this.mediaService.registerPeerUpdateListener(() => {
+      this.allUsers = this.mediaService.getPeerDetails()
+    })
+  },
+  computed : {
+    filteredUsers () {
+      if (this.filterText === '') {
+        return this.allUsers
+      }
+      else {
+        return this.allUsers.filter(user =>
+          user.displayName.search(this.filterText) !== -1
+        )
+      }
+    },
   }
 }
 </script>

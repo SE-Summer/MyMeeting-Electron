@@ -1,5 +1,13 @@
 <template>
   <div class="settings-page">
+    <v-snackbar
+        top
+        color="teal lighten-1 white--text"
+        timeout="1600"
+        light
+        v-model="snack">
+      {{snackText}}
+    </v-snackbar>
     <v-card
         class="teal lighten-5 settings-card"
         elevation="10"
@@ -10,16 +18,21 @@
               用 户
           </v-col>
         </v-row>
-        <v-row no-gutters>
-          <v-col>
+        <v-row no-gutters dense>
+          <v-col align="center">
             <v-avatar
                 size="100px"
                 class="teal lighten-4"
-                :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait"
             >
+              <img
+                  alt="Avatar"
+                  :loading="loading"
+                  :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait"
+              >
             </v-avatar>
           </v-col>
-          <v-col>
+
+          <v-col align="left">
             <p class="nickname">{{GLOBAL.userinfo.nickname}}</p>
             <p class="userid">ID: {{GLOBAL.userinfo.id}}</p>
           </v-col>
@@ -50,7 +63,7 @@
             ></v-switch>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row dense>
           <v-col align="center">
             <v-btn
                 color="red accent-4 white--text"
@@ -67,6 +80,8 @@
             <v-btn
                 class="mr-4 teal white--text"
                 @click="back"
+                :loading="loading"
+                :disabled="loading"
                 large
             >
               会 议 >
@@ -79,6 +94,9 @@
 </template>
 
 <script>
+import axios from "axios";
+const FormData = require("form-data");
+const fs = require('fs');
 
 export default {
   name: "Settings",
@@ -88,7 +106,12 @@ export default {
     return{
       email : "",
       password : "",
-      loading: false
+      loading: false,
+      file: null,
+      microphone : false,
+      camera : false,
+      snack : false,
+      snackText : "",
     }
   },
   methods:{
@@ -103,6 +126,33 @@ export default {
     },
     async uploadPortrait(){
       this.loading = true;
+      this.file = fs.createReadStream('local/path/image.jpg');
+      const formData = new FormData();
+      formData.append('file', this.file);
+      console.log(this.file);
+      try{
+        const response =await axios(
+            {
+              method : 'post',
+              url : 'http://se-summer.cn:4446/portrait?token='+this.GLOBAL.userinfo.token,
+              headers:{'Content-Type': 'multipart/form-data'},
+              data : formData
+            })
+        this.GLOBAL.userinfo.portrait = response.data.filename;
+        this.snackText = '上传成功';
+        this.snack = true;
+        this.loading = false;
+        console.log(response.data.filename);
+      }catch(error){
+        if (error.response){
+          this.snackText = error.response.data.error;
+        }
+        else{
+          this.snackText = '无法连接至服务器'
+        }
+        this.snack = true;
+        this.loading = false;
+      }
     }
   },
 }
@@ -138,4 +188,15 @@ export default {
   text-align: left;
   margin-bottom: 10px;
 }
+.file-input{
+  cursor: default;
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  left: 0;
+}
+.file-input:hover{
+  cursor: pointer;
+}
+
 </style>

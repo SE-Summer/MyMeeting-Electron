@@ -301,6 +301,66 @@
         </v-row>
       </v-container>
     </div>
+    <v-btn color="teal lighten-3" large :class="['mymeeting-btn', {'active':click4}]" @click="getMeetings">
+      {{'我的会议'+ (click4 ? '>' : '&lt;')}}</v-btn>
+    <div :class="['mymeeting-list', {'active':click4}]">
+      <v-container>
+        <h2 class="title3">
+          我的会议
+        </h2>
+        <v-row v-for="room in rooms" :key="room.id">
+          <v-card
+              elevation="5"
+              class="mx-auto teal room-card"
+              color="teal lighten-2"
+              max-width="344"
+          >
+            <v-img
+                src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg"
+                height="90px"
+            ></v-img>
+
+            <v-card-title>
+              {{room.topic}}
+            </v-card-title>
+
+            <v-card-subtitle>
+              {{room.start_time + ' ~ ' + room.end_time}}
+            </v-card-subtitle>
+
+            <v-card-actions>
+              <v-btn
+                  color="orange lighten-2"
+                  text
+              >
+                Join
+              </v-btn>
+
+              <v-spacer></v-spacer>
+
+              <v-btn
+                  icon
+                  @click="room.show = !room.show"
+              >
+                <v-icon>{{ room.show ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+              </v-btn>
+            </v-card-actions>
+
+            <v-expand-transition>
+              <div v-show="room.show">
+                <v-divider></v-divider>
+                <v-card-text class="meeting-card-text">
+                  {{'会议号：'+room.id}}
+                </v-card-text>
+                <v-card-text class="meeting-card-text">
+                  {{'会议密码：'+room.password}}
+                </v-card-text>
+              </div>
+            </v-expand-transition>
+          </v-card>
+        </v-row>
+      </v-container>
+    </div>
   </div>
 </template>
 
@@ -320,15 +380,18 @@ export default {
       click2 : false,
       hover3 : false,
       click3 : false,
+      click4 : false,
       loading : false,
       snack : false,
       valid1 : false,
+      show : false,
       valid2 : false,
       valid3 : false,
       snackText : "",
       roomId : "",
       password : "",
       topic : "",
+      rooms : [],
       start_time :  moment().format("HH:mm"),
       end_time : moment().add(2, 'h').format("HH:mm"),
       start_date : moment().format("YYYY-MM-DD"),
@@ -445,6 +508,31 @@ export default {
           this.loading = false;
         }
       }
+    },
+    async getMeetings(){
+      this.click4 = !this.click4;
+      if (this.click4){
+        try{
+          const response =await axios(
+              {
+                method : 'post',
+                url : 'http://se-summer.cn:4446/getReservations',
+                data : {
+                  'token' : this.GLOBAL.userinfo.token,
+                }
+              })
+          response.data.rooms.forEach((room)=>{
+            room.show = false;
+            room.start_time = moment(room.start_time).format("YYYY-MM-DD HH:mm");
+            room.end_time = moment(room.end_time).format("YYYY-MM-DD HH:mm");
+          });
+          this.rooms = response.data.rooms
+          console.log(response);
+        }catch(error){
+          console.log(error);
+        }
+      }
+
     }
   }
 }
@@ -491,6 +579,14 @@ export default {
 .title2.active{
   opacity: 0;
   transition: 0.25s ease-in-out;
+}
+.title3{
+  text-align: center;
+  font-family: "Microsoft YaHei UI", serif;
+  font-size: 40px;
+  font-weight: bold;
+  color: white;
+  margin: 10px;
 }
 .card-title{
   font-family: "Microsoft YaHei UI", serif;
@@ -569,6 +665,45 @@ export default {
   transform: scale(1.1);
   position: absolute;
 }
+
+.mymeeting-btn{
+  font-family: "Microsoft YaHei UI", serif;
+  font-weight: bold;
+  font-size: 22px;
+  padding: 10px;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transition: 0.3s ease-in-out;
+}
+.mymeeting-btn.active{
+  right: 35%;
+  transition: 0.3s ease-in-out;
+}
+
+.mymeeting-list{
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 0;
+  height: 100%;
+  overflow: auto;
+  transition: 0.3s ease-in-out;
+  background-image: linear-gradient(to right, #00897B00, #00897Bdd);
+}
+.mymeeting-list.active{
+  width: 35%;
+  transition: 0.3s ease-in-out;
+}
+.room-card{
+  margin: 20px;
+}
+.meeting-card-text{
+  margin-left: 20px;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  padding: 0;
+}
 @keyframes effect {
   from {
     background-image: linear-gradient(to bottom left, #00897B00, #00897Bdd);;
@@ -577,5 +712,4 @@ export default {
     background-image: linear-gradient(to bottom left, #00897Bdd, #00897B00);;
   }
 }
-
 </style>
