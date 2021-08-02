@@ -137,7 +137,9 @@
               color="green darken-3"
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
-              clearable></v-text-field>
+              clearable
+              v-model="filterText"
+              @change="filterUser(filterText)"></v-text-field>
         </div>
       </v-sheet>
 
@@ -306,6 +308,8 @@
           outlined
           label="发送消息"
           @focus="showChat(true)"
+          @keypress.13="sendMsg"
+          v-model="inputMsg"
       >
         <template v-slot:prepend>
           <div @click="showChat(!chatOverlay)">
@@ -319,9 +323,27 @@
         </template>
       </v-text-field>
       <div>
-        <v-icon color="yellow darken-3" :disabled="!chatOverlay" style="margin-left:5px;margin-right: 5px;">mdi-emoticon-outline</v-icon>
+        <v-expand-x-transition>
+          <v-menu
+              v-model="showEmojiPicker"
+              absolute
+              offset-y
+              :close-on-content-click="false">
+            <template v-slot:activator="{on, attrs}">
+              <v-icon
+                  color="yellow darken-3"
+                  :disabled="!chatOverlay"
+                  style="margin-left:5px;margin-right: 5px;"
+                  @click="showEmojiPicker = !showEmojiPicker"
+                  v-bind="attrs"
+                  v-on="on">
+                mdi-emoticon-outline</v-icon>
+            </template>
+            <picker></picker>
+          </v-menu>
+        </v-expand-x-transition>
         <v-icon color="blue" style="margin-right: 5px;">mdi-file</v-icon>
-        <v-icon color="green" :disabled="!chatOverlay">mdi-send</v-icon>
+        <v-icon color="green" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
       </div>
     </v-footer>
   </v-app>
@@ -329,8 +351,12 @@
 </template>
 
 <script>
+import {Picker} from 'emoji-mart-vue'
 export default {
   name: "mainPage.vue",
+  components : {
+    Picker
+  },
   data () {
     return {
       drawer: null,
@@ -366,7 +392,18 @@ export default {
           text : '添加至侧关注',
           function: 'subView'
         },
-      ]
+      ],
+      filterText : '',
+      inputMsg : '',
+      allMsgs : [],
+      allUsers : [
+        {
+          id : 1,
+          displayName : 'aaaa'
+        }
+      ],
+      filteredUsers : [],
+      showEmojiPicker : false
     }
   },
   methods: {
@@ -431,6 +468,15 @@ export default {
     },
     subView (n) {
       console.log('sub view', n)
+    },
+    sendMsg () {
+      this.inputMsg = ''
+      console.log('send msgs')
+    },
+    filterUser (value) {
+     this.filteredUsers = this.allUsers.filter(user =>
+       user.displayName.search(value) !== -1
+     )
     }
   }
 }
