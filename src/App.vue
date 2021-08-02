@@ -1,29 +1,17 @@
 <template>
-  <v-app class="mymeeting-app">
-
-    <v-main>
-      <cube></cube>
-    </v-main>
-
-    <v-footer padless>
-      <v-col
-          class="text-center"
-          cols="12"
-      >
-       - {{ new Date().getFullYear() }} — <strong>MyMeeting® </strong>-
-      </v-col>
-    </v-footer>
-  </v-app>
+  <login-page v-if="false"></login-page>
+  <main-page v-else></main-page>
 </template>
 
 <script>
-import cube from "./components/cube";
-
+import LoginPage from "./pages/loginPage";
+import MainPage from "./pages/mainPage";
 export default {
   name: 'App',
 
   components: {
-    cube,
+    LoginPage,
+    MainPage,
   },
 
   data: () => ({
@@ -34,5 +22,9 @@ export default {
 <style>
 html::-webkit-scrollbar{
   display: none;
+}
+
+body {
+
 }
 </style>
