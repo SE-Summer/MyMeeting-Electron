@@ -1,9 +1,9 @@
 
 export default {
-    userinfo : "",
+    userinfo : {},
     email : "",
     password : "",
     token : "",
-    portrait : "",
+    roomInfo : {},
     baseURL : "http://se-summer.cn:4446"
 }

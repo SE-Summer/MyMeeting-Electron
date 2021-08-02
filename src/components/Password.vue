@@ -24,7 +24,7 @@
         <v-row>
           <v-text-field
               v-model="nickname"
-              append-icon="mdi-dialpad"
+              append-icon="mdi-format-title"
               label="昵称"
               :rules="nicknameRules"
               background-color="teal lighten-5"
@@ -100,7 +100,7 @@ export default {
         v => /^[a-zA-Z0-9_]{6,18}$/.test(v) || '密码是六到十八位字母、数字或下划线',
       ],
       nicknameRules: [
-        v => v.length < 2 || '昵称太短',
+        v => v.length >= 2 || '昵称太短',
       ],
     }
   },
@@ -113,7 +113,7 @@ export default {
               method : 'post',
               url : 'http://se-summer.cn:4446/register',
               data : {
-                'token' : this.GLOBAL.email,
+                'token' : this.GLOBAL.token,
                 'nickname' : this.nickname,
                 'password' : this.password
               }

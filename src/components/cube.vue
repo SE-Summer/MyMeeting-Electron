@@ -1,5 +1,5 @@
 <template>
-  <div :class="['td-cube', {'td-cube-main': !account}]" @click="openSettings">
+  <div :class="['td-cube', {'td-cube-main': !account}]">
     <ul :class="[{'page1': currentPage === 'Login',
          'page2': currentPage === 'Register',
          'page3': currentPage === 'Verify',
@@ -7,24 +7,29 @@
          'page5': currentPage === 'Settings',
          'page6': !account, 'rot':rot}, 'ul-page']">
       <li :class="[{'main':!account}, 'front']">
-        <login @register="currentPage='Register'" @login="currentPage='Settings'"></login>
+        <transition name="cols-transition">
+          <login @register="currentPage='Register'" @login="currentPage='Settings'" v-if="!rot"></login></transition>
       </li>
       <li :class="[{'main':!account}, 'back']">
-        <Register @back="currentPage='Login'" @next="currentPage='Verify'"></Register>
+        <transition name="cols-transition">
+          <Register @back="currentPage='Login'" @next="currentPage='Verify'" v-if="!rot"></Register></transition>
       </li>
       <li :class="[{'main':!account}, 'top']">
-        <Verify @back="currentPage='Register'" @ok="currentPage='Password'"></Verify>
+        <transition name="cols-transition">
+          <Verify @back="currentPage='Register'" @ok="currentPage='Password'" v-if="!rot"></Verify></transition>
       </li>
       <li  :class="[{'main':!account}, 'bottom']">
-        <Password @finish="currentPage='Login'"></Password>
+        <transition name="cols-transition">
+          <Password @finish="currentPage='Login'" v-if="!rot"></Password></transition>
       </li>
       <li  :class="[{'main':!account}, 'left']"></li>
       <li  :class="[{'main':!account}, 'right']">
-        <Settings @logout="currentPage='Login'" @back="backToMain" v-if="currentPage==='Settings'"></Settings>
+        <transition name="cols-transition">
+          <Settings @logout="currentPage='Login'" @back="backToMain" v-if="currentPage==='Settings' && !rot"></Settings></transition>
       </li>
     </ul>
     <div v-if="rot">
-      <p class="hint">用户设置</p>
+      <v-icon class="hint" @click="openSettings" size="40px">mdi-cogs</v-icon>
     </div>
   </div>
 </template>
@@ -88,20 +93,13 @@ $length: 600px;
   perspective: 1200px;
   transition: 0.5s ease-out;
   position: absolute;
-  top: 100px;
-  left: 30%;
+  top: calc(50% - 300px);
+  left: calc(50% - 300px);
 }
 .td-cube.td-cube-main {
   transition: 0.5s ease-out;
-  width: 200px;
-  height: 200px;
-  top: -30px;
-  left: calc(100% - 200px);
-}
-.td-cube.td-cube-main:hover {
-  cursor: pointer;
-  transform: scale(1.15);
-  transition: 0.5s ease-in-out;
+  top: -230px;
+  left: calc(100% - 400px);
 }
 li {
     position: absolute;
@@ -113,7 +111,7 @@ li {
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transition: 0.8s ease-in-out;
+  transition: 0.5s ease-in-out;
   padding: 0;
 }
 .ul-page.rot {
@@ -146,66 +144,83 @@ li {
   transform: rotateY(0) rotateX(35deg) rotateZ(45deg) scaleX(0.1) scaleY(0.1) scaleZ(0.1);
 }
 .front {
-  background-color: #ffffff;
+  background-color: #10222077;
   transform: translateZ($length / 2);
 }
 .front.main {
-  background-image: linear-gradient(to bottom left, #00897B55, #00897Bff);
-  transition: 1s ease-in-out;
-  border: 4px solid #009688;
+  background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
+  transition: 0.7s ease-in-out;
+  border: 20px solid #80CBC4;
 }
 .back {
-  background-color: #ffffff;
+  background-color: #10222077;
   transform: rotateY(180deg) translateZ($length / 2);
 }
 .back.main {
-  background-image: linear-gradient(to bottom left, #00897B55, #00897Bff);
-  transition: 1s ease-in-out;
-  border: 4px solid #009688;
+  background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
+  transition: 0.7s ease-in-out;
+  border: 20px solid #80CBC4;
 }
 .top {
-  background-color: #ffffff;
+  background-color: #10222077;
   transform: rotateX(90deg) translateZ($height / 2);
 }
 .top.main {
-  background-image: linear-gradient(to bottom left, #00897B55, #00897Bff);
-  transition: 1s ease-in-out;
-  border: 4px solid #009688;
+  background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
+  transition: 0.7s ease-in-out;
+  border: 20px solid #80CBC4;
 }
 .bottom {
-  background-color: #ffffff;
+  background-color: #10222077;
   transform: rotateX(-90deg) translateZ($height / 2);
 }
 .bottom.main {
-  background-image: linear-gradient(to bottom left, #00897B55, #00897Bff);
-  transition: 1s ease-in-out;
-  border: 4px solid #009688;
+  background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
+  transition: 0.7s ease-in-out;
+  border: 20px solid #80CBC4;
 }
 .left {
-  background-color: #ffffff;
+  background-color: #10222077;
   transform: rotateY(-90deg) translateZ($width / 2);
 }
 .left.main {
-  background-image: linear-gradient(to bottom left, #00897B55, #00897Bff);
-  transition: 1s ease-in-out;
-  border: 4px solid #009688;
+  background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
+  transition: 0.7s ease-in-out;
+  border: 20px solid #80CBC4;
 }
 .right {
-  background-color: #ffffff;
+  background-color: #10222077;
   transform: rotateY(90deg) translateZ($width / 2);
 }
 .right.main {
-  background-image: linear-gradient(to bottom left, #00897B55, #00897Bff);
-  transition: 1s ease-in-out;
-  border: 4px solid #009688;
+  background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
+  transition: 0.7s ease-in-out;
+  border: 20px solid #80CBC4;
 }
 
 .hint{
   text-align: center;
+  position: relative;
+  top: -310px;
+  left: 280px;
   color: white;
-  font-family: "Microsoft YaHei UI", serif;
-  font-size: 24px;
-  font-weight: bold;
+  transition: 0.15s ease-in-out;
+}
+
+.hint:hover{
+  cursor: pointer;
+  transform: scale(1.2);
+  transition: 0.15s ease-in-out;
+}
+
+.cols-transition-enter, .cols-transition-leave-to{
+  opacity: 0;
+}
+.cols-transition-leave, .cols-transition-enter-to{
+  opacity: 1;
+}
+.cols-transition-enter-active, .cols-transition-leave-active{
+  transition: all 0.7s ease-in-out;
 }
 
 @keyframes rotate {

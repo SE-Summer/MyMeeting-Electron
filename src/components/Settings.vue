@@ -27,23 +27,30 @@
             <p class="userid">ID: {{GLOBAL.userinfo.id}}</p>
           </v-col>
         </v-row>
-        <v-row>
-          <v-col align="center">
-          <v-avatar
-              slot="icon"
-              size="40"
-              color="teal"
-          >
-            <v-icon
-                icon="mdi-lock"
-                color="white"
-            >
-              mdi-cogs
-            </v-icon>
-          </v-avatar>
+        <v-row dense>
+          <v-col align="center" class="title2" cols="7">
+            麦克风默认开启
           </v-col>
-          <v-col>
-            <p class="userid">会议设置</p>
+          <v-col align="center">
+            <v-switch
+                v-model="microphone"
+                label=""
+                color="teal"
+                hide-details
+            ></v-switch>
+          </v-col>
+        </v-row>
+        <v-row dense>
+          <v-col align="center" class="title2" cols="7">
+            摄像头默认开启
+          </v-col>
+          <v-col align="center">
+            <v-switch
+                v-model="camera"
+                label=""
+                color="teal"
+                hide-details
+            ></v-switch>
           </v-col>
         </v-row>
         <v-row>
@@ -105,7 +112,11 @@ export default {
   text-align: center;
   margin-bottom: 20px;
 }
-
+.title2{
+  font-size: 22px;
+  text-align: center;
+  margin: 16px;
+}
 .settings-card{
   //margin-top: 20%;
   padding: 5% 5%;
@@ -115,14 +126,12 @@ export default {
 .userid{
   font-family: "Microsoft YaHei UI", serif;
   font-size: 16px;
-  font-weight: bold;
   text-align: left;
   margin-top: 5px;
 }
 .nickname{
   font-family: "Microsoft YaHei UI", serif;
   font-size: 40px;
-  font-weight: bold;
   text-align: left;
   margin-bottom: 10px;
 }
