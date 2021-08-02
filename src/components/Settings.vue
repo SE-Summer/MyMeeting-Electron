@@ -15,11 +15,8 @@
             <v-avatar
                 size="100px"
                 class="teal lighten-4"
+                :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait"
             >
-              <v-icon
-              size="64px">
-                mdi-account
-              </v-icon>
             </v-avatar>
           </v-col>
           <v-col>
@@ -100,6 +97,12 @@ export default {
     },
     back(){
       this.$emit('back');
+    },
+    getPortrait(){
+
+    },
+    async uploadPortrait(){
+      this.loading = true;
     }
   },
 }
