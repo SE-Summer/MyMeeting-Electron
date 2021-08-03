@@ -27,14 +27,14 @@
               <img
                   alt="Avatar"
                   :loading="loading"
-                  :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait"
+                  :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait"
               >
             </v-avatar>
           </v-col>
 
           <v-col align="left">
-            <p class="nickname">{{GLOBAL.userinfo.nickname}}</p>
-            <p class="userid">ID: {{GLOBAL.userinfo.id}}</p>
+            <p class="nickname">{{GLOBAL.userInfo.nickname}}</p>
+            <p class="userid">ID: {{GLOBAL.userInfo.id}}</p>
           </v-col>
         </v-row>
         <v-row dense>
@@ -119,6 +119,8 @@ export default {
       this.$emit('logout');
     },
     back(){
+      this.GLOBAL.openMicrophoneWhenEnter = this.microphone;
+      this.GLOBAL.openCameraWhenEnter = this.camera;
       this.$emit('back');
     },
     getPortrait(){
@@ -134,11 +136,11 @@ export default {
         const response =await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/portrait?token='+this.GLOBAL.userinfo.token,
+              url : 'http://se-summer.cn:4446/portrait?token='+this.GLOBAL.userInfo.token,
               headers:{'Content-Type': 'multipart/form-data'},
               data : formData
             })
-        this.GLOBAL.userinfo.portrait = response.data.filename;
+        this.GLOBAL.userInfo.portrait = response.data.filename;
         this.snackText = '上传成功';
         this.snack = true;
         this.loading = false;

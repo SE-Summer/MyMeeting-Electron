@@ -117,7 +117,7 @@ export default {
             'password' : this.password,
           }
         })
-        this.GLOBAL.userinfo = response.data.user;
+        this.GLOBAL.userInfo = response.data.user;
         this.snackText = '登录成功';
         this.snack = true;
         this.loading = false;

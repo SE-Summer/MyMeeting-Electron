@@ -43,6 +43,9 @@
         <v-btn small icon color="gray" style="margin-left: 5px">
           <v-icon>mdi-window-restore</v-icon>
         </v-btn>
+        <v-btn small icon color="red" style="margin-left: 5px" @click="leaveMeeting">
+          <v-icon>mdi-exit-to-app</v-icon>
+        </v-btn>
       </div>
 
     </v-app-bar>
@@ -63,7 +66,7 @@
             color="grey darken-1"
             size="36"
         >
-          <v-img :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait">
+          <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
             <template v-slot:placeholder>
               <div style="margin-top: 7px">
                 <v-progress-circular
@@ -227,7 +230,7 @@
                   height="150px"
                   outlined
                   elevation="13">
-                <video :srcObject="new MediaStream(user.getTracks())">
+                <video :id="'sub-video-window'+user.id" autoplay>
                 </video>
                 <template>
                   <v-expand-transition>
@@ -236,7 +239,7 @@
                         class="d-flex transition-fast-in-fast-out white black--text v-card--reveal"
                         style="height: 20%;">
                       <p id="rightSideBarText">
-                        {{user.getPeerInfo().displayName}}
+                        {{user.displayName}}
                       </p>
                       <v-spacer></v-spacer>
                       <v-btn icon @click="sub2Main(index)">
@@ -261,7 +264,7 @@
 
     <v-main style="text-align: center">
       <div id="mainVideo">
-        <video style="height: 100%; width: 100%" src="../assets/dark-knight.mp4"></video>
+        <video style="height: 100%; width: 100%" id="main-video-window" autoplay></video>
       </div>
       <div id="chatOverlay" v-if="chatOverlay">
         <v-container id="chatContainer">
@@ -361,6 +364,7 @@
 <script>
 import {VEmojiPicker} from 'v-emoji-picker'
 import {MediaService} from '../service/MediaService'
+import {ipcRenderer} from "electron";
 
 export default {
   name: "mainPage.vue",
@@ -396,13 +400,13 @@ export default {
           icon : 'mdi-account-star',
           color: 'blue',
           text : '设为主关注',
-          function: 'mainView'
+          function: 'mainVideo'
         },
         {
           icon : 'mdi-account-plus',
           color: 'blue lighten-2',
           text : '添加至侧关注',
-          function: 'subView'
+          function: 'subVideo'
         },
       ],
       showEmojiPicker : false,
@@ -411,24 +415,39 @@ export default {
       allMsgs : [],
       allUsers : [],
       mainFollowUser : null,
-      subFollowUsers : []
+      subFollowUsers : [],
+      mediaDevice : null,
+      videoStream : null,
+      audioStream : null,
+      video : false,
+      audio : false
     }
   },
   methods: {
-    videoSwitch () {
-      if (this.videoIcon.icon === 'mdi-video-outline') {
+    async videoSwitch () {
+      if (this.video) {
+        this.video = false
+        let res = await this.mediaService.closeTrack(this.videoStream.getTracks())
+        console.log('[Video Close]', res)
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
-      } else {
+      } else{
+        this.video = true
+        this.sendMediaStream(true, false)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'green'
       }
     },
-    microSwitch () {
+    async microSwitch () {
       if (this.microIcon.icon === 'mdi-microphone-outline') {
+        this.audio = false
+        let res = await this.mediaService.closeTrack(this.audioStream.getTracks())
+        console.log(res)
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
       } else {
+        this.audio = true
+        this.sendMediaStream(false, true)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'green'
       }
@@ -460,21 +479,21 @@ export default {
         this.chatIcon.color = 'red'
       }
     },
-    switchMenuFunc (index, n) {
+    switchMenuFunc (index, userId) {
       switch (index) {
         case 0 :
         {
-          this.privateChat(n)
+          this.privateChat(userId)
           break
         }
         case 1 :
         {
-          this.mainView(n)
+          this.mainVideo(userId)
           break
         }
         case 2 :
         {
-          this.subView(n)
+          this.subVideo(userId)
           break;
         }
         default:
@@ -483,14 +502,43 @@ export default {
         }
       }
     },
-    privateChat (n) {
-      console.log('private chat', n)
+    privateChat (userId) {
+      console.log('private chat', userId)
     },
-    mainVideo (n) {
-      console.log('main view', n)
+    mainVideo (userId) {
+      let user = this.mediaService.getPeerDetailsByPeerId(userId)
+
+      let mediaStream = new MediaStream(user.getTracks())
+
+      let peerInfo = user.getPeerInfo()
+
+      this.mainFollowUser = {
+        id : peerInfo.id,
+        displayName : peerInfo.displayName,
+        mediaStream : mediaStream
+      }
+      setTimeout(()=>{
+        document.getElementById('main-video-window').srcObject = mediaStream;
+      }, 2000)
+      console.log('[Main Video]', peerInfo.displayName)
     },
-    subVideo (n) {
-      console.log('sub view', n)
+    subVideo (userId) {
+      let user = this.mediaService.getPeerDetailsByPeerId(userId)
+
+      let mediaStream = new MediaStream(user.getTracks())
+
+      let peerInfo = user.getPeerInfo()
+
+      this.subFollowUsers.push(
+        {
+          id : peerInfo.id,
+          displayName : peerInfo.displayName,
+        }
+      )
+      setTimeout(()=>{
+        document.getElementById('sub-video-window' + peerInfo.id).srcObject = mediaStream
+      }, 2000)
+      console.log('[Add Sub Video]', peerInfo.displayName)
     },
     sendMsg () {
       this.inputMsg = ''
@@ -506,13 +554,112 @@ export default {
     },
     removeSubFollowUser (index) {
       this.subFollowUsers.splice(index, 1)
+    },
+    leaveMeeting () {
+      this.mediaService.leaveMeeting()
+    },
+    sendMediaStream (video, audio) {
+      if (video) {
+        let constraint = {
+          video : this.GLOBAL.videoConstraint
+        }
+
+        navigator.mediaDevices.getUserMedia(constraint)
+          .then(async (mediaStream) => {
+            this.videoStream = mediaStream
+            await this.mediaService.sendMediaStream(mediaStream)
+
+            this.subFollowUsers.push({
+              id : this.GLOBAL.userInfo.id,
+              displayName: this.GLOBAL.userInfo.nickname,
+              mediaStream : new MediaStream(mediaStream.getTracks())
+            })
+
+            setTimeout(()=>{
+              document.getElementById('sub-video-window' + this.GLOBAL.userInfo.id).srcObject = mediaStream
+            }, 2000)
+
+            console.log('[Send Video]')
+          }).catch((error) => {
+          console.log(error)
+        })
+      }
+
+      if (audio) {
+        let constraint = {
+          audio : true
+        }
+
+        navigator.mediaDevices.getUserMedia(constraint)
+          .then(async (mediaStream) => {
+            this.audioStream = mediaStream
+            let res = await this.mediaService.sendMediaStream(mediaStream)
+
+            console.log('[Send Audio]',res)
+          }).catch((error) => {
+          console.log(error)
+        })
+      }
+    },
+    minimizeWin(){
+      ipcRenderer.send('window-min') // 通知主进程我要进行窗口最小化操作
+    },
+    maximizeWin(){
+      ipcRenderer.send('window-max')
+    },
+    closeWin(){
+      ipcRenderer.send('window-close')
     }
   },
-  mounted() {
+  async created() {
     this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener(() => {
       this.allUsers = this.mediaService.getPeerDetails()
     })
+
+    this.mediaService.registerNewMessageListener((newMsg) => {
+      this.allMsgs.push(newMsg)
+    })
+
+    this.mediaService.registerMeetingEndListener(() => {
+
+    })
+
+    console.log(this.GLOBAL)
+    let res = await this.mediaService.joinMeeting(
+      this.GLOBAL.roomInfo.token,
+      this.GLOBAL.userInfo.token,
+      this.GLOBAL.userInfo.nickname,
+      this.GLOBAL.userInfo.nickname + '\'s PC',
+      this.GLOBAL.userInfo.avatar)
+
+    console.log(res)
+
+    navigator.getUserMedia  = navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia ||
+      navigator.msGetUserMedia;
+
+    if (!navigator.getUserMedia) {
+      console.log('Browser DOES NOT support!')
+    }
+
+    this.video = this.GLOBAL.openMicrophoneWhenEnter
+    this.audio = this.GLOBAL.openCameraWhenEnter
+
+    this.sendMediaStream(this.video, this.audio)
+
+    if (!this.video) {
+      this.videoIcon.icon = 'mdi-video-off'
+      this.videoIcon.color = 'gray'
+    }
+
+    if (!this.audio) {
+      this.microIcon.icon = 'mdi-microphone-off'
+      this.microIcon.color = 'gray'
+    }
+
+
   },
   computed : {
     filteredUsers () {

@@ -17,7 +17,7 @@
       </h1>
       <v-container :class="['cards-container', {'active':click1||click2||click3}]">
         <v-row>
-          <v-col align="center" v-show="click1||(!click1&&!click2&&!click3)">
+          <v-col align="center" v-show="click1||(!click1&&!click2&&!click3)" @click="click1=true">
             <v-card
                 class="teal lighten-4 function-card"
                 :class="[{'active':click1||click2||click3}]"
@@ -35,7 +35,7 @@
                   color="teal accent-4" size="160px" :class="['arrow',{'pos1':hover1, 'pos2':click1}]" :disabled="!valid1 || loading" @click="sendReq">
                 mdi-arrow-right-thick
               </v-icon>
-              <p class="card-title teal--text text--darken-4" @click="click1=true">
+              <p class="card-title teal--text text--darken-4">
                 快速入会
               </p>
               <p class="card-text teal--text text--darken-4">
@@ -76,7 +76,7 @@
                 </v-form>
             </v-card>
           </v-col>
-          <v-col align="center" v-show="click2||(!click1&&!click2&&!click3)">
+          <v-col align="center" v-show="click2||(!click1&&!click2&&!click3)" @click="click2=true">
             <v-card
                 class="teal lighten-4 function-card"
                 :class="[{'active':click1||click2||click3}]"
@@ -93,7 +93,7 @@
                   color="teal accent-4" size="160px" :class="['arrow',{'pos1':hover2, 'pos2':click2}]" :disabled="!valid2 || loading" @click="sendReq">
                 mdi-arrow-right-thick
               </v-icon>
-              <p class="card-title teal--text text--darken-4" @click="click2=true">
+              <p class="card-title teal--text text--darken-4">
                 创建会议
               </p>
               <p class="card-text teal--text text--darken-4">
@@ -134,7 +134,7 @@
               </v-form>
             </v-card>
           </v-col>
-          <v-col align="center" v-show="click3||(!click1&&!click2&&!click3)">
+          <v-col align="center" v-show="click3||(!click1&&!click2&&!click3)" @click="click3=true">
             <v-card
                 class="teal lighten-4 function-card"
                 :class="[{'active':click1||click2||click3}]"
@@ -195,7 +195,7 @@
                   color="teal accent-4" size="160px" :class="['arrow',{'pos1':hover3, 'pos2':click3}]"  :disabled="!valid3||loading" @click="sendReq">
                 mdi-arrow-right-thick
               </v-icon>
-              <p class="card-title teal--text text--darken-4" @click="click3=true">
+              <p class="card-title teal--text text--darken-4">
                 预约会议
               </p>
               <p class="card-text teal--text text--darken-4">
@@ -312,15 +312,15 @@
           <v-card
               elevation="5"
               class="mx-auto teal room-card"
-              color="teal lighten-2"
+              color="teal lighten-3"
               max-width="344"
           >
             <v-img
-                src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg"
+                :src="GLOBAL.baseURL + '/static/images/'+(1+room.id % 8)+'.jpeg'"
                 height="90px"
             ></v-img>
 
-            <v-card-title>
+            <v-card-title class="room-card-title">
               {{room.topic}}
             </v-card-title>
 
@@ -330,10 +330,12 @@
 
             <v-card-actions>
               <v-btn
-                  color="orange lighten-2"
+                  color="orange lighten-1"
+                  :disabled="room.ended"
                   text
+                  @click="quickJoin(room)"
               >
-                Join
+                JOIN
               </v-btn>
 
               <v-spacer></v-spacer>
@@ -451,7 +453,7 @@ export default {
                 method : 'post',
                 url : 'http://se-summer.cn:4446/reserve',
                 data : {
-                  'token' : this.GLOBAL.userinfo.token,
+                  'token' : this.GLOBAL.userInfo.token,
                   'topic' : this.topic,
                   'password' : this.password,
                   'start_time' : this.start_date + ' ' + this.start_time + ':00',
@@ -483,7 +485,7 @@ export default {
                 method : 'post',
                 url : 'http://se-summer.cn:4446/reserve',
                 data : {
-                  'token' : this.GLOBAL.userinfo.token,
+                  'token' : this.GLOBAL.userInfo.token,
                   'topic' : this.topic,
                   'password' : this.password,
                   'start_time' : moment().add(1, 'm').format("YYYY-MM-DD HH:mm:ss"),
@@ -518,11 +520,12 @@ export default {
                 method : 'post',
                 url : 'http://se-summer.cn:4446/getReservations',
                 data : {
-                  'token' : this.GLOBAL.userinfo.token,
+                  'token' : this.GLOBAL.userInfo.token,
                 }
               })
           response.data.rooms.forEach((room)=>{
             room.show = false;
+            room.ended = moment(room.end_time).isBefore(moment());
             room.start_time = moment(room.start_time).format("YYYY-MM-DD HH:mm");
             room.end_time = moment(room.end_time).format("YYYY-MM-DD HH:mm");
           });
@@ -532,7 +535,34 @@ export default {
           console.log(error);
         }
       }
-
+    },
+    async quickJoin(room){
+      this.loading = true;
+      try{
+        const response = await axios(
+            {
+              method : 'post',
+              url : 'http://se-summer.cn:4446/getRoom',
+              data : {
+                'id' : room.id,
+                'password' : room.password,
+              }
+            })
+        this.GLOBAL.roomInfo = response.data.room;
+        this.snackText = '加入成功';
+        this.snack = true;
+        this.loading = false;
+        setTimeout(()=>{this.$emit('join');},1000)
+      }catch(error){
+        if (error.response){
+          this.snackText = error.response.data.error;
+        }
+        else{
+          this.snackText = '无法连接至服务器'
+        }
+        this.snack = true;
+        this.loading = false;
+      }
     }
   }
 }
@@ -553,7 +583,6 @@ export default {
   width: 100%;
   height: 100%;
   background-image: linear-gradient(to bottom left, #00897B00, #00897Bdd);
-  //animation: effect 1s infinite;
 }
 .title1{
   font-family: "Microsoft YaHei UI", serif;
@@ -593,11 +622,7 @@ export default {
   font-size: 42px;
   font-weight: bold;
   text-align: left;
-  cursor: pointer;
 }
-.card-title:hover {
-  font-weight: normal;
- }
 .card-text{
   font-family: "Microsoft YaHei UI", serif;
   font-size: 16px;
@@ -620,12 +645,12 @@ export default {
   opacity: 0.85;
   transition: all 0.2s ease-out;
   overflow: hidden;
+  background-image: linear-gradient(to bottom right, #00897B00, #00897B99);
 }
 .function-card:hover{
   transition: all 0.15s ease-out;
-  opacity: 1;
-  transform: scale(1.05);
-  //background-image: linear-gradient(to bottom right, #00897B00, #00897Bff);
+  transform: scale(1.1);
+  cursor: pointer;
 }
 .function-card.active{
   transform: scale(1);
@@ -669,7 +694,7 @@ export default {
 .mymeeting-btn{
   font-family: "Microsoft YaHei UI", serif;
   font-weight: bold;
-  font-size: 22px;
+  font-size: 20px;
   padding: 10px;
   position: absolute;
   bottom: 0;
@@ -689,7 +714,7 @@ export default {
   height: 100%;
   overflow: auto;
   transition: 0.3s ease-in-out;
-  background-image: linear-gradient(to right, #00897B00, #00897Bdd);
+  background-image: linear-gradient(to right, #00897B08, #00897Bff);
 }
 .mymeeting-list.active{
   width: 35%;
@@ -697,6 +722,9 @@ export default {
 }
 .room-card{
   margin: 20px;
+}
+.room-card-title{
+  font-family: "Microsoft YaHei UI", serif;
 }
 .meeting-card-text{
   margin-left: 20px;
