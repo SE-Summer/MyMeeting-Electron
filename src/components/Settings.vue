@@ -186,7 +186,7 @@ export default {
 }
 .nickname{
   font-family: "Microsoft YaHei UI", serif;
-  font-size: 40px;
+  font-size: 32px;
   text-align: left;
   margin-bottom: 10px;
 }
@@ -202,7 +202,5 @@ export default {
 }
 .settings-row{
   margin: 0;
-  margin-bottom: 20px;
-  height: 50px;
 }
 </style>

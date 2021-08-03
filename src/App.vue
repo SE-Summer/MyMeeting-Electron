@@ -1,6 +1,6 @@
 <template>
   <div>
-    <login-page v-if="page==='login'" @join="page='main'"></login-page>
+    <login-page v-show="page==='login'" @join="page='main'"></login-page>
     <main-page v-if="page==='main'" @back="page='login'"></main-page>
   </div>
 </template>

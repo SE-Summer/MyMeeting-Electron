@@ -90,7 +90,7 @@ $length: 60vh;
 .td-cube {
   width: $width;
   height: $height;
-  perspective: 120vh;
+  perspective: 90vh;
   transition: 0.5s ease-out;
   position: absolute;
   top: 15vh;
@@ -108,6 +108,7 @@ li {
     overflow: hidden;
 }
 .ul-page{
+  display: flex;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;

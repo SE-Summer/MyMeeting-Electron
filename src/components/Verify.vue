@@ -135,5 +135,6 @@ export default {
   padding: 5% 10%;
 //width: 60%;
   margin: 20% 15%;
+  //margin: auto;
 }
 </style>

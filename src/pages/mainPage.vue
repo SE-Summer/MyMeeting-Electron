@@ -224,7 +224,6 @@
             :key="index"
             link
         >
-          <SubVideo :user="user" @sub2main="sub2Main(index)" @removesubfollowuser="removeSubFollowUser(index)"></SubVideo>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -332,12 +331,10 @@
 import {VEmojiPicker} from 'v-emoji-picker'
 import {MediaService} from '../service/MediaService'
 import {ipcRenderer} from "electron";
-import SubVideo from "../components/subVideo";
 
 export default {
   name: "mainPage.vue",
   components : {
-    SubVideo,
     VEmojiPicker
   },
   data () {

@@ -247,7 +247,7 @@
                       <v-text-field
                           v-model="start_date"
                           outlined
-                          height="50px"
+                          height="45px"
                           append-icon="mdi-calendar-range"
                           label="开始日期"
                           color="teal darken-1"
@@ -259,7 +259,7 @@
                       <v-text-field
                           v-model="start_time"
                           outlined
-                          height="50px"
+                          height="45px"
                           append-icon="mdi-clock-time-four-outline"
                           label="开始时间"
                           color="teal darken-1"
@@ -272,7 +272,7 @@
                     <v-col>
                       <v-text-field
                           v-model="end_date"
-                          height="50px"
+                          height="45px"
                           outlined
                           append-icon="mdi-calendar"
                           label="结束日期"
@@ -284,7 +284,7 @@
                     <v-col>
                       <v-text-field
                           v-model="end_time"
-                          height="50px"
+                          height="45px"
                           outlined
                           append-icon="mdi-clock-time-five-outline"
                           label="结束时间"
@@ -301,8 +301,8 @@
         </v-row>
       </v-container>
     </div>
-    <v-btn color="teal lighten-3" large :class="['mymeeting-btn', {'active':click4}]" @click="getMeetings">
-      {{'我的会议'+ (click4 ? '>' : '&lt;')}}</v-btn>
+    <v-btn color="teal lighten-3"  :class="['mymeeting-btn', {'active':click4}]" large @click="getMeetings">
+        {{'我的会议'+ (click4 ? '>' : '&lt;')}}</v-btn>
     <div :class="['mymeeting-list', {'active':click4}]">
       <v-container>
         <h2 class="title3">
@@ -571,7 +571,7 @@ export default {
 <style scoped>
 .main-page{
   min-width: 600px;
-  overflow: hidden;
+  overflow: auto;
   width: 100%;
   height: 100%;
   //background-size: contain;
@@ -588,7 +588,7 @@ export default {
   font-family: "Microsoft YaHei UI", serif;
   font-size: 72px;
   font-weight: bold;
-  margin-top: 180px;
+  margin-top: 20vh;
   margin-left: 60px;
   transition: 0.25s ease-in-out;
 }
@@ -607,6 +607,7 @@ export default {
 }
 .title2.active{
   opacity: 0;
+  height: 0;
   transition: 0.25s ease-in-out;
 }
 .title3{
@@ -630,7 +631,7 @@ export default {
   margin-left: 10%;
 }
 .cards-container{
-  margin-top: 80px;
+  margin-top: calc(70vh - 600px);
   transition: all 0.15s ease-out;
 }
 .cards-container.active{
@@ -642,7 +643,6 @@ export default {
   padding: 8% 10%;
 //width: 60%;
   margin: 30% 10%;
-  opacity: 0.85;
   transition: all 0.2s ease-out;
   overflow: hidden;
   background-image: linear-gradient(to bottom right, #00897B00, #00897B99);
@@ -654,9 +654,8 @@ export default {
 }
 .function-card.active{
   transform: scale(1);
-  margin: 30px;
-  width: 66%;
-  padding: 4% 10%;
+  margin: 5% 15% 0 15%;
+  padding: 1% 10% 0 10%;
   transition: all 0.2s ease-out;
 }
 .function-card.active:hover{
