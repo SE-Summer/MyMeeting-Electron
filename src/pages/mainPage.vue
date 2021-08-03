@@ -1,15 +1,5 @@
 <template>
   <v-app id="mainWindow">
-<!--    <v-system-bar app>-->
-<!--      <v-spacer></v-spacer>-->
-
-<!--      <v-icon>mdi-square</v-icon>-->
-
-<!--      <v-icon>mdi-circle</v-icon>-->
-
-<!--      <v-icon>mdi-triangle</v-icon>-->
-<!--    </v-system-bar>-->
-
     <v-app-bar
         app
         clipped-right
@@ -25,7 +15,7 @@
       <v-spacer></v-spacer>
 
       <div id="appBarContent">
-        <p style="color: grey; font-size: small">会议号 : 1</p>
+        <p style="color: grey; font-size: small">会议号 : {{GLOBAL.roomInfo.id}}</p>
       </div>
 
       <v-spacer></v-spacer>
@@ -39,6 +29,9 @@
         </v-chip>
         <v-btn small icon color="gray" style="margin-left: 5px">
           <v-icon>mdi-window-restore</v-icon>
+        </v-btn>
+        <v-btn small icon color="red" style="margin-left: 5px" @click="leaveMeeting">
+          <v-icon>mdi-exit-to-app</v-icon>
         </v-btn>
       </div>
 
@@ -60,7 +53,7 @@
             color="grey darken-1"
             size="36"
         >
-          <v-img src="../assets/kendrick.jpg">
+          <v-img :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait">
             <template v-slot:placeholder>
               <div style="margin-top: 7px">
                 <v-progress-circular
@@ -138,8 +131,7 @@
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
               clearable
-              v-model="filterText"
-              @change="filterUser(filterText)"></v-text-field>
+              v-model="filterText"></v-text-field>
         </div>
       </v-sheet>
 
@@ -148,11 +140,11 @@
           shaped
       >
         <v-list-item
-            v-for="n in 5"
-            :key="n"
+            v-for="(user, index) in this.filteredUsers"
+            :key="index"
         >
           <v-list-item-avatar>
-            <v-img src="../assets/snoopdogg.jpg">
+            <v-img :src="user.getPeerInfo().avatar">
               <template v-slot:placeholder>
                 <div style="margin-top: 7px; margin-left: 8px">
                   <v-progress-circular
@@ -165,7 +157,7 @@
             </v-img>
           </v-list-item-avatar>
           <v-list-item-content style="font-size: small">
-            aaaa
+            {{user.getPeerInfo().displayName}}
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
             <v-menu
@@ -183,7 +175,7 @@
                 <v-list-item
                   v-for="(item, index) in menuItems"
                   :key="index"
-                  @click="switchMenuFunc(index, n)">
+                  @click="switchMenuFunc(index, user.getPeerDetails().id)">
                   <v-list-item-icon>
                     <v-icon :color="item.color">
                       {{item.icon}}
@@ -215,8 +207,8 @@
     >
       <v-list>
         <v-list-item
-            v-for="n in 4"
-            :key="n"
+            v-for="(user, index) in this.subFollowUsers"
+            :key="index"
             link
         >
           <v-list-item-content>
@@ -225,7 +217,7 @@
                   height="150px"
                   outlined
                   elevation="13">
-                <video src="../assets/xiangxi.mp4">
+                <video :srcObject="user.videoStream">
                 </video>
                 <template>
                   <v-expand-transition>
@@ -234,15 +226,15 @@
                         class="d-flex transition-fast-in-fast-out white black--text v-card--reveal"
                         style="height: 20%;">
                       <p id="rightSideBarText">
-                        TEXT
+                        {{user.displayName}}
                       </p>
                       <v-spacer></v-spacer>
-                      <v-btn icon>
+                      <v-btn icon @click="sub2Main(index)">
                         <v-icon color="blue lighten-2">
                           mdi-account-star
                         </v-icon>
                       </v-btn>
-                      <v-btn icon>
+                      <v-btn icon @click="removeSubFollowUser(index)">
                         <v-icon color="yellow darken-3">
                           mdi-close
                         </v-icon>
@@ -259,7 +251,7 @@
 
     <v-main style="text-align: center">
       <div id="mainVideo">
-        <video style="height: 100%; width: 100%" src="../assets/dark-knight.mp4"></video>
+        <video style="height: 100%; width: 100%" :srcObject="this.mainVideo.videoStream"></video>
       </div>
       <div id="chatOverlay" v-if="chatOverlay">
         <v-container id="chatContainer">
@@ -300,6 +292,20 @@
         height="72"
         inset
     >
+      <div @click="switchChat(null)" style="margin-right: 5px">
+        <v-btn icon>
+          <v-fab-transition>
+          <v-badge
+               v-if="!chatOverlay"
+               :color="this.chatBadge"
+               light
+               dot>
+            <v-icon>mdi-chat-outline</v-icon>
+          </v-badge>
+          <v-icon v-else>mdi-chat-remove-outline</v-icon>
+          </v-fab-transition>
+        </v-btn>
+      </div>
       <v-text-field
           background-color="grey lighten-4"
           dense
@@ -307,27 +313,17 @@
           rounded
           outlined
           label="发送消息"
-          @focus="showChat(true)"
+          @focus="switchChat(true)"
           @keypress.13="sendMsg"
           v-model="inputMsg"
       >
-        <template v-slot:prepend>
-          <div @click="showChat(!chatOverlay)">
-            <v-badge
-                color="green"
-                light
-                dot>
-              <v-icon>mdi-comment-multiple-outline</v-icon>
-            </v-badge>
-          </div>
-        </template>
       </v-text-field>
       <div>
-        <v-expand-x-transition>
           <v-menu
               v-model="showEmojiPicker"
               absolute
-              offset-y
+              offset-x
+              transition="scale-transition"
               :close-on-content-click="false">
             <template v-slot:activator="{on, attrs}">
               <v-icon
@@ -339,9 +335,11 @@
                   v-on="on">
                 mdi-emoticon-outline</v-icon>
             </template>
-            <picker></picker>
+            <v-emoji-picker
+                :emojiSize="24"
+                :emojisByRow="5"
+                @select="selectEmoji"></v-emoji-picker>
           </v-menu>
-        </v-expand-x-transition>
         <v-icon color="blue" style="margin-right: 5px;">mdi-file</v-icon>
         <v-icon color="green" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
       </div>
@@ -351,14 +349,17 @@
 </template>
 
 <script>
-import {Picker} from 'emoji-mart-vue'
+import {VEmojiPicker} from 'v-emoji-picker'
+import {MediaService} from '../service/MediaService'
+
 export default {
   name: "mainPage.vue",
   components : {
-    Picker
+    VEmojiPicker
   },
   data () {
     return {
+      mediaService : null,
       drawer: null,
       videoIcon : {
         icon : 'mdi-video-outline',
@@ -372,6 +373,7 @@ export default {
         icon : 'mdi-laptop',
         color : 'green'
       },
+      chatBadge : 'green',
       chatOverlay : false,
       menuItems : [
         {
@@ -384,43 +386,54 @@ export default {
           icon : 'mdi-account-star',
           color: 'blue',
           text : '设为主关注',
-          function: 'mainView'
+          function: 'mainVideo'
         },
         {
           icon : 'mdi-account-plus',
           color: 'blue lighten-2',
           text : '添加至侧关注',
-          function: 'subView'
+          function: 'subVideo'
         },
       ],
+      showEmojiPicker : false,
       filterText : '',
       inputMsg : '',
       allMsgs : [],
-      allUsers : [
-        {
-          id : 1,
-          displayName : 'aaaa'
-        }
-      ],
-      filteredUsers : [],
-      showEmojiPicker : false
+      allUsers : [],
+      mainFollowUser : null,
+      subFollowUsers : [],
+      mediaDevice : null,
+      videoStream : null,
+      audioStream : null,
+      video : false,
+      audio : false
     }
   },
   methods: {
-    videoSwitch () {
-      if (this.videoIcon.icon === 'mdi-video-outline') {
+    async videoSwitch () {
+      if (this.video) {
+        this.video = false
+        let res = await this.mediaService.closeTrack(this.videoStream.getTracks())
+        console.log('[Video Close]', res)
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
-      } else {
+      } else{
+        this.video = true
+        this.sendMediaStream(true, false)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'green'
       }
     },
-    microSwitch () {
+    async microSwitch () {
       if (this.microIcon.icon === 'mdi-microphone-outline') {
+        this.audio = false
+        let res = await this.mediaService.closeTrack(this.audioStream.getTracks())
+        console.log(res)
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
       } else {
+        this.audio = true
+        this.sendMediaStream(false, true)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'green'
       }
@@ -434,24 +447,39 @@ export default {
         this.screenIcon.color = 'green'
       }
     },
-    showChat (boolean) {
-      this.chatOverlay = boolean
+    switchChat (boolean) {
+      let toStat;
+      if (boolean == null) {
+        toStat = !this.chatOverlay
+      } else {
+        toStat = boolean
+      }
+
+      if (!toStat) {
+        this.chatOverlay = false
+        this.chatIcon.icon = 'mdi-comment-multiple-outline'
+        this.chatIcon.color = 'green'
+      } else {
+        this.chatOverlay = true
+        this.chatIcon.icon = 'mdi-comment-multiple'
+        this.chatIcon.color = 'red'
+      }
     },
-    switchMenuFunc (index, n) {
+    switchMenuFunc (index, userId) {
       switch (index) {
         case 0 :
         {
-          this.privateChat(n)
+          this.privateChat(userId)
           break
         }
         case 1 :
         {
-          this.mainView(n)
+          this.mainVideo(userId)
           break
         }
         case 2 :
         {
-          this.subView(n)
+          this.subVideo(userId)
           break;
         }
         default:
@@ -460,24 +488,157 @@ export default {
         }
       }
     },
-    privateChat (n) {
-      console.log('private chat', n)
+    privateChat (userId) {
+      console.log('private chat', userId)
     },
-    mainView (n) {
-      console.log('main view', n)
+    mainVideo (userId) {
+      let user = this.mediaService.getPeerDetailsByPeerId(userId)
+
+      let mediaStream = new MediaStream(user.getTracks())
+
+      let peerInfo = user.getPeerInfo()
+
+      this.mainFollowUser = {
+        id : peerInfo.id,
+        displayName : peerInfo.displayName,
+        mediaStream : mediaStream
+      }
+
+      console.log('[Main Video]', peerInfo.displayName)
     },
-    subView (n) {
-      console.log('sub view', n)
+    subVideo (userId) {
+      let user = this.mediaService.getPeerDetailsByPeerId(userId)
+
+      let mediaStream = new MediaStream(user.getTracks())
+
+      let peerInfo = user.getPeerInfo()
+
+      this.subFollowUsers.push(
+        {
+          id : peerInfo.id,
+          displayName : peerInfo.displayName,
+          mediaStream : mediaStream
+        }
+      )
+      console.log('[Add Sub Video]', peerInfo.displayName)
     },
     sendMsg () {
       this.inputMsg = ''
       console.log('send msgs')
     },
-    filterUser (value) {
-     this.filteredUsers = this.allUsers.filter(user =>
-       user.displayName.search(value) !== -1
-     )
+    selectEmoji (emoji) {
+        this.inputMsg += emoji.data
+    },
+    sub2Main (index) {
+      let user = this.subFollowUsers[index]
+      this.subFollowUsers.splice(index, 1)
+      this.mainFollowUser = user
+    },
+    removeSubFollowUser (index) {
+      this.subFollowUsers.splice(index, 1)
+    },
+    leaveMeeting () {
+      this.mediaService.leaveMeeting()
+    },
+    sendMediaStream (video, audio) {
+      if (video) {
+        let constraint = {
+          video : this.GLOBAL.videoConstraint
+        }
+
+        this.navigator.mediaDevices.getUserMedia(constraint)
+          .then(async (mediaStream) => {
+            this.videoStream = mediaStream
+            let res = await this.mediaService.sendMediaStream(mediaStream)
+
+            this.subFollowUsers.push({
+              id : this.GLOBAL.userinfo.id,
+              displayName: this.GLOBAL.userinfo.nickname,
+              mediaStream : new MediaStream(mediaStream.getTracks())
+            })
+            console.log('[Send Video]',res)
+          }).catch((error) => {
+          console.log(error)
+        })
+      }
+
+      if (audio) {
+        let constraint = {
+          audio : true
+        }
+
+        this.navigator.mediaDevices.getUserMedia(constraint)
+          .then(async (mediaStream) => {
+            this.audioStream = mediaStream
+            let res = await this.mediaService.sendMediaStream(mediaStream)
+
+            console.log('[Send Audio]',res)
+          }).catch((error) => {
+          console.log(error)
+        })
+      }
     }
+  },
+  async created() {
+    this.mediaService = new MediaService()
+    this.mediaService.registerPeerUpdateListener(() => {
+      this.allUsers = this.mediaService.getPeerDetails()
+    })
+
+    this.mediaService.registerNewMessageListener((newMsg) => {
+      this.allMsgs.push(newMsg)
+    })
+
+    this.mediaService.registerMeetingEndListener(() => {
+
+    })
+
+    let res = await this.mediaService.joinMeeting(
+      this.GLOBAL.roomInfo.token,
+      this.GLOBAL.userInfo.token,
+      this.GLOBAL.userInfo.nickname,
+      this.GLOBAL.userInfo.nickname + '\'s PC',
+      this.GLOBAL.userInfo.avatar)
+
+    console.log(res)
+
+    navigator.getUserMedia  = navigator.getUserMedia ||
+      navigator.webkitGetUserMedia ||
+      navigator.mozGetUserMedia ||
+      navigator.msGetUserMedia;
+
+    if (!navigator.getUserMedia) {
+      console.log('Browser DOES NOT support!')
+    }
+
+    this.video = this.GLOBAL.openMicrophoneWhenEnter
+    this.audio = this.GLOBAL.openCameraWhenEnter
+
+    this.sendMediaStream(this.video, this.audio)
+
+    if (!this.video) {
+      this.videoIcon.icon = 'mdi-video-off'
+      this.videoIcon.color = 'gray'
+    }
+
+    if (!this.audio) {
+      this.microIcon.icon = 'mdi-microphone-off'
+      this.microIcon.color = 'gray'
+    }
+
+
+  },
+  computed : {
+    filteredUsers () {
+      if (this.filterText === '') {
+        return this.allUsers
+      }
+      else {
+        return this.allUsers.filter(user =>
+          user.displayName.search(this.filterText) !== -1
+        )
+      }
+    },
   }
 }
 </script>
