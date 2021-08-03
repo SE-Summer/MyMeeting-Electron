@@ -224,40 +224,7 @@
             :key="index"
             link
         >
-          <v-list-item-content>
-            <v-hover v-slot="{hover}">
-                <v-card
-                  height="150px"
-                  outlined
-                  elevation="13">
-                <video :id="'sub-video-window'+user.id" autoplay>
-                </video>
-                <template>
-                  <v-expand-transition>
-                    <div
-                        v-if="hover"
-                        class="d-flex transition-fast-in-fast-out white black--text v-card--reveal"
-                        style="height: 20%;">
-                      <p id="rightSideBarText">
-                        {{user.displayName}}
-                      </p>
-                      <v-spacer></v-spacer>
-                      <v-btn icon @click="sub2Main(index)">
-                        <v-icon color="blue lighten-2">
-                          mdi-account-star
-                        </v-icon>
-                      </v-btn>
-                      <v-btn icon @click="removeSubFollowUser(index)">
-                        <v-icon color="yellow darken-3">
-                          mdi-close
-                        </v-icon>
-                    </v-btn>
-                    </div>
-                  </v-expand-transition>
-                </template>
-              </v-card>
-            </v-hover>
-          </v-list-item-content>
+          <SubVideo :user="user" @sub2main="sub2Main(index)" @removesubfollowuser="removeSubFollowUser(index)"></SubVideo>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -365,10 +332,12 @@
 import {VEmojiPicker} from 'v-emoji-picker'
 import {MediaService} from '../service/MediaService'
 import {ipcRenderer} from "electron";
+import SubVideo from "../components/subVideo";
 
 export default {
   name: "mainPage.vue",
   components : {
+    SubVideo,
     VEmojiPicker
   },
   data () {
@@ -533,11 +502,10 @@ export default {
         {
           id : peerInfo.id,
           displayName : peerInfo.displayName,
+          mediaStream : mediaStream
         }
       )
-      setTimeout(()=>{
-        document.getElementById('sub-video-window' + peerInfo.id).srcObject = mediaStream
-      }, 2000)
+
       console.log('[Add Sub Video]', peerInfo.displayName)
     },
     sendMsg () {
@@ -574,10 +542,6 @@ export default {
               displayName: this.GLOBAL.userInfo.nickname,
               mediaStream : new MediaStream(mediaStream.getTracks())
             })
-
-            setTimeout(()=>{
-              document.getElementById('sub-video-window' + this.GLOBAL.userInfo.id).srcObject = mediaStream
-            }, 2000)
 
             console.log('[Send Video]')
           }).catch((error) => {

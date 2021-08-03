@@ -147,8 +147,8 @@ export default {
 }
 .password-card{
 //margin-top: 20%;
-  padding: 5% 10%;
+  padding: 5% 5%;
 //width: 60%;
-  margin: 20% 15%;
+  margin: 10% 15%;
 }
 </style>

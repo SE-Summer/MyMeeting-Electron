@@ -37,7 +37,7 @@
             <p class="userid">ID: {{GLOBAL.userInfo.id}}</p>
           </v-col>
         </v-row>
-        <v-row dense>
+        <v-row dense class="settings-row">
           <v-col align="center" class="title2" cols="7">
             麦克风默认开启
           </v-col>
@@ -50,7 +50,7 @@
             ></v-switch>
           </v-col>
         </v-row>
-        <v-row dense>
+        <v-row dense class="settings-row">
           <v-col align="center" class="title2" cols="7">
             摄像头默认开启
           </v-col>
@@ -174,9 +174,9 @@ export default {
 }
 .settings-card{
   //margin-top: 20%;
-  padding: 5% 5%;
+  padding: 3% 3%;
   //width: 60%;
-  margin: 15% 10%;
+  margin: 10% 10%;
 }
 .userid{
   font-family: "Microsoft YaHei UI", serif;
@@ -200,5 +200,9 @@ export default {
 .file-input:hover{
   cursor: pointer;
 }
-
+.settings-row{
+  margin: 0;
+  margin-bottom: 20px;
+  height: 50px;
+}
 </style>
