@@ -28,7 +28,6 @@
               label="昵称"
               :rules="nicknameRules"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
@@ -38,9 +37,9 @@
               v-model="password"
               append-icon="mdi-dialpad"
               label="密码"
+              type="password"
               :rules="passwordRules"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
@@ -50,9 +49,9 @@
               v-model="password2"
               append-icon="mdi-dialpad"
               label="再次输入密码"
+              type="password"
               :rules="passwordRules"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
