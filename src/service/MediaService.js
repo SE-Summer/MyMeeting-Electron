@@ -272,7 +272,7 @@ export class MediaService
                     params = {
                         track,
                         appData: { source },
-                        codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
+                        // codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
                     }
                 } else {
                     source = `Audio_from_${this.userToken}_track${++audioTrackCount}`;

@@ -84,22 +84,22 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-$width: 60vh;
-$height: 60vh;
-$length: 60vh;
+$width: 50vh;
+$height: 50vh;
+$length: 50vh;
 .td-cube {
   width: $width;
   height: $height;
-  perspective: 90vh;
+  perspective: 75vh;
   transition: 0.5s ease-out;
   position: absolute;
-  top: 15vh;
-  left: calc(50vw - 30vh);
+  top: calc(25vh - 100px);
+  left: calc(50vw - 25vh);
 }
 .td-cube.td-cube-main {
   transition: 0.5s ease-out;
   top: -20vh;
-  left: calc(100vw - 40vh);
+  left: calc(100vw - 50vh);
 }
 li {
     position: absolute;

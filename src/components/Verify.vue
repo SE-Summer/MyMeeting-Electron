@@ -40,9 +40,8 @@
             <v-btn
                 class="mr-4"
                 @click="back"
-                large
             >
-              返 回
+              返回
             </v-btn>
           </v-col>
           <v-col align="center">
@@ -52,9 +51,8 @@
                 @click="verify"
                 :loading="loading"
                 :disabled="loading || !valid"
-                large
             >
-              验 证
+              验证
             </v-btn>
           </v-col>
         </v-row>
@@ -124,17 +122,17 @@ export default {
 
 <style scoped>
 .title1{
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .register-card{
 //margin-top: 20%;
-  padding: 5% 10%;
+  padding: 5% 8%;
 //width: 60%;
-  margin: 20% 15%;
+  margin: calc(20vh - 80px) 10%;
   //margin: auto;
 }
 </style>

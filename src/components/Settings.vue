@@ -21,7 +21,7 @@
         <v-row no-gutters dense>
           <v-col align="center">
             <v-avatar
-                size="100px"
+                size="80px"
                 class="teal lighten-4"
             >
               <img
@@ -38,26 +38,20 @@
           </v-col>
         </v-row>
         <v-row dense class="settings-row">
-          <v-col align="center" class="title2" cols="7">
-            麦克风默认开启
-          </v-col>
-          <v-col align="center">
+          <v-col align="center" class="title2">
             <v-switch
                 v-model="microphone"
-                label=""
+                label="麦克风默认开启"
                 color="teal"
                 hide-details
             ></v-switch>
           </v-col>
         </v-row>
         <v-row dense class="settings-row">
-          <v-col align="center" class="title2" cols="7">
-            摄像头默认开启
-          </v-col>
-          <v-col align="center">
+          <v-col align="center" class="title2">
             <v-switch
                 v-model="camera"
-                label=""
+                label="摄像头默认开启"
                 color="teal"
                 hide-details
             ></v-switch>
@@ -71,7 +65,6 @@
                 @click="logout"
                 :loading="loading"
                 :disabled="loading"
-                large
             >
               退出登录
             </v-btn>
@@ -82,9 +75,8 @@
                 @click="back"
                 :loading="loading"
                 :disabled="loading"
-                large
             >
-              会 议 >
+              会议 >
             </v-btn>
           </v-col>
         </v-row>
@@ -162,31 +154,28 @@ export default {
 
 <style scoped>
 .title1{
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 .title2{
-  font-size: 22px;
-  text-align: center;
-  margin: 16px;
+  padding: 1% 10%;
 }
 .settings-card{
   //margin-top: 20%;
   padding: 3% 3%;
   //width: 60%;
-  margin: 10% 10%;
+  margin: calc(20vh - 130px) 10%;
 }
 .userid{
   font-family: "Microsoft YaHei UI", serif;
-  font-size: 16px;
+  font-size: 14px;
   text-align: left;
-  margin-top: 5px;
 }
 .nickname{
   font-family: "Microsoft YaHei UI", serif;
-  font-size: 32px;
+  font-size: 28px;
   text-align: left;
   margin-bottom: 10px;
 }

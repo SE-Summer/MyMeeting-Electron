@@ -65,7 +65,6 @@
                 @click="setPassword"
                 :loading="loading"
                 :disabled="loading || !valid || password !== password2"
-                large
             >
               确 认
             </v-btn>
@@ -140,16 +139,16 @@ export default {
 
 <style scoped>
 .title1{
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 .password-card{
 //margin-top: 20%;
-  padding: 5% 5%;
+  padding: 5% 8%;
 //width: 60%;
-  margin: 10% 15%;
+  margin: calc(20vh - 150px) 10%;
   //margin: auto;
 }
 </style>

@@ -152,6 +152,38 @@
           class="pl-14"
           shaped
       >
+        <v-list-item class="blue lighten-4">
+          <v-list-item-avatar>
+            <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
+            <template v-slot:placeholder>
+              <div style="margin-top: 7px; margin-left: 8px">
+                <v-progress-circular
+                        indeterminate
+                        size="20"
+                        color="grey lighten-5"
+                ></v-progress-circular>
+              </div>
+            </template>
+          </v-img>
+          </v-list-item-avatar>
+          <v-list-item-content style="font-size: small">
+            {{GLOBAL.userInfo.nickname}}
+          </v-list-item-content>
+          <v-list-item-content style="display: inline-block">
+            <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
+              <v-icon color="blue">
+                mdi-account-star
+              </v-icon>
+            </v-btn>
+          </v-list-item-content>
+          <v-list-item-content style="display: inline-block">
+            <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
+              <v-icon color="blue">
+                mdi-account-plus
+              </v-icon>
+            </v-btn>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item
             v-for="(user, index) in this.filteredUsers"
             :key="index"
@@ -174,26 +206,27 @@
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
             <v-menu
-              top
-              :offset-x="true">
+                    top
+                    nudge-left="10px"
+                    attach>
               <template v-slot:activator="{on, attrs}">
-              <v-btn
-                v-bind="attrs"
-                v-on="on"
-                icon>
-                <v-icon>mdi-cog-outline</v-icon>
-              </v-btn>
+                <v-btn
+                        v-bind="attrs"
+                        v-on="on"
+                        icon>
+                  <v-icon>mdi-cog-outline</v-icon>
+                </v-btn>
               </template>
-              <v-list dense>
+              <v-list class="white" dense>
                 <v-list-item
-                  v-for="(item, index) in menuItems"
-                  :key="index"
-                  @click="switchMenuFunc(index, user.getPeerDetails().id)">
+                        v-for="(item, index) in menuItems"
+                        :key="index"
+                        @click="switchMenuFunc(index, user.getPeerInfo().id)">
                   <v-list-item-icon>
                     <v-icon :color="item.color">
                       {{item.icon}}
                     </v-icon>
-                    </v-list-item-icon>
+                  </v-list-item-icon>
                   <v-list-item-title>{{item.text}}</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -224,13 +257,46 @@
             :key="index"
             link
         >
+          <v-list-item-content>
+            <v-hover v-slot="{hover}">
+                <v-card
+                  height="150px"
+                  outlined
+                  elevation="13">
+                  <my-video :src-object="user.mediaStream" style="width: 100%; height: 100%"></my-video>
+                <template>
+                  <v-expand-transition>
+                    <div
+                        v-if="hover"
+                        class="d-flex transition-fast-in-fast-out white black--text v-card--reveal"
+                        style="height: 20%;">
+                      <p id="rightSideBarText">
+                        {{user.displayName}}
+                      </p>
+                      <v-spacer></v-spacer>
+                      <v-btn icon @click="sub2Main(index)">
+                        <v-icon color="blue lighten-2">
+                          mdi-account-star
+                        </v-icon>
+                      </v-btn>
+                      <v-btn icon @click="removeSubFollowUser(index)">
+                        <v-icon color="yellow darken-3">
+                          mdi-close
+                        </v-icon>
+                    </v-btn>
+                    </div>
+                  </v-expand-transition>
+                </template>
+              </v-card>
+            </v-hover>
+          </v-list-item-content>
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
-    <v-main style="text-align: center">
+    <v-main style="text-align: center" id="main-window">
       <div id="mainVideo">
-        <video style="height: 100%; width: 100%" id="main-video-window" autoplay></video>
+        <my-video style="height: 100%; width: 100%" :src-object="mainFollowUser.mediaStream"></my-video>
       </div>
       <div id="chatOverlay" v-if="chatOverlay">
         <v-container id="chatContainer">
@@ -298,10 +364,12 @@
       >
       </v-text-field>
       <div>
-          <v-menu
-              v-model="showEmojiPicker"
-              absolute
-              offset-x
+        <v-menu
+              top
+              left
+              nudge-top="50px"
+              nudge-right="50px"
+              attach
               transition="scale-transition"
               :close-on-content-click="false">
             <template v-slot:activator="{on, attrs}">
@@ -331,10 +399,12 @@
 import {VEmojiPicker} from 'v-emoji-picker'
 import {MediaService} from '../service/MediaService'
 import {ipcRenderer} from "electron";
+import MyVideo from "../components/myVideo";
 
 export default {
   name: "mainPage.vue",
   components : {
+    MyVideo,
     VEmojiPicker
   },
   data () {
@@ -365,13 +435,13 @@ export default {
         {
           icon : 'mdi-account-star',
           color: 'blue',
-          text : '设为主关注',
+          text : '主关注',
           function: 'mainVideo'
         },
         {
           icon : 'mdi-account-plus',
           color: 'blue lighten-2',
-          text : '添加至侧关注',
+          text : '侧关注',
           function: 'subVideo'
         },
       ],
@@ -380,7 +450,11 @@ export default {
       inputMsg : '',
       allMsgs : [],
       allUsers : [],
-      mainFollowUser : null,
+      mainFollowUser : {
+        id : null,
+        displayName : null,
+        mediaStream : null
+      },
       subFollowUsers : [],
       mediaDevice : null,
       videoStream : null,
@@ -437,12 +511,8 @@ export default {
 
       if (!toStat) {
         this.chatOverlay = false
-        this.chatIcon.icon = 'mdi-comment-multiple-outline'
-        this.chatIcon.color = 'green'
       } else {
         this.chatOverlay = true
-        this.chatIcon.icon = 'mdi-comment-multiple'
-        this.chatIcon.color = 'red'
       }
     },
     switchMenuFunc (index, userId) {
@@ -472,28 +542,64 @@ export default {
       console.log('private chat', userId)
     },
     mainVideo (userId) {
-      let user = this.mediaService.getPeerDetailsByPeerId(userId)
-
-      let mediaStream = new MediaStream(user.getTracks())
-
-      let peerInfo = user.getPeerInfo()
-
-      this.mainFollowUser = {
-        id : peerInfo.id,
-        displayName : peerInfo.displayName,
-        mediaStream : mediaStream
+      for (let i = 0; i < this.subFollowUsers.length; ++i) {
+        if (this.subFollowUsers[i].id === userId) {
+          this.mainFollowUser = this.subFollowUsers[i]
+          this.subFollowUsers.splice(i, 1)
+          return
+        }
       }
-      setTimeout(()=>{
-        document.getElementById('main-video-window').srcObject = mediaStream;
-      }, 2000)
-      console.log('[Main Video]', peerInfo.displayName)
+
+      if (this.GLOBAL.userInfo.id === userId) {
+        this.mainFollowUser = {
+          id : userId,
+          displayName : this.GLOBAL.userInfo.nickname,
+          mediaStream : this.videoStream
+        }
+      } else {
+        let user = this.mediaService.getPeerDetailsByPeerId(userId)
+
+        let mediaStream = new MediaStream(user.getTracks())
+
+        let peerInfo = user.getPeerInfo()
+
+        this.mainFollowUser = {
+          id : peerInfo.id,
+          displayName : peerInfo.displayName,
+          mediaStream : mediaStream
+        }
+      }
+
+      console.log('[Main Video]')
     },
     subVideo (userId) {
+      if (this.mainFollowUser.id === userId) {
+        return
+      }
+
+      if (this.subFollowUsers.find((user) => {
+        return user.id === userId
+      })) {
+        return;
+      }
+
+      if (userId === this.GLOBAL.userInfo.id) {
+        this.subFollowUsers.push(
+          {
+            id : userId,
+            displayName : this.GLOBAL.userInfo.nickname,
+            mediaStream : new MediaStream(((this.videoStream) ? this.videoStream.getTracks() : []))
+          }
+        )
+        return
+      }
+
       let user = this.mediaService.getPeerDetailsByPeerId(userId)
 
       let mediaStream = new MediaStream(user.getTracks())
 
       let peerInfo = user.getPeerInfo()
+
 
       this.subFollowUsers.push(
         {
@@ -520,8 +626,14 @@ export default {
     removeSubFollowUser (index) {
       this.subFollowUsers.splice(index, 1)
     },
-    leaveMeeting () {
-      this.mediaService.leaveMeeting()
+    async leaveMeeting () {
+      try {
+        await this.mediaService.leaveMeeting()
+      } catch (error) {
+        console.log(error)
+      }
+
+      this.$emit('back')
     },
     sendMediaStream (video, audio) {
       if (video) {
@@ -534,11 +646,22 @@ export default {
             this.videoStream = mediaStream
             await this.mediaService.sendMediaStream(mediaStream)
 
-            this.subFollowUsers.push({
-              id : this.GLOBAL.userInfo.id,
-              displayName: this.GLOBAL.userInfo.nickname,
-              mediaStream : new MediaStream(mediaStream.getTracks())
-            })
+            if (this.mainFollowUser.id === this.GLOBAL.userInfo.id) {
+              this.mainFollowUser.mediaStream = new MediaStream(mediaStream.getTracks())
+            } else {
+              let user = this.subFollowUsers.find((user) => {
+                return user.id === this.GLOBAL.userInfo.id})
+
+              if (!user) {
+                this.subFollowUsers.push({
+                  id : this.GLOBAL.userInfo.id,
+                  displayName: this.GLOBAL.userInfo.nickname,
+                  mediaStream : new MediaStream(mediaStream.getTracks())
+                })
+              } else if (user.mediaStream.getVideoTracks().length === 0) {
+                this.subFollowUsers[this.subFollowUsers.indexOf(user)].mediaStream = new MediaStream(mediaStream.getTracks())
+              }
+            }
 
             console.log('[Send Video]')
           }).catch((error) => {
@@ -628,9 +751,9 @@ export default {
         return this.allUsers
       }
       else {
-        return this.allUsers.filter(user =>
-          user.displayName.search(this.filterText) !== -1
-        )
+        return this.allUsers.filter(user => {
+           return user.getPeerInfo().displayName.search(this.filterText) !== -1
+        })
       }
     },
   }

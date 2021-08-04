@@ -51,22 +51,19 @@
           <v-col align="center">
             <v-btn
                 color="teal accent-4 white--text"
-                class="mr-4"
                 @click="login"
                 :loading="loading"
                 :disabled="loading || !valid"
-                large
             >
-              登 录
+              登录
             </v-btn>
           </v-col>
           <v-col align="center">
             <v-btn
                 class="mr-4"
                 @click="register"
-                large
             >
-              注 册 >
+              注册
             </v-btn>
           </v-col>
         </v-row>
@@ -140,16 +137,16 @@ export default {
 
 <style scoped>
 .title1{
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .login-card{
   //margin-top: 20%;
-  padding: 5% 10%;
-  margin: 20% 15%;
+  padding: 5% 8%;
+  margin: calc(20vh - 110px) 10%;
   //margin: auto;
 }
 </style>
