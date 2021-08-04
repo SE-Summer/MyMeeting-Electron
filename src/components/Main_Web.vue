@@ -42,38 +42,38 @@
                 使用会议号和密码，加入一场现有的会议
               </p>
               <v-form v-model="valid1" ref="form">
-                  <v-container v-if="click1">
-                    <v-row dense>
-                      <v-col>
-                        <v-text-field
-                            v-model="roomId"
-                            height="60px"
-                            outlined
-                            :rules="idRules"
-                            append-icon="mdi-email"
-                            label="会议号"
-                            color="teal darken-1"
-                            required
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                    <v-row dense>
-                      <v-col>
-                        <v-text-field
-                            v-model="password"
-                            outlined
-                            height="60px"
-                            type="password"
-                            :rules="passwordRules"
-                            append-icon="mdi-dialpad"
-                            label="密码"
-                            color="teal darken-1"
-                            required
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-form>
+                <v-container v-if="click1">
+                  <v-row dense>
+                    <v-col>
+                      <v-text-field
+                          v-model="roomId"
+                          height="60px"
+                          outlined
+                          :rules="idRules"
+                          append-icon="mdi-email"
+                          label="会议号"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                  <v-row dense>
+                    <v-col>
+                      <v-text-field
+                          v-model="password"
+                          outlined
+                          height="60px"
+                          type="password"
+                          :rules="passwordRules"
+                          append-icon="mdi-dialpad"
+                          label="密码"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-form>
             </v-card>
           </v-col>
           <v-col align="center" v-show="click2||(!click1&&!click2&&!click3)" @click="click2=true">
@@ -230,17 +230,17 @@
                   </v-row>
                   <v-row dense>
                     <v-col>
-                    <v-text-field
-                      v-model="password"
-                      outlined
-                      height="50px"
-                      type="password"
-                      :rules="passwordRules"
-                      append-icon="mdi-dialpad"
-                      label="设置密码"
-                      color="teal darken-1"
-                      required
-                    ></v-text-field></v-col>
+                      <v-text-field
+                          v-model="password"
+                          outlined
+                          height="50px"
+                          type="password"
+                          :rules="passwordRules"
+                          append-icon="mdi-dialpad"
+                          label="设置密码"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field></v-col>
                   </v-row>
                   <v-row dense>
                     <v-col>
@@ -302,7 +302,7 @@
       </v-container>
     </div>
     <v-btn color="teal lighten-3"  :class="['mymeeting-btn', {'active':click4}]" large @click="getMeetings">
-        {{'我的会议'+ (click4 ? '>' : '&lt;')}}</v-btn>
+      {{'我的会议'+ (click4 ? '>' : '&lt;')}}</v-btn>
     <div :class="['mymeeting-list', {'active':click4}]">
       <v-container>
         <h2 class="title3">
@@ -574,8 +574,8 @@ export default {
   overflow: auto;
   width: 100%;
   height: 100%;
-  //background-size: contain;
-    background: #000000;
+//background-size: contain;
+  background: #000000;
 //background-image: url("https://unity-cn-cms-prd-1254078910.cos.ap-shanghai.myqcloud.com/assetstore-cms-media/img-176409f9-fa82-4a95-ab0c-1ecaffe87f55");
 }
 .teal-cover{

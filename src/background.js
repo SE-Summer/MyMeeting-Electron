@@ -3,7 +3,7 @@
 import { app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
-import * as electron from "electron";
+//import * as electron from "electron";
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -13,13 +13,12 @@ protocol.registerSchemesAsPrivileged([
 
 async function createWindow() {
   // Create the browser window.
-  //electron.Menu.setApplicationMenu();
+  //electron.Menu.setApplicationMenu(null);
   const win = new BrowserWindow({
     width: 1200,
     height: 850,
     minHeight: 680,
     minWidth: 1000,
-    frame: false,
     webPreferences: {
       webSecurity: false,
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -28,20 +27,6 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
-  electron.ipcMain.on('window-min',function(){
-    win.minimize();
-  })
-
-  electron.ipcMain.on('window-max',function () {
-    if(win.isMaximized()){
-      win.restore();
-    }else{
-      win.maximize();
-    }
-  })
-  electron.ipcMain.on('window-close',function (){
-    win.close();
-  });
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)

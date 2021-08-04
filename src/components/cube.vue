@@ -93,7 +93,7 @@ $length: 50vh;
   perspective: 75vh;
   transition: 0.5s ease-out;
   position: absolute;
-  top: calc(25vh - 100px);
+  top: 23vh;
   left: calc(50vw - 25vh);
 }
 .td-cube.td-cube-main {

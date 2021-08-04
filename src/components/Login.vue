@@ -20,7 +20,6 @@
           <v-col class="title1 teal--text">
               登 录
           </v-col>
-
         </v-row>
         <v-row>
           <v-text-field

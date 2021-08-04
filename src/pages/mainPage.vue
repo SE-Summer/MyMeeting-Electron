@@ -1,18 +1,5 @@
 <template>
   <v-app id="mainWindow">
-    <v-system-bar app color="grey darken-4" class="white--text" height="40px">
-      <v-app-bar-title class="appbar-title">MyMeeting</v-app-bar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="minimizeWin">
-        <v-icon color="white">mdi-window-minimize</v-icon>
-      </v-btn>
-      <v-btn icon @click="maximizeWin">
-        <v-icon color="white">mdi-window-maximize</v-icon>
-      </v-btn>
-      <v-btn icon @click="closeWin">
-        <v-icon color="white">mdi-window-close</v-icon>
-      </v-btn>
-    </v-system-bar>
     <v-app-bar
         app
         clipped-right
@@ -398,7 +385,6 @@
 <script>
 import {VEmojiPicker} from 'v-emoji-picker'
 import {MediaService} from '../service/MediaService'
-import {ipcRenderer} from "electron";
 import MyVideo from "../components/myVideo";
 
 export default {
@@ -685,15 +671,6 @@ export default {
         })
       }
     },
-    minimizeWin(){
-      ipcRenderer.send('window-min') // 通知主进程我要进行窗口最小化操作
-    },
-    maximizeWin(){
-      ipcRenderer.send('window-max')
-    },
-    closeWin(){
-      ipcRenderer.send('window-close')
-    }
   },
   async created() {
     this.mediaService = new MediaService()
