@@ -1,39 +1,28 @@
 <template>
-  <v-app class="mymeeting-app">
-
-    <v-main>
-      <cube @click="account = true" @back="account = false" account="account"></cube>
-    </v-main>
-
-    <v-footer padless>
-      <v-col
-          class="text-center"
-          cols="12"
-      >
-       - {{ new Date().getFullYear() }} — <strong>MyMeeting® </strong>-
-      </v-col>
-    </v-footer>
-  </v-app>
+  <div>
+    <login-page v-show="page==='login'" @join="page='main'"></login-page>
+    <main-page v-if="page==='main'" @back="page='login'"></main-page>
+  </div>
 </template>
 
 <script>
-import cube from "./components/cube";
-
+import loginPage from "./pages/loginPage";
+import mainPage from "./pages/mainPage";
 export default {
   name: 'App',
 
   components: {
-    cube,
+    mainPage,
+    loginPage,
   },
 
   data(){
     return{
-      accont : true,
+      page : 'login',
     }
   },
 
   methods :{
-
   }
 };
 </script>
