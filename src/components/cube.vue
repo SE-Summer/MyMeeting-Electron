@@ -99,7 +99,20 @@ $length: 50vh;
 .td-cube.td-cube-main {
   transition: 0.5s ease-out;
   top: -20vh;
-  left: calc(100vw - 50vh);
+  left: calc(100vw - 30vh);
+}
+.hint{
+  text-align: center;
+  position: relative;
+  top: -27vh;
+  left: 23vh;
+  color: white;
+  transition: 0.15s ease-in-out;
+}
+.hint:hover{
+  cursor: pointer;
+  transform: scale(1.2);
+  transition: 0.15s ease-in-out;
 }
 li {
     position: absolute;
@@ -197,21 +210,6 @@ li {
   background-image: linear-gradient(to bottom left, #00695C55, #00897Bff);
   transition: 0.7s ease-in-out;
   border: 20px solid #80CBC4;
-}
-
-.hint{
-  text-align: center;
-  position: relative;
-  top: -31vh;
-  left: 28vh;
-  color: white;
-  transition: 0.15s ease-in-out;
-}
-
-.hint:hover{
-  cursor: pointer;
-  transform: scale(1.2);
-  transition: 0.15s ease-in-out;
 }
 
 .cols-transition-enter, .cols-transition-leave-to{

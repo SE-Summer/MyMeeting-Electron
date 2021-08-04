@@ -29,7 +29,6 @@
               :rules="emailRules"
               label="邮箱"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
@@ -42,7 +41,6 @@
               label="密码"
               type="password"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
