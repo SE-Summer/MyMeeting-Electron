@@ -19,8 +19,8 @@
 </template>
 
 <script>
-import cube from "../components/cube_web";
-import Main from "../components/Main_Web";
+import cube from "../components/cube";
+import Main from "../components/Main";
 export default {
   name: 'loginPage',
 

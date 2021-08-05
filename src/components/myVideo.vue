@@ -1,17 +1,18 @@
 <template>
-  <video id="my-video" autoplay></video>
+  <video :id="myId" :autoplay="srcObject"></video>
 </template>
 
 <script>
   export default {
     name: "myVideo",
     mounted() {
-        document.getElementById('my-video').srcObject = this.srcObject
+        document.getElementById(this.myId).srcObject = this.srcObject
     },
-    props: ["srcObject"],
+    props: ["srcObject", "myId"],
     watch: {
       srcObject(newValue) {
-        document.getElementById('my-video').srcObject = newValue
+        console.log('[My Video]', newValue)
+          document.getElementById(this.myId).srcObject = newValue
       }
     }
   }

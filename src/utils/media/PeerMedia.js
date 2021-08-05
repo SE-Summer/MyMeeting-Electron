@@ -1,4 +1,4 @@
-import {config} from "../../Constants"
+import {config} from "../../Constants.js"
 
 const defaultPeerInfo = {
     id: 'defaultUser_defaultUser',
@@ -9,13 +9,7 @@ const defaultPeerInfo = {
 
 class PeerDetail
 {
-    _hasAudio = null;
-    _hasVideo = null;
-    peerInfo = null;
-    // consumerId ==> Consumer
-    consumers= null;
-    // consumerId ==> MediaStreamTrack
-    tracks = null;
+
     constructor()
     {
         this._hasAudio = false;
@@ -24,12 +18,12 @@ class PeerDetail
         this.tracks = new Map();
     }
 
-    setPeerInfo(peerInfo)
+     setPeerInfo(peerInfo)
     {
         this.peerInfo = peerInfo;
     }
 
-    addConsumerAndTrack(consumer, track)
+     addConsumerAndTrack(consumer, track)
     {
         this.consumers.set(consumer.id, consumer);
         this.tracks.set(consumer.id, track);
@@ -40,7 +34,7 @@ class PeerDetail
             this._hasVideo = true;
     }
 
-    deleteConsumerAndTrack(consumerId)
+     deleteConsumerAndTrack(consumerId)
     {
         if (this.consumers.has(consumerId)) {
             if (!this.consumers.get(consumerId).closed) {
@@ -56,16 +50,16 @@ class PeerDetail
         this.updateMediaStatus();
     }
 
-    getConsumerIds()
+     getConsumerIds()
     {
-        let consumerIds = [];
+        let consumerIds= [];
         this.consumers.forEach((consumer, consumerId) => {
             consumerIds.push(consumerId);
         })
         return consumerIds;
     }
 
-    getPeerInfo()
+     getPeerInfo()
     {
         if (this.peerInfo)
             return this.peerInfo;
@@ -73,26 +67,26 @@ class PeerDetail
             return defaultPeerInfo;
     }
 
-    getTracks()
+     getTracks()
     {
-        let tracks = [];
+        let tracks= [];
         this.tracks.forEach((track) => {
             tracks.push(track);
         });
         return tracks;
     }
 
-    hasVideo()
+     hasVideo()
     {
         return this._hasVideo;
     }
 
-    hasAudio()
+     hasAudio()
     {
         return this._hasAudio;
     }
 
-    closeConsumers()
+     closeConsumers()
     {
         this.consumers.forEach((consumer) => {
             if (!consumer.closed) {
@@ -101,7 +95,7 @@ class PeerDetail
         })
     }
 
-    updateMediaStatus()
+     updateMediaStatus()
     {
         this._hasAudio = false;
         this._hasVideo = false;
@@ -116,9 +110,6 @@ class PeerDetail
 
 export class PeerMedia
 {
-    // peerId ==> PeerDetail
-    peerId2Details = null;
-    consumerId2Details = null;
 
     constructor()
     {
@@ -126,7 +117,7 @@ export class PeerMedia
         this.consumerId2Details = new Map();
     }
 
-    addPeerInfo(peerInfo)
+     addPeerInfo(peerInfo)
     {
         const peerId = peerInfo.id;
         if (!this.peerId2Details.has(peerId)) {
@@ -138,7 +129,7 @@ export class PeerMedia
         }
     }
 
-    addConsumerAndTrack(peerId, consumer, track)
+     addConsumerAndTrack(peerId, consumer, track)
     {
         if (this.consumerId2Details.has(consumer.id))
             return;
@@ -155,7 +146,7 @@ export class PeerMedia
         }
     }
 
-    deleteConsumerAndTrack(consumerId)
+     deleteConsumerAndTrack(consumerId)
     {
         if (!this.consumerId2Details.has(consumerId))
             return;
@@ -163,7 +154,7 @@ export class PeerMedia
         this.consumerId2Details.get(consumerId).deleteConsumerAndTrack(consumerId);
     }
 
-    deletePeer(peerId)
+     deletePeer(peerId)
     {
         if (!this.peerId2Details.has(peerId))
             return;
@@ -180,7 +171,7 @@ export class PeerMedia
         this.peerId2Details.delete(peerId);
     }
 
-    getPeerDetails()
+     getPeerDetails()
     {
         let peerDetails = [];
         this.peerId2Details.forEach((peerDetail) => {
@@ -189,7 +180,7 @@ export class PeerMedia
         return peerDetails;
     }
 
-    clear()
+     clear()
     {
         this.peerId2Details.forEach((peerDetail) => {
             peerDetail.closeConsumers();
@@ -198,7 +189,7 @@ export class PeerMedia
         this.consumerId2Details.clear();
     }
 
-    getPeerDetailsByPeerId(peerId)
+     getPeerDetailsByPeerId(peerId)
     {
         return this.peerId2Details.get(peerId);
     }

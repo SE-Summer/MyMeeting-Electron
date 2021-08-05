@@ -1,15 +1,15 @@
 export const MessageType = {
-    file : null,
-    text : null,
+    file : 'file',
+    text : 'text',
 }
 
 export const FileJobType = {
-    upload : null,
-    download : null,
+    upload : 'upload',
+    download : 'download',
 }
 
 export const FileJobStatus = {
-    progressing : null,
-    completed : null,
-    failed : null,
+    progressing : 'progressing',
+    completed : 'completed',
+    failed : 'failed',
 }
