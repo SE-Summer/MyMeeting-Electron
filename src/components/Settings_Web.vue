@@ -127,7 +127,7 @@ export default {
         const response =await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/portrait?token='+this.GLOBAL.userInfo.token,
+              url : this.GLOBAL.baseURL + '/portrait?token='+this.GLOBAL.userInfo.token,
               headers:{'Content-Type': 'multipart/form-data'},
               data : formData
             })

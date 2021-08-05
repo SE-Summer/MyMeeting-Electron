@@ -68,7 +68,7 @@ app.on('ready', async () => {
   createWindow()
 })
 
-
+app.commandLine.appendSwitch('ignore-certificate-errors');
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {

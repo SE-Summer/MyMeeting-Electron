@@ -89,7 +89,7 @@ export default {
         const response =await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/email',
+              url : this.GLOBAL.baseURL + '/email',
               data : {
                 'email' : this.email,
               }

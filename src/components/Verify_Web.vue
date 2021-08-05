@@ -91,7 +91,7 @@ export default {
         const response =await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/verify',
+              url : this.GLOBAL.baseURL + '/verify',
               data : {
                 'email' : this.GLOBAL.email,
                 'verify' : this.verifyCode

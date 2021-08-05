@@ -42,38 +42,38 @@
                 使用会议号和密码，加入一场现有的会议
               </p>
               <v-form v-model="valid1" ref="form">
-                  <v-container v-if="click1">
-                    <v-row dense>
-                      <v-col>
-                        <v-text-field
-                            v-model="roomId"
-                            height="60px"
-                            outlined
-                            :rules="idRules"
-                            append-icon="mdi-email"
-                            label="会议号"
-                            color="teal darken-1"
-                            required
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                    <v-row dense>
-                      <v-col>
-                        <v-text-field
-                            v-model="password"
-                            outlined
-                            height="60px"
-                            type="password"
-                            :rules="passwordRules"
-                            append-icon="mdi-dialpad"
-                            label="密码"
-                            color="teal darken-1"
-                            required
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-form>
+                <v-container v-if="click1">
+                  <v-row dense>
+                    <v-col>
+                      <v-text-field
+                          v-model="roomId"
+                          height="60px"
+                          outlined
+                          :rules="idRules"
+                          append-icon="mdi-email"
+                          label="会议号"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                  <v-row dense>
+                    <v-col>
+                      <v-text-field
+                          v-model="password"
+                          outlined
+                          height="60px"
+                          type="password"
+                          :rules="passwordRules"
+                          append-icon="mdi-dialpad"
+                          label="密码"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-form>
             </v-card>
           </v-col>
           <v-col align="center" v-show="click2||(!click1&&!click2&&!click3)" @click="click2=true">
@@ -153,7 +153,7 @@
                     elevation="8"
                     color="teal"
                     light
-                    :min="start_date"
+                    :min="now_date"
                 ></v-date-picker>
                 <v-time-picker
                     v-show="selecting_start_time"
@@ -164,7 +164,7 @@
                     format="24hr"
                     color="teal"
                     scrollable
-                    :min="start_time"
+                    :min="now_time"
                 ></v-time-picker>
                 <v-date-picker
                     v-show="selecting_end_date"
@@ -230,17 +230,17 @@
                   </v-row>
                   <v-row dense>
                     <v-col>
-                    <v-text-field
-                      v-model="password"
-                      outlined
-                      height="50px"
-                      type="password"
-                      :rules="passwordRules"
-                      append-icon="mdi-dialpad"
-                      label="设置密码"
-                      color="teal darken-1"
-                      required
-                    ></v-text-field></v-col>
+                      <v-text-field
+                          v-model="password"
+                          outlined
+                          height="50px"
+                          type="password"
+                          :rules="passwordRules"
+                          append-icon="mdi-dialpad"
+                          label="设置密码"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field></v-col>
                   </v-row>
                   <v-row dense>
                     <v-col>
@@ -301,8 +301,8 @@
         </v-row>
       </v-container>
     </div>
-    <v-btn color="teal lighten-3"  :class="['mymeeting-btn', {'active':click4}]" large @click="getMeetings">
-        {{'我的会议'+ (click4 ? '>' : '&lt;')}}</v-btn>
+    <button :class="['mymeeting-btn', {'active':click4}]" @click="getMeetings">
+      {{'我的会议'+ (click4 ? '>' : '&lt;')}}</button>
     <div :class="['mymeeting-list', {'active':click4}]">
       <v-container>
         <h2 class="title3">
@@ -398,6 +398,8 @@ export default {
       end_time : moment().add(2, 'h').format("HH:mm"),
       start_date : moment().format("YYYY-MM-DD"),
       end_date :  moment().format("YYYY-MM-DD"),
+      now_time : moment().format("HH:mm"),
+      now_date : moment().format("YYYY-MM-DD"),
       max_num : 10,
       topicRules: [
         v => !!v || '请输入会议主题',
@@ -422,7 +424,7 @@ export default {
           const response = await axios(
               {
                 method : 'post',
-                url : 'http://se-summer.cn:4446/getRoom',
+                url : this.GLOBAL.baseURL + '/getRoom',
                 data : {
                   'id' : this.roomId,
                   'password' : this.password,
@@ -451,7 +453,7 @@ export default {
           const response = await axios(
               {
                 method : 'post',
-                url : 'http://se-summer.cn:4446/reserve',
+                url : this.GLOBAL.baseURL + '/reserve',
                 data : {
                   'token' : this.GLOBAL.userInfo.token,
                   'topic' : this.topic,
@@ -483,7 +485,7 @@ export default {
           const response = await axios(
               {
                 method : 'post',
-                url : 'http://se-summer.cn:4446/reserve',
+                url : this.GLOBAL.baseURL + '/reserve',
                 data : {
                   'token' : this.GLOBAL.userInfo.token,
                   'topic' : this.topic,
@@ -518,7 +520,7 @@ export default {
           const response =await axios(
               {
                 method : 'post',
-                url : 'http://se-summer.cn:4446/getReservations',
+                url : this.GLOBAL.baseURL + '/getReservations',
                 data : {
                   'token' : this.GLOBAL.userInfo.token,
                 }
@@ -542,7 +544,7 @@ export default {
         const response = await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/getRoom',
+              url : this.GLOBAL.baseURL + '/getRoom',
               data : {
                 'id' : room.id,
                 'password' : room.password,
@@ -574,8 +576,8 @@ export default {
   overflow: auto;
   width: 100%;
   height: 100%;
-  //background-size: contain;
-    background: #000000;
+//background-size: contain;
+  background: #000000;
 //background-image: url("https://unity-cn-cms-prd-1254078910.cos.ap-shanghai.myqcloud.com/assetstore-cms-media/img-176409f9-fa82-4a95-ab0c-1ecaffe87f55");
 }
 .teal-cover{
@@ -631,7 +633,7 @@ export default {
   margin-left: 10%;
 }
 .cards-container{
-  margin-top: calc(40vh - 350px);
+  margin-top: calc(35vh - 200px);
   transition: all 0.15s ease-out;
 }
 .cards-container.active{
@@ -639,17 +641,15 @@ export default {
   transition: all 0.15s ease-out;
 }
 .function-card{
-//margin-top: 20%;
-  padding: 8% 10%;
-//width: 60%;
-  margin: 30% 10%;
+  padding: 5% 8%;
+  margin: 5vh 10%;
   transition: all 0.2s ease-out;
   overflow: hidden;
-  background-image: linear-gradient(to bottom right, #00897B00, #00897B99);
+  background-image: linear-gradient(to bottom, #00897B00, #00695Cdd);
 }
 .function-card:hover{
   transition: all 0.15s ease-out;
-  transform: scale(1.1);
+  transform: scale(1.05);
   cursor: pointer;
 }
 .function-card.active{
@@ -663,7 +663,7 @@ export default {
 }
 .arrow{
   position: absolute;
-  top: 104px;
+  top: 100px;
   left: -90px;
   transition: all 0.15s ease-in;
 }
@@ -694,14 +694,27 @@ export default {
   font-family: "Microsoft YaHei UI", serif;
   font-weight: bold;
   font-size: 20px;
-  padding: 10px;
+  padding: 15px;
   position: absolute;
-  bottom: 0;
+  width: 50px;
+  bottom: 30px;
+  background: #80CBC4;
   right: 0;
+  outline: none;
   transition: 0.3s ease-in-out;
+  border-bottom-left-radius: 10px;
+  border-top-left-radius: 10px;
+}
+.mymeeting-btn:hover {
+  background: #00BFA5;
+}
+.mymeeting-btn.active:hover {
+  background: #00BFA5;
 }
 .mymeeting-btn.active{
-  right: 35%;
+  right: 40%;
+  bottom: 70%;
+  background: #80CBC4;
   transition: 0.3s ease-in-out;
 }
 
@@ -716,7 +729,7 @@ export default {
   background-image: linear-gradient(to right, #00897B08, #00897Bff);
 }
 .mymeeting-list.active{
-  width: 35%;
+  width: 40%;
   transition: 0.3s ease-in-out;
 }
 .room-card{

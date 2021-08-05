@@ -102,7 +102,7 @@ export default {
         const response =await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/login',
+              url : this.GLOBAL.baseURL + '/login',
               data : {
                 'email' : this.email,
                 'password' : this.password,
