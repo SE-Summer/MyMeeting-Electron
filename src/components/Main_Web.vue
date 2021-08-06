@@ -301,9 +301,9 @@
         </v-row>
       </v-container>
     </div>
-    <button :class="['mymeeting-btn', {'active':click4}]" @click="getMeetings" @focusout="click4 = false">
+    <button :class="['mymeeting-btn', {'active':click4}]" @mouseenter="getMeetings">
       {{'我的会议'+ (click4 ? '>' : '&lt;')}}</button>
-    <div :class="['mymeeting-list', {'active':click4}]">
+    <div :class="['mymeeting-list', {'active':click4}]" @mouseleave="click4 = false">
       <v-container>
         <h2 class="title3">
           我的会议
