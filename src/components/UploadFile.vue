@@ -98,6 +98,7 @@ export default {
         'application/x-rar' : 'folder-zip-outline',
         'application/x-tar' : 'folder-zip-outline',
         'application/x-7z-compressed' : 'folder-zip-outline',
+        'application/x-zip-compressed' : 'folder-zip-outline',
         'default':'file-question-outline',
       },
     }

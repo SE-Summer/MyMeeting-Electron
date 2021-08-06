@@ -301,9 +301,13 @@
         </v-row>
       </v-container>
     </div>
-    <button :class="['mymeeting-btn', {'active':click4}]" @mouseenter="getMeetings">
+    <button
+        :class="['mymeeting-btn', {'active':click4}]"
+        @click="getMeetings">
       {{'我的会议'+ (click4 ? '>' : '&lt;')}}</button>
-    <div :class="['mymeeting-list', {'active':click4}]" @mouseleave="click4 = false">
+    <div
+        :class="['mymeeting-list', {'active':click4}]"
+         @mouseleave="click4 = false">
       <v-container>
         <h2 class="title3">
           我的会议
@@ -313,17 +317,15 @@
               elevation="5"
               class="mx-auto teal room-card"
               color="teal lighten-3"
-              max-width="344"
-          >
-            <v-img
+              max-width="350"
+          ><v-img
                 :src="GLOBAL.baseURL + '/static/images/'+(1+room.id % 8)+'.jpeg'"
                 height="90px"
             ></v-img>
-
             <v-card-title class="room-card-title">
+              <v-icon color="teal darken-2" v-if="room.host === GLOBAL.userInfo.id"> mdi-crown-outline</v-icon>
               {{room.topic}}
             </v-card-title>
-
             <v-card-subtitle>
               {{room.start_time + ' ~ ' + room.end_time}}
             </v-card-subtitle>
@@ -490,7 +492,7 @@ export default {
                   'token' : this.GLOBAL.userInfo.token,
                   'topic' : this.topic,
                   'password' : this.password,
-                  'start_time' : moment().add(1, 'm').format("YYYY-MM-DD HH:mm:ss"),
+                  'start_time' : moment().format("YYYY-MM-DD HH:mm:ss"),
                   'end_time' : moment().add(2, 'h').format("YYYY-MM-DD HH:mm:ss"),
                   'max_num' : this.max_num,
                 }
@@ -701,7 +703,7 @@ export default {
   background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
   right: 0;
   outline: none;
-  transition: 0.3s ease-in-out;
+  transition: 0.2s ease-in-out;
   border-bottom-left-radius: 10px;
   border-top-left-radius: 10px;
 }
@@ -713,7 +715,7 @@ export default {
 .mymeeting-btn.active{
   right: 40%;
   bottom: 70%;
-  transition: 0.3s ease-in-out;
+  transition: 0.2s ease-in-out;
   background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);
 }
 

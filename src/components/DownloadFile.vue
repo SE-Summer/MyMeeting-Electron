@@ -67,15 +67,15 @@ export default {
         'video/x-flv' : 'file-video-outline',
         'video/x-matroska' : 'file-video-outline',
         'text/plain' : 'file-document-outline',
-        'text/x-php'  : 'language-php-outline',
-        'text/html' : 'language-html5-outline',
-        'text/javascript' : 'language-javascript-outline',
-        'text/css' : 'language-css-outline',
+        'text/x-php'  : 'language-php',
+        'text/html' : 'language-html5',
+        'text/javascript' : 'language-javascript',
+        'text/css' : 'language-css3',
         'text/rtf' : 'file-document-outline',
         'text/rtfd' : 'file-document-outline',
-        'text/x-python' : 'language-python-outline',
-        'text/x-java-source' : 'file-java-outline',
-        'text/x-ruby' : 'file-ruby-outline',
+        'text/x-python' : 'language-python',
+        'text/x-java-source' : 'language-java',
+        'text/x-ruby' : 'language-ruby',
         'text/x-shellscript' : 'powershell',
         'text/x-perl' : 'file-document-outline',
         'text/x-sql' : 'file-document-outline',
@@ -84,7 +84,9 @@ export default {
         'application/vnd.ms-word' : 'file-word-outline',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :  'file-word-outline',
         'application/vnd.ms-excel' : 'file-excel-outline',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'file-excel-outline',
         'application/vnd.ms-powerpoint' : 'file-powerpoint-outline',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' : 'file-powerpoint-outline',
         'application/pdf' : 'file-pdf-outline',
         'application/xml' : 'file-question-outline',
         'application/vnd.oasis.opendocument.text' : 'file-question-outline',
@@ -95,6 +97,7 @@ export default {
         'application/x-rar' : 'folder-zip-outline',
         'application/x-tar' : 'folder-zip-outline',
         'application/x-7z-compressed' : 'folder-zip-outline',
+        'application/x-zip-compressed' : 'folder-zip-outline',
         'default':'file-question-outline',
       },
     }
@@ -135,8 +138,8 @@ export default {
     }
   },
   mounted() {
-    if (this.file.type in this.map4icon)
-      this.icon = this.map4icon[this.file.type];
+    if (this.message.fileType in this.map4icon)
+      this.icon = this.map4icon[this.message.fileType];
     else this.icon = this.map4icon['default'];
   }
 }

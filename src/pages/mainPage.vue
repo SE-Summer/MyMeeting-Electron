@@ -35,6 +35,10 @@
 
       <v-spacer></v-spacer>
 
+      <div style="font-size: small; color: grey;">会议号 : {{GLOBAL.roomInfo.id}}</div>
+
+      <v-spacer></v-spacer>
+
       <div>
         <v-chip small style="color: gray; font-weight: lighter">
           <v-icon left>
@@ -117,7 +121,9 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
-            color="yellow darken-3">
+            color="yellow darken-3"
+            v-if="isHost"
+            @click="muteAll">
           <v-badge
             color="yellow darken-3"
             content="all"
@@ -235,12 +241,12 @@
             </v-menu>
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
-            <v-btn icon>
+            <v-btn icon @click="mediaService.mutePeer(user.getPeerInfo().id)">
               <v-icon>mdi-microphone-off</v-icon>
             </v-btn>
           </v-list-item-content>
-          <v-list-item-content style="display: inline-block">
-            <v-btn icon>
+          <v-list-item-content style="display: inline-block" v-if="isHost">
+            <v-btn icon @click="mediaService.kickPeer(user.getPeerInfo().id)">
               <v-icon color="yellow darken-3">mdi-account-remove</v-icon>
             </v-btn>
           </v-list-item-content>
@@ -383,9 +389,9 @@
                :color="this.chatBadge"
                light
                dot>
-            <v-icon>mdi-chat-outline</v-icon>
+            <v-icon color="teal">mdi-chat-outline</v-icon>
           </v-badge>
-          <v-icon v-else>mdi-chat-remove-outline</v-icon>
+          <v-icon v-else color="teal">mdi-chat-remove-outline</v-icon>
           </v-fab-transition>
         </v-btn>
       </div>
@@ -395,6 +401,7 @@
           hide-details
           rounded
           outlined
+          color="teal"
           :label="placeholdOfMsg"
           @focus="switchChat(true)"
           @keyup.enter="sendMsg"
@@ -414,7 +421,7 @@
             <template v-slot:activator="{on, attrs}">
               <v-icon
                       :disabled="!chatOverlay"
-                      color="#64B5F6"
+                      color="teal"
                       v-bind="attrs"
                       v-on="on">
                 mdi-broadcast</v-icon>
@@ -451,7 +458,7 @@
               <v-icon
                   color="yellow darken-3"
                   :disabled="!chatOverlay"
-                  style="margin-left:5px;margin-right: 5px;"
+                  style="margin-left:5px;"
                   @click="showEmojiPicker = !showEmojiPicker"
                   v-bind="attrs"
                   v-on="on">
@@ -487,7 +494,7 @@
               append-icon="mdi-file-send-outline"
               @click:append="pickFile"></v-file-input>
         </v-menu>
-        <v-icon color="green" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
+        <v-icon color="teal" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
       </div>
     </v-footer>
   </v-app>
@@ -500,6 +507,7 @@ import {MediaService} from '../service/MediaService'
 import MyVideo from "../components/myVideo"
 import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
+import axios from "axios";
 const moment = require("moment");
 
 export default {
@@ -588,11 +596,11 @@ export default {
     async microSwitch () {
       if (this.microIcon.icon === 'mdi-microphone-outline') {
         this.audio = false
-        let tracks = this.myMediaStream.getAudioTracks()
+        let tracks = this.myAudioStream.getAudioTracks()
         for (const track of tracks){
           await this.mediaService.closeTrack(track)
           track.stop()
-          this.myMediaStream.removeTrack(track)
+          this.myAudioStream.removeTrack(track)
         }
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
@@ -783,6 +791,7 @@ export default {
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
             this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : null
+            this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : null
             await this.mediaService.sendMediaStream(mediaStream)
 
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
@@ -805,13 +814,37 @@ export default {
         }
       }
     },
+    muteAll(){
+      this.mediaService.mutePeer(null);
+      console.log('Send Mute All Request')
+    },
+    async getRoomInfo(){
+      try{
+        const response = await axios(
+            {
+              method : 'post',
+              url : this.GLOBAL.baseURL + '/getRoom',
+              data : {
+                'id' : this.GLOBAL.roomInfo.id,
+                'password' : this.GLOBAL.roomInfo.password,
+              }
+            })
+        this.GLOBAL.roomInfo = response.data.room;
+      }catch(error){
+        console.error(error)
+      }
+    }
   },
   async created() {
     this.mediaService = new MediaService()
-    this.mediaService.registerPeerUpdateListener('updateListener', () => {
+    this.mediaService.registerPeerUpdateListener('updateListener', async () => {
       console.log('[User Update]')
       this.allUsers = this.mediaService.getPeerDetails()
-      console.log(this.allUsers[0].getPeerInfo())
+      if (this.mediaService.getHostPeerId() !== this.GLOBAL.userInfo.token && this.isHost){
+        await this.getRoomInfo();
+      }else if(this.mediaService.getHostPeerId() === this.GLOBAL.userInfo.token && !this.isHost){
+        await this.getRoomInfo();
+      }
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -825,6 +858,21 @@ export default {
 
     this.mediaService.registerMeetingEndListener('updateListener',() => {
 
+    })
+
+    this.mediaService.registerBeMutedListener('mutedListener', async () => {
+      console.log('Be Muted')
+      if (this.audio){
+        this.audio = false
+        let tracks = this.myAudioStream.getAudioTracks()
+        for (const track of tracks){
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myAudioStream.removeTrack(track)
+        }
+        this.microIcon.icon = 'mdi-microphone-off'
+        this.microIcon.color = 'gray'
+      }
     })
 
     await this.mediaService.joinMeeting(
@@ -921,6 +969,9 @@ export default {
       })
 
       return subUsers
+    },
+    isHost(){
+      return this.GLOBAL.userInfo.id === this.GLOBAL.roomInfo.host
     }
   }
 }

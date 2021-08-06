@@ -35,6 +35,7 @@ export class MediaService
             this.updatePeerCallbacks = new Map();
             this.newMessageCallbacks = new Map();
             this.meetingEndCallbacks = new Map();
+            this.beMutedCallbacks = new Map();
 
         } catch (err) {
             console.error('[Error]  Fail to construct MediaService instance', err);
