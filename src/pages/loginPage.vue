@@ -20,7 +20,7 @@
 
 <script>
 import cube from "../components/cube";
-import Main from "../components/Main";
+import Main from "../components/Main_Web";
 export default {
   name: 'loginPage',
 

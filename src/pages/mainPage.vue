@@ -7,15 +7,30 @@
         height="45"
     >
       <div>
-        <v-btn small icon color="gray" style="margin-left: 5px">
-          <v-icon>mdi-information-outline</v-icon>
-        </v-btn>
-      </div>
-
-      <v-spacer></v-spacer>
-
-      <div id="appBarContent">
-        <p style="color: grey; font-size: small">会议号 : {{GLOBAL.roomInfo.id}}</p>
+        <v-menu
+            bottom
+            right
+            nudge-right="40px"
+            transition="scale-transition"
+            attach
+            max-width="400px"
+            max-height="200px"
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn small v-bind="attrs" v-on="on" icon color="gray" style="margin-left: 5px">
+              <v-icon>mdi-information-outline</v-icon>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-text>
+              <div>会议主题 : {{GLOBAL.roomInfo.topic}}</div>
+              <div>会议号 : {{GLOBAL.roomInfo.id}}</div>
+              <div>会议密码 : {{GLOBAL.roomInfo.password}}</div>
+              <div>会议开始时间 : {{GLOBAL.roomInfo.start_time}}</div>
+              <div>会议开始时间 : {{GLOBAL.roomInfo.end_time}}</div>
+            </v-card-text>
+          </v-card>
+        </v-menu>
       </div>
 
       <v-spacer></v-spacer>
@@ -281,7 +296,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-main style="text-align: center" id="main-window">
+    <v-main style="text-align: center" id="main-video-window">
       <div id="mainVideo">
         <v-hover v-slot="{hover}">
           <v-card color="grey lighten-4" height="100%" width="100%">
@@ -610,6 +625,10 @@ export default {
       } else {
         this.chatOverlay = true
         this.chatBadge = '#00000000'
+        setTimeout(()=>{
+          let col = document.getElementById('chatContainer');
+          col.scrollTop = col.scrollHeight;
+        }, 200)
       }
     },
     switchMenuFunc (index, userId) {
@@ -638,6 +657,10 @@ export default {
     privateChat (userId) {
       if (!this.chatOverlay) {
         this.chatOverlay = true
+        setTimeout(()=>{
+          let col = document.getElementById('chatContainer');
+          col.scrollTop = col.scrollHeight;
+        }, 200)
       }
 
       if (userId == null) {
@@ -788,13 +811,16 @@ export default {
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update]')
       this.allUsers = this.mediaService.getPeerDetails()
+      console.log(this.allUsers[0].getPeerInfo())
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
       if (!this.chatOverlay) {
         this.chatBadge = 'green'
       }
-      this.allMsgs.push(newMsg)
+      this.allMsgs.push(newMsg);
+      let col = document.getElementById('chatContainer');
+      col.scrollTop = col.scrollHeight;
     })
 
     this.mediaService.registerMeetingEndListener('updateListener',() => {
@@ -807,7 +833,7 @@ export default {
       this.GLOBAL.userInfo.token,
       this.GLOBAL.userInfo.nickname,
       this.GLOBAL.userInfo.nickname + '\'s PC',
-      this.GLOBAL.userInfo.avatar)
+      this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
 
     navigator.getUserMedia  = navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
@@ -964,7 +990,8 @@ export default {
 #chatContainer {
   width: 100%;
   height: 100%;
-  text-align: left !important;
+  text-align: left;
+  overflow: auto;
 }
 
 #chatOverlay {
@@ -977,7 +1004,6 @@ export default {
   bottom: 0;
   margin: auto;
   background-color: #88888855;
-  overflow: scroll;
 }
 
 #chatOverlay::-webkit-scrollbar{

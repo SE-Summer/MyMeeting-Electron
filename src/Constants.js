@@ -1,5 +1,5 @@
 export const config = {
-    unKnownUri: 'https://www.imoments.com.cn/resource/img/web/UNavatar.jpg',
+    unKnownUri: 'http://se-summer.cn:4446/static/portraits/default.png',
     baseURL: 'http://se-summer.cn:4446',
     // baseURL: 'http://192.168.0.106:4446',
     qGreen: '#44CE55',
