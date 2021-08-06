@@ -4,14 +4,11 @@ import {timeoutCallback} from "../utils/media/MediaUtils";
 
 export class SignalingService
 {
-    URL = null;
-    socket = null;
-    callbackMap = null;
-
     constructor(URL, opts, onDisconnect)
     {
         this.URL = URL;
         this.socket = io(URL, opts);
+        this.disconnectCallback = onDisconnect;
         console.log('[Socket]  Start to connect');
 
         this.callbackMap = new Map();
@@ -26,14 +23,10 @@ export class SignalingService
             this.handleSignal(SignalType.notify, method, data);
         });
 
-        this.socket.on('disconnect', async () => {
-            console.warn('[Socket]  Disconnected');
-            // this.socket.disconnect();
-            await onDisconnect();
-        })
+        this.socket.on('disconnect', this.disconnectCallback);
     }
 
-    handleSignal(type, method, data)
+     handleSignal(type, method, data)
     {
         console.log(`[Socket]  Received signal (${type} , ${method})`);
         let callback = this.callbackMap.get(type).get(method);
@@ -45,17 +38,18 @@ export class SignalingService
         }
     }
 
-    registerListener(type, method, callback)
+     registerListener(type, method, callback)
     {
         this.callbackMap.get(type).set(method, callback);
     }
 
-    stopListeners()
+     removeAllListeners()
     {
-        this.socket.offAny();
+        this.socket.off('disconnect', this.disconnectCallback);
+        this.callbackMap.clear();
     }
 
-    waitForConnection()
+     waitForConnection()
     {
         this.socket.connect();
         return new Promise((resolve, reject) => {
@@ -87,7 +81,7 @@ export class SignalingService
         });
     }
 
-    waitForReconnection()
+     waitForReconnection()
     {
         return new Promise((resolve, reject) => {
             console.log('[Socket]  Waiting for reconnection to ' + this.URL + '...');
@@ -114,12 +108,12 @@ export class SignalingService
         })
     }
 
-    disconnect()
+     disconnect()
     {
         this.socket.disconnect();
     }
 
-    sendRequest(method, data = null)
+     sendRequest(method, data = null)
     {
         return new Promise((resolve, reject) => {
             if (!this.socket || !this.socket.connected) {
@@ -139,7 +133,7 @@ export class SignalingService
         });
     }
 
-    connected()
+     connected()
     {
         return (this.socket && this.socket.connected);
     }

@@ -1,16 +1,25 @@
 <template>
   <div class="login-page">
+    <v-snackbar
+    top
+    color="teal lighten-1 white--text"
+    timeout="1600"
+    light
+    v-model="snack">
+    {{snackText}}
+    </v-snackbar>
     <v-card
         class="teal lighten-5 login-card"
         elevation="10"
-        shaped
       >
+      <v-form
+      ref="form"
+      v-model="valid">
       <v-container>
         <v-row>
           <v-col class="title1 teal--text">
               登 录
           </v-col>
-
         </v-row>
         <v-row>
           <v-text-field
@@ -19,7 +28,6 @@
               :rules="emailRules"
               label="邮箱"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
@@ -32,7 +40,6 @@
               label="密码"
               type="password"
               background-color="teal lighten-5"
-              clearable
               required
               color="teal darken-1"
           ></v-text-field>
@@ -41,31 +48,30 @@
           <v-col align="center">
             <v-btn
                 color="teal accent-4 white--text"
-                class="mr-4"
                 @click="login"
                 :loading="loading"
-                :disabled="loading"
-                large
+                :disabled="loading || !valid"
             >
-              登 录
+              登录
             </v-btn>
           </v-col>
           <v-col align="center">
             <v-btn
                 class="mr-4"
                 @click="register"
-                large
             >
-              注 册 >
+              注册
             </v-btn>
           </v-col>
         </v-row>
       </v-container>
+      </v-form>
     </v-card>
   </div>
 </template>
 
 <script>
+import axios from 'axios'
 
 export default {
   name: "Login",
@@ -73,9 +79,12 @@ export default {
   },
   data(){
     return{
-      email : "",
+      email : "jz2000@sjtu.edu.cn",
       password : "",
       loading : false,
+      snackText: "",
+      snack : false,
+      valid : true,
       emailRules: [
         v => !!v || '请输入邮箱地址',
         v => /.+@.+\..+/.test(v) || '邮箱地址格式错误',
@@ -90,30 +99,34 @@ export default {
     register(){
       this.$emit('register');
     },
-    login(){
+    async login(){
       this.loading = true;
-      fetch('http://se-summer.cn:4446/login',
-       {
-         mode : 'no-cors',
-         method : 'POST',
-         body : {
-           'email': this.email,
-           'password': this.password,
-         }
-       }).then(
-         (response)=>{
-           console.log(response);
-          if(response.status === 401){
-            alert(response.body.error);
-          }else if(response.status === 200){
-            alert(response.body);
-            this.$emit('logined');
-          }else{
-            alert("Unknown Error");
+      try{
+        const response =await axios(
+        {
+          method : 'post',
+          url : this.GLOBAL.baseURL + '/login',
+          data : {
+            'email' : this.email,
+            'password' : this.password,
           }
-          this.loading = false
-         }
-       )
+        })
+        this.GLOBAL.userInfo = response.data.user;
+        this.snackText = '登录成功';
+        this.snack = true;
+        this.loading = false;
+        console.log(response);
+        setTimeout(()=>{this.$emit('login');},1000)
+      }catch(error){
+        if (error.response){
+         this.snackText = error.response.data.error;
+        }
+        else{
+          this.snackText = '无法连接至服务器'
+        }
+        this.snack = true;
+        this.loading = false;
+      }
     }
   }
 }
@@ -121,16 +134,16 @@ export default {
 
 <style scoped>
 .title1{
-  font-size: 40px;
+  font-size: 36px;
   font-weight: bold;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .login-card{
   //margin-top: 20%;
-  padding: 5% 10%;
-  //width: 60%;
-  margin: 20% 15%;
+  padding: 5% 8%;
+  margin: calc(20vh - 115px) 10%;
+  //margin: auto;
 }
 </style>

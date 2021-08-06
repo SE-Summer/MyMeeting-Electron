@@ -7,15 +7,30 @@
         height="45"
     >
       <div>
-        <v-btn small icon color="gray" style="margin-left: 5px">
-          <v-icon>mdi-information-outline</v-icon>
-        </v-btn>
-      </div>
-
-      <v-spacer></v-spacer>
-
-      <div id="appBarContent">
-        <p style="color: grey; font-size: small">会议号 : {{GLOBAL.roomInfo.id}}</p>
+        <v-menu
+            bottom
+            right
+            nudge-right="40px"
+            transition="scale-transition"
+            attach
+            max-width="400px"
+            max-height="200px"
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn small v-bind="attrs" v-on="on" icon color="gray" style="margin-left: 5px">
+              <v-icon>mdi-information-outline</v-icon>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-card-text>
+              <div>会议主题 : {{GLOBAL.roomInfo.topic}}</div>
+              <div>会议号 : {{GLOBAL.roomInfo.id}}</div>
+              <div>会议密码 : {{GLOBAL.roomInfo.password}}</div>
+              <div>会议开始时间 : {{GLOBAL.roomInfo.start_time}}</div>
+              <div>会议开始时间 : {{GLOBAL.roomInfo.end_time}}</div>
+            </v-card-text>
+          </v-card>
+        </v-menu>
       </div>
 
       <v-spacer></v-spacer>
@@ -53,7 +68,7 @@
             color="grey darken-1"
             size="36"
         >
-          <v-img :src="GLOBAL.baseURL + GLOBAL.userinfo.portrait">
+          <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
             <template v-slot:placeholder>
               <div style="margin-top: 7px">
                 <v-progress-circular
@@ -139,6 +154,38 @@
           class="pl-14"
           shaped
       >
+        <v-list-item class="teal lighten-4">
+          <v-list-item-avatar>
+            <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
+            <template v-slot:placeholder>
+              <div style="margin-top: 7px; margin-left: 8px">
+                <v-progress-circular
+                        indeterminate
+                        size="20"
+                        color="grey lighten-5"
+                ></v-progress-circular>
+              </div>
+            </template>
+          </v-img>
+          </v-list-item-avatar>
+          <v-list-item-content style="font-size: small">
+            {{GLOBAL.userInfo.nickname}}
+          </v-list-item-content>
+          <v-list-item-content style="display: inline-block">
+            <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
+              <v-icon color="teal">
+                mdi-account-star
+              </v-icon>
+            </v-btn>
+          </v-list-item-content>
+          <v-list-item-content style="display: inline-block">
+            <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
+              <v-icon color="teal">
+                mdi-account-plus
+              </v-icon>
+            </v-btn>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item
             v-for="(user, index) in this.filteredUsers"
             :key="index"
@@ -161,26 +208,27 @@
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
             <v-menu
-              top
-              :offset-x="true">
+                    top
+                    nudge-left="10px"
+                    attach>
               <template v-slot:activator="{on, attrs}">
-              <v-btn
-                v-bind="attrs"
-                v-on="on"
-                icon>
-                <v-icon>mdi-cog-outline</v-icon>
-              </v-btn>
+                <v-btn
+                        v-bind="attrs"
+                        v-on="on"
+                        icon>
+                  <v-icon>mdi-cog-outline</v-icon>
+                </v-btn>
               </template>
-              <v-list dense>
+              <v-list class="white" dense>
                 <v-list-item
-                  v-for="(item, index) in menuItems"
-                  :key="index"
-                  @click="switchMenuFunc(index, user.getPeerDetails().id)">
+                        v-for="(item, index) in menuItems"
+                        :key="index"
+                        @click="switchMenuFunc(index, user.getPeerInfo().id)">
                   <v-list-item-icon>
                     <v-icon :color="item.color">
                       {{item.icon}}
                     </v-icon>
-                    </v-list-item-icon>
+                  </v-list-item-icon>
                   <v-list-item-title>{{item.text}}</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -207,7 +255,7 @@
     >
       <v-list>
         <v-list-item
-            v-for="(user, index) in this.subFollowUsers"
+            v-for="(user, index) in subFollowUsers"
             :key="index"
             link
         >
@@ -217,8 +265,7 @@
                   height="150px"
                   outlined
                   elevation="13">
-                <video :srcObject="user.videoStream">
-                </video>
+                  <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" style="width: 100%; height: 100%"></my-video>
                 <template>
                   <v-expand-transition>
                     <div
@@ -249,22 +296,45 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-main style="text-align: center">
+    <v-main style="text-align: center" id="main-video-window">
       <div id="mainVideo">
-        <video style="height: 100%; width: 100%" :srcObject="this.mainVideo.videoStream"></video>
+        <v-hover v-slot="{hover}">
+          <v-card color="grey lighten-4" height="100%" width="100%">
+            <my-video style="height: 100%; width: 100%" my-id="main-video" :src-object="mainFollowUser.mediaStream"></my-video>
+            <v-expand-transition>
+              <div v-if="hover"
+                   class="transition-fast-in-fast-out v-card--reveal-1"
+                   style="height: 10% ">
+                <p style="color: white;font-weight: bold; height: 10%" v-if="mainFollowUserId">
+                  {{mainFollowUser.displayName}}
+                </p>
+                <v-btn icon @click="removeMainFollowUser" v-if="mainFollowUserId">
+                  <v-icon small color="white">mdi-close</v-icon>
+                </v-btn>
+              </div>
+            </v-expand-transition>
+          </v-card>
+        </v-hover>
       </div>
-      <div id="chatOverlay" v-if="chatOverlay">
+      <div id="chatOverlay" v-show="chatOverlay">
         <v-container id="chatContainer">
-          <v-row v-for="n in 50" :key="n">
+          <v-row v-for="(msg, index) in allMsgs" :key="index">
             <v-col>
-                <v-card id="messageCard" max-width="500px" max-height="80px">
+                <v-card
+                    id="messageCard"
+                    shaped
+                    :color="(msg.fromMyself) ? '#26A69A' : 'white'"
+                    width="600px"
+                    max-height="300px">
                   <v-card-text  style="height: 30px; font-size: 15px; color: black;">
                     <template>
                       <v-avatar
                           color="grey darken-1"
                           size="25"
                           style="margin-right: 8px;">
-                        <v-img src="../assets/kendrick.jpg">
+                        <v-img :src="(msg.fromMyself) ?
+                        GLOBAL.baseURL + GLOBAL.userInfo.portrait :
+                        mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
                           <template v-slot:placeholder>
                             <div style="margin-top: 7px">
                               <v-progress-circular
@@ -277,8 +347,21 @@
                         </v-img>
                       </v-avatar>
                     </template>
-                    Kendrick to EveryOne 2021/7/30/15:16</v-card-text>
-                  <v-card-text id="messageText">Hello!</v-card-text>
+                    <div style="display: inline-block">
+                      <span style="font-weight: bold">{{(msg.fromMyself) ?
+                              GLOBAL.userInfo.nickname :
+                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                      <span> to </span>
+                      <span :class="[{'private-chat': !msg.broadcast}]">{{formatToPeerName(msg)}} </span>
+                      <span>{{moment(msg.timestamp).format('llll')}}</span>
+                    </div>
+                    </v-card-text>
+                  <v-card-text id="messageText" v-if="msg.type === 'text'">{{msg.text}}</v-card-text>
+                  <upload-file
+                      :file="msg.file"
+                      v-else-if="msg.type === 'file'&&msg.fromMyself"
+                      @file-sended="sendFile"></upload-file>
+                  <download-file :message="msg" v-else></download-file>
                 </v-card>
             </v-col>
           </v-row>
@@ -312,17 +395,56 @@
           hide-details
           rounded
           outlined
-          label="发送消息"
+          :label="placeholdOfMsg"
           @focus="switchChat(true)"
-          @keypress.13="sendMsg"
+          @keyup.enter="sendMsg"
           v-model="inputMsg"
       >
+        <template v-slot:append>
+          <v-menu
+                  top
+                  left
+                  nudge-top="50px"
+                  nudge-right="50px"
+                  min-width="150px"
+                  max-width="500px"
+                  attach
+                  close-on-content-click
+                  transition="scale-transition">
+            <template v-slot:activator="{on, attrs}">
+              <v-icon
+                      :disabled="!chatOverlay"
+                      color="#64B5F6"
+                      v-bind="attrs"
+                      v-on="on">
+                mdi-broadcast</v-icon>
+            </template>
+            <v-list dense shaped>
+              <v-list-item link @click="privateChat(null)">
+                <v-list-item-content style="font-size: 15px; font-family: 'Cascadia Mono'">
+                  All
+                </v-list-item-content>
+              </v-list-item>
+              <v-list-item
+                      v-for="(user, index) in allUsers"
+                      :key="index"
+                      link
+                      @click="privateChat(user.getPeerInfo().id)">
+                <v-list-item-content style="font-size: 15px; font-family: 'Cascadia Mono'">
+                  {{user.getPeerInfo().displayName}}
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
       </v-text-field>
       <div>
-          <v-menu
-              v-model="showEmojiPicker"
-              absolute
-              offset-x
+        <v-menu
+              top
+              left
+              nudge-top="50px"
+              nudge-right="50px"
+              attach
               transition="scale-transition"
               :close-on-content-click="false">
             <template v-slot:activator="{on, attrs}">
@@ -340,7 +462,31 @@
                 :emojisByRow="5"
                 @select="selectEmoji"></v-emoji-picker>
           </v-menu>
-        <v-icon color="blue" style="margin-right: 5px;">mdi-file</v-icon>
+        <v-menu
+            top
+            left
+            nudge-top="40px"
+            attach
+            min-width="200px"
+            transition="scale-transition"
+            :close-on-content-click="false">
+          <template v-slot:activator="{on, attrs}">
+            <v-icon
+                color="blue"
+                :disabled="!chatOverlay"
+                style="margin-left:5px;margin-right: 5px;"
+                @click="showFilePicker = !showFilePicker"
+                v-bind="attrs"
+                v-on="on">
+              mdi-file</v-icon>
+          </template>
+          <v-file-input
+              v-model="file"
+              style="width: 180px"
+              :clearable="false"
+              append-icon="mdi-file-send-outline"
+              @click:append="pickFile"></v-file-input>
+        </v-menu>
         <v-icon color="green" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
       </div>
     </v-footer>
@@ -351,10 +497,17 @@
 <script>
 import {VEmojiPicker} from 'v-emoji-picker'
 import {MediaService} from '../service/MediaService'
+import MyVideo from "../components/myVideo"
+import DownloadFile from "../components/DownloadFile"
+import UploadFile from "../components/UploadFile";
+const moment = require("moment");
 
 export default {
   name: "mainPage.vue",
   components : {
+    UploadFile,
+    DownloadFile,
+    MyVideo,
     VEmojiPicker
   },
   data () {
@@ -363,17 +516,17 @@ export default {
       drawer: null,
       videoIcon : {
         icon : 'mdi-video-outline',
-        color : 'green'
+        color : 'teal'
       },
       microIcon : {
         icon : 'mdi-microphone-outline',
-        color : 'green'
+        color : 'teal'
       },
       screenIcon : {
         icon : 'mdi-laptop',
-        color : 'green'
+        color : 'teal'
       },
-      chatBadge : 'green',
+      chatBadge : '#00000000',
       chatOverlay : false,
       menuItems : [
         {
@@ -385,57 +538,69 @@ export default {
         {
           icon : 'mdi-account-star',
           color: 'blue',
-          text : '设为主关注',
+          text : '主关注',
           function: 'mainVideo'
         },
         {
           icon : 'mdi-account-plus',
           color: 'blue lighten-2',
-          text : '添加至侧关注',
+          text : '侧关注',
           function: 'subVideo'
         },
       ],
       showEmojiPicker : false,
+      showFilePicker : false,
       filterText : '',
       inputMsg : '',
       allMsgs : [],
       allUsers : [],
-      mainFollowUser : null,
-      subFollowUsers : [],
+      mainFollowUserId : null,
+      subFollowUserIds : [],
       mediaDevice : null,
-      videoStream : null,
-      audioStream : null,
+      myMediaStream : null,
       video : false,
-      audio : false
+      audio : false,
+      moment : moment,
+      placeholdOfMsg : '发送消息 to 所有人',
+      privateChatPeerId : null,
+      file : null,
     }
   },
   methods: {
     async videoSwitch () {
       if (this.video) {
         this.video = false
-        let res = await this.mediaService.closeTrack(this.videoStream.getTracks())
-        console.log('[Video Close]', res)
+        let tracks = this.myMediaStream.getVideoTracks()
+        for (const track of tracks) {
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myMediaStream.removeTrack(track)
+        }
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
         this.video = true
-        this.sendMediaStream(true, false)
+        this.sendMediaStream(this.video, this.audio)
         this.videoIcon.icon = 'mdi-video-outline'
-        this.videoIcon.color = 'green'
+        this.videoIcon.color = 'teal'
       }
     },
     async microSwitch () {
       if (this.microIcon.icon === 'mdi-microphone-outline') {
         this.audio = false
-        let res = await this.mediaService.closeTrack(this.audioStream.getTracks())
-        console.log(res)
+        let tracks = this.myMediaStream.getAudioTracks()
+        for (const track of tracks){
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myMediaStream.removeTrack(track)
+        }
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        this.sendMediaStream(false, true)
+        this.sendMediaStream(this.video, this.audio)
         this.microIcon.icon = 'mdi-microphone-outline'
-        this.microIcon.color = 'green'
+        this.microIcon.color = 'teal'
       }
     },
     screenSwitch () {
@@ -444,7 +609,7 @@ export default {
         this.screenIcon.color = 'gray'
       } else {
         this.screenIcon.icon = 'mdi-laptop'
-        this.screenIcon.color = 'green'
+        this.screenIcon.color = 'teal'
       }
     },
     switchChat (boolean) {
@@ -457,12 +622,13 @@ export default {
 
       if (!toStat) {
         this.chatOverlay = false
-        this.chatIcon.icon = 'mdi-comment-multiple-outline'
-        this.chatIcon.color = 'green'
       } else {
         this.chatOverlay = true
-        this.chatIcon.icon = 'mdi-comment-multiple'
-        this.chatIcon.color = 'red'
+        this.chatBadge = '#00000000'
+        setTimeout(()=>{
+          let col = document.getElementById('chatContainer');
+          col.scrollTop = col.scrollHeight;
+        }, 200)
       }
     },
     switchMenuFunc (index, userId) {
@@ -489,118 +655,185 @@ export default {
       }
     },
     privateChat (userId) {
-      console.log('private chat', userId)
-    },
-    mainVideo (userId) {
-      let user = this.mediaService.getPeerDetailsByPeerId(userId)
-
-      let mediaStream = new MediaStream(user.getTracks())
-
-      let peerInfo = user.getPeerInfo()
-
-      this.mainFollowUser = {
-        id : peerInfo.id,
-        displayName : peerInfo.displayName,
-        mediaStream : mediaStream
+      if (!this.chatOverlay) {
+        this.chatOverlay = true
+        setTimeout(()=>{
+          let col = document.getElementById('chatContainer');
+          col.scrollTop = col.scrollHeight;
+        }, 200)
       }
 
-      console.log('[Main Video]', peerInfo.displayName)
+      if (userId == null) {
+        this.placeholdOfMsg =  this.placeholdOfMsg = '发送消息 to 所有人'
+      } else {
+        this.placeholdOfMsg = '发送消息 to ' + this.mediaService.getPeerDetailsByPeerId(userId).getPeerInfo().displayName
+      }
+
+      this.privateChatPeerId = userId
+    },
+    mainVideo (userId) {
+      for (let i = 0; i < this.subFollowUserIds.length; ++i) {
+        if (this.subFollowUserIds[i] === userId) {
+          this.subFollowUserIds.splice(i, 1)
+          break
+        }
+      }
+
+      this.mainFollowUserId = userId
+      console.log('[Main Video]')
     },
     subVideo (userId) {
-      let user = this.mediaService.getPeerDetailsByPeerId(userId)
+      if (this.mainFollowUserId === userId) {
+        this.mainFollowUserId = null
+      }
 
-      let mediaStream = new MediaStream(user.getTracks())
+      if (this.subFollowUserIds.find((subUserId) => {
+        return subUserId === userId
+      })) {
+        return;
+      }
 
-      let peerInfo = user.getPeerInfo()
+      if (userId === this.GLOBAL.userInfo.id) {
+        this.subFollowUserIds.push(userId)
+        return
+      }
 
-      this.subFollowUsers.push(
-        {
-          id : peerInfo.id,
-          displayName : peerInfo.displayName,
-          mediaStream : mediaStream
-        }
-      )
-      console.log('[Add Sub Video]', peerInfo.displayName)
+      this.subFollowUserIds.push(this.mediaService.getPeerDetailsByPeerId(userId).getPeerInfo().id)
+
+      console.log('[Add Sub Video]')
     },
     sendMsg () {
+      if (this.inputMsg === '') {
+        return
+      }
+
+      let timestamp = moment()
+
+      this.mediaService.sendText(this.privateChatPeerId, this.inputMsg, timestamp)
+      this.allMsgs.push({
+        type : 'text',
+        broadcast : (!this.privateChatPeerId),
+        fromMyself : true,
+        fromPeerId : this.GLOBAL.userInfo.id,
+        text : this.inputMsg,
+        timestamp : timestamp,
+        toPeerName : (!this.privateChatPeerId) ? '' :
+          this.mediaService.getPeerDetailsByPeerId(this.privateChatPeerId).getPeerInfo().displayName
+      })
       this.inputMsg = ''
+
       console.log('send msgs')
+    },
+    sendFile (data, file) {
+
+      let timestamp = moment()
+
+      this.mediaService.sendFile(this.GLOBAL.baseURL+ data.path, timestamp, file.name, file.type)
+      console.log('send file')
+    },
+    pickFile () {
+      if (this.file) {
+        let timestamp = moment()
+
+        this.allMsgs.push({
+          type : 'file',
+          file : this.file,
+          broadcast : true,
+          fromMyself : true,
+          fromPeerId : this.GLOBAL.userInfo.id,
+          timestamp : timestamp,
+        })
+
+      }
     },
     selectEmoji (emoji) {
         this.inputMsg += emoji.data
     },
     sub2Main (index) {
-      let user = this.subFollowUsers[index]
-      this.subFollowUsers.splice(index, 1)
-      this.mainFollowUser = user
+      let userId = this.subFollowUserIds[index]
+      this.subFollowUserIds.splice(index, 1)
+      this.mainFollowUserId = userId
     },
     removeSubFollowUser (index) {
-      this.subFollowUsers.splice(index, 1)
+      this.subFollowUserIds.splice(index, 1)
     },
-    leaveMeeting () {
-      this.mediaService.leaveMeeting()
+    removeMainFollowUser () {
+      this.mainFollowUserId = null
+    },
+    async leaveMeeting () {
+      try {
+        if (this.myMediaStream) {
+          this.myMediaStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        await this.mediaService.leaveMeeting()
+      } catch (error) {
+        console.log('[LEAVE]', error)
+      }
+
+      this.$emit('back')
     },
     sendMediaStream (video, audio) {
-      if (video) {
-        let constraint = {
-          video : this.GLOBAL.videoConstraint
-        }
-
-        this.navigator.mediaDevices.getUserMedia(constraint)
-          .then(async (mediaStream) => {
-            this.videoStream = mediaStream
-            let res = await this.mediaService.sendMediaStream(mediaStream)
-
-            this.subFollowUsers.push({
-              id : this.GLOBAL.userinfo.id,
-              displayName: this.GLOBAL.userinfo.nickname,
-              mediaStream : new MediaStream(mediaStream.getTracks())
-            })
-            console.log('[Send Video]',res)
-          }).catch((error) => {
-          console.log(error)
-        })
+      let constraint = {
+        video : (video) ? this.GLOBAL.videoConstraint : false,
+        audio : audio
       }
 
-      if (audio) {
-        let constraint = {
-          audio : true
-        }
-
-        this.navigator.mediaDevices.getUserMedia(constraint)
+      navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-            this.audioStream = mediaStream
-            let res = await this.mediaService.sendMediaStream(mediaStream)
+            this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : null
+            await this.mediaService.sendMediaStream(mediaStream)
 
-            console.log('[Send Audio]',res)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+            }
+
+            console.log('[Send Video]')
           }).catch((error) => {
-          console.log(error)
-        })
+        console.log(error)
+      })
+    },
+    formatToPeerName (msg) {
+      if (msg.broadcast) {
+        return 'everyone'
+      } else {
+        if (msg.fromMyself) {
+          return msg.toPeerName
+        } else {
+          return 'You'
+        }
       }
-    }
+    },
   },
   async created() {
     this.mediaService = new MediaService()
-    this.mediaService.registerPeerUpdateListener(() => {
+    this.mediaService.registerPeerUpdateListener('updateListener', () => {
+      console.log('[User Update]')
       this.allUsers = this.mediaService.getPeerDetails()
+      console.log(this.allUsers[0].getPeerInfo())
     })
 
-    this.mediaService.registerNewMessageListener((newMsg) => {
-      this.allMsgs.push(newMsg)
+    this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
+      if (!this.chatOverlay) {
+        this.chatBadge = 'green'
+      }
+      this.allMsgs.push(newMsg);
+      let col = document.getElementById('chatContainer');
+      col.scrollTop = col.scrollHeight;
     })
 
-    this.mediaService.registerMeetingEndListener(() => {
+    this.mediaService.registerMeetingEndListener('updateListener',() => {
 
     })
 
-    let res = await this.mediaService.joinMeeting(
+    await this.mediaService.joinMeeting(
       this.GLOBAL.roomInfo.token,
+      this.GLOBAL.userInfo.token,
       this.GLOBAL.userInfo.token,
       this.GLOBAL.userInfo.nickname,
       this.GLOBAL.userInfo.nickname + '\'s PC',
-      this.GLOBAL.userInfo.avatar)
-
-    console.log(res)
+      this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
 
     navigator.getUserMedia  = navigator.getUserMedia ||
       navigator.webkitGetUserMedia ||
@@ -626,7 +859,7 @@ export default {
       this.microIcon.color = 'gray'
     }
 
-
+    moment.locale('zh-cn')
   },
   computed : {
     filteredUsers () {
@@ -634,11 +867,61 @@ export default {
         return this.allUsers
       }
       else {
-        return this.allUsers.filter(user =>
-          user.displayName.search(this.filterText) !== -1
-        )
+        return this.allUsers.filter(user => {
+           return user.getPeerInfo().displayName.search(this.filterText) !== -1
+        })
       }
     },
+    mainFollowUser () {
+      if (this.mainFollowUserId == null) {
+        return {
+          id : "",
+          displayName: "",
+          mediaStream : null
+        }
+      }
+      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
+        return {
+          id : this.mainFollowUserId,
+          displayName : this.GLOBAL.userInfo.nickname,
+          mediaStream : this.myMediaStream
+        }
+      } else {
+        for (let i = 0; i < this.allUsers.length; ++i) {
+          if(this.allUsers[i].getPeerInfo().id === this.mainFollowUserId) {
+            let user = this.allUsers[i]
+            return {
+              id : this.mainFollowUserId,
+              displayName : user.getPeerInfo().displayName,
+              mediaStream : new MediaStream(user.getTracks())
+            }
+          }
+        }
+      }
+      return null
+    },
+    subFollowUsers () {
+      let subUsers = []
+      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) > -1) {
+        subUsers.push({
+          id: this.GLOBAL.userInfo.id,
+          displayName: this.GLOBAL.userInfo.nickname,
+          mediaStream: this.myMediaStream
+        })
+      }
+
+      this.allUsers.forEach((user) => {
+        if (this.subFollowUserIds.indexOf(user.getPeerInfo().id) > -1) {
+          subUsers.push({
+            id: user.getPeerInfo().id,
+            displayName: user.getPeerInfo().displayName,
+            mediaStream: new MediaStream(user.getTracks())
+          })
+        }
+      })
+
+      return subUsers
+    }
   }
 }
 </script>
@@ -684,6 +967,17 @@ export default {
   width: 100%;
 }
 
+.v-card--reveal-1 {
+    background-color: #00000066;
+    position: absolute;
+    justify-content: center;
+    left: 0;
+    right: 0;
+    top: 0;
+    margin : auto;
+    width: 20%;
+}
+
 #messageCard {
   background-color: #aaaaaa88;
 }
@@ -696,7 +990,8 @@ export default {
 #chatContainer {
   width: 100%;
   height: 100%;
-  text-align: left !important;
+  text-align: left;
+  overflow: auto;
 }
 
 #chatOverlay {
@@ -709,7 +1004,6 @@ export default {
   bottom: 0;
   margin: auto;
   background-color: #88888855;
-  overflow: scroll;
 }
 
 #chatOverlay::-webkit-scrollbar{
@@ -720,5 +1014,10 @@ export default {
   font-size: small;
   margin-top: 18px;
   font-family: "JetBrains Mono ExtraBold";
+}
+
+.private-chat {
+    color: #FF9800;
+    font-weight: bold;
 }
 </style>

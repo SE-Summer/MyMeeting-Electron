@@ -1,6 +1,6 @@
 
 export default {
-    userinfo : {
+    userInfo : {
         token : "",
         nickname: "",
         password: "",
