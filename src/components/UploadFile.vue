@@ -45,6 +45,61 @@ export default {
       icon : 'close',
       uploaded : false,
       uploading : false,
+      map4icon : {
+        'image/x-ms-bmp' : 'file-image-outline',
+        'image/jpeg' : 'file-image-outline',
+        'image/gif' : 'file-image-outline',
+        'image/png' : 'file-image-outline',
+        'image/tiff' : 'file-image-outline',
+        'image/x-targa' : 'file-image-outline',
+        'image/vnd.adobe.photoshop' : 'file-image-outline',
+        'audio/mpeg' : 'file-music-outline',
+        'audio/midi' : 'file-music-outline',
+        'audio/ogg' : 'file-music-outline',
+        'audio/mp4' : 'file-music-outline',
+        'audio/wav' : 'file-music-outline',
+        'audio/x-ms-wma' : 'file-music-outline',
+        'video/x-msvideo' : 'file-video-outline',
+        'video/x-dv' : 'file-video-outline',
+        'video/mp4' : 'file-video-outline',
+        'video/mpeg' : 'file-video-outline',
+        'video/quicktime' : 'file-video-outline',
+        'video/x-ms-wmv' : 'file-video-outline',
+        'video/x-flv' : 'file-video-outline',
+        'video/x-matroska' : 'file-video-outline',
+        'text/plain' : 'file-document-outline',
+        'text/x-php'  : 'language-php',
+        'text/html' : 'language-html5',
+        'text/javascript' : 'language-javascript',
+        'text/css' : 'language-css3',
+        'text/rtf' : 'file-document-outline',
+        'text/rtfd' : 'file-document-outline',
+        'text/x-python' : 'language-python',
+        'text/x-java-source' : 'language-java',
+        'text/x-ruby' : 'language-ruby',
+        'text/x-shellscript' : 'powershell',
+        'text/x-perl' : 'file-document-outline',
+        'text/x-sql' : 'file-document-outline',
+        'application/postscript' : 'file-question-outline',
+        'application/octet-stream' : 'file-question-outline',
+        'application/vnd.ms-word' : 'file-word-outline',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :  'file-word-outline',
+        'application/vnd.ms-excel' : 'file-excel-outline',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'file-excel-outline',
+        'application/vnd.ms-powerpoint' : 'file-powerpoint-outline',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' : 'file-powerpoint-outline',
+        'application/pdf' : 'file-pdf-outline',
+        'application/xml' : 'file-question-outline',
+        'application/vnd.oasis.opendocument.text' : 'file-question-outline',
+        'application/x-shockwave-flash' : 'file-question-outline',
+        'application/x-gzip' : 'folder-zip-outline',
+        'application/x-bzip2' : 'folder-zip-outline',
+        'application/zip' : 'folder-zip-outline',
+        'application/x-rar' : 'folder-zip-outline',
+        'application/x-tar' : 'folder-zip-outline',
+        'application/x-7z-compressed' : 'folder-zip-outline',
+        'default':'file-question-outline',
+      },
     }
   },
   props : ['message', 'file'],
@@ -78,8 +133,11 @@ export default {
     }
   },
   mounted() {
+    console.log(this.file.type);
+    if (this.file.type in this.map4icon)
+      this.icon = this.map4icon[this.file.type];
+    else this.icon = this.map4icon['default'];
     this.upload();
-    this.icon = "file-"+ this.file.type.split('/')[0] +"-outline";
   }
 }
 </script>

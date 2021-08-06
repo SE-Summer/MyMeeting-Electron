@@ -633,7 +633,7 @@ export default {
   margin-left: 10%;
 }
 .cards-container{
-  margin-top: calc(35vh - 200px);
+  margin-top: calc(36vh - 190px);
   transition: all 0.15s ease-out;
 }
 .cards-container.active{
@@ -698,7 +698,7 @@ export default {
   position: absolute;
   width: 50px;
   bottom: 30px;
-  background: #80CBC4;
+  background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
   right: 0;
   outline: none;
   transition: 0.3s ease-in-out;
@@ -706,16 +706,15 @@ export default {
   border-top-left-radius: 10px;
 }
 .mymeeting-btn:hover {
-  background: #00BFA5;
-}
+  background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);}
 .mymeeting-btn.active:hover {
-  background: #00BFA5;
+  background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
 }
 .mymeeting-btn.active{
   right: 40%;
   bottom: 70%;
-  background: #80CBC4;
   transition: 0.3s ease-in-out;
+  background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);
 }
 
 .mymeeting-list{
