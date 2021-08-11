@@ -35,6 +35,10 @@
 
       <v-spacer></v-spacer>
 
+      <div style="font-size: small; color: grey;">会议号 : {{GLOBAL.roomInfo.id}}</div>
+
+      <v-spacer></v-spacer>
+
       <div>
         <v-chip small style="color: gray; font-weight: lighter">
           <v-icon left>
@@ -107,17 +111,14 @@
           <v-icon>{{ this.screenIcon.icon }}</v-icon>
         </v-btn>
 
-        <v-btn
-            icon
-            class="d-block text-center mx-auto mb-9"
-            color="gray">
-          <v-icon>mdi-cog-outline</v-icon>
-        </v-btn>
+        <setting-dialog @changeSettings="changeSettings"></setting-dialog>
 
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
-            color="yellow darken-3">
+            color="yellow darken-3"
+            v-if="isHost"
+            @click="muteAll">
           <v-badge
             color="yellow darken-3"
             content="all"
@@ -265,7 +266,7 @@
                   height="150px"
                   outlined
                   elevation="13">
-                  <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" style="width: 100%; height: 100%"></my-video>
+                  <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" process-video-type="blur" style="width: 100%; height: 100%"></my-video>
                 <template>
                   <v-expand-transition>
                     <div
@@ -300,7 +301,7 @@
       <div id="mainVideo">
         <v-hover v-slot="{hover}">
           <v-card color="grey lighten-4" height="100%" width="100%">
-            <my-video style="height: 100%; width: 100%" my-id="main-video" :src-object="mainFollowUser.mediaStream"></my-video>
+            <my-video style="height: 100%; width: 100%" my-id="main-video" :src-object="mainFollowUser.mediaStream" process-video-type="blur"></my-video>
             <v-expand-transition>
               <div v-if="hover"
                    class="transition-fast-in-fast-out v-card--reveal-1"
@@ -367,6 +368,8 @@
           </v-row>
         </v-container>
       </div>
+      <canvas id="invisibleCanvas" v-show="false"></canvas>
+      <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
 
     <v-footer
@@ -383,9 +386,9 @@
                :color="this.chatBadge"
                light
                dot>
-            <v-icon>mdi-chat-outline</v-icon>
+            <v-icon color="teal">mdi-chat-outline</v-icon>
           </v-badge>
-          <v-icon v-else>mdi-chat-remove-outline</v-icon>
+          <v-icon v-else color="teal">mdi-chat-remove-outline</v-icon>
           </v-fab-transition>
         </v-btn>
       </div>
@@ -395,6 +398,7 @@
           hide-details
           rounded
           outlined
+          color="teal"
           :label="placeholdOfMsg"
           @focus="switchChat(true)"
           @keyup.enter="sendMsg"
@@ -414,7 +418,7 @@
             <template v-slot:activator="{on, attrs}">
               <v-icon
                       :disabled="!chatOverlay"
-                      color="#64B5F6"
+                      color="teal"
                       v-bind="attrs"
                       v-on="on">
                 mdi-broadcast</v-icon>
@@ -451,7 +455,7 @@
               <v-icon
                   color="yellow darken-3"
                   :disabled="!chatOverlay"
-                  style="margin-left:5px;margin-right: 5px;"
+                  style="margin-left:5px;"
                   @click="showEmojiPicker = !showEmojiPicker"
                   v-bind="attrs"
                   v-on="on">
@@ -487,7 +491,7 @@
               append-icon="mdi-file-send-outline"
               @click:append="pickFile"></v-file-input>
         </v-menu>
-        <v-icon color="green" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
+        <v-icon color="teal" :disabled="!chatOverlay" @click="sendMsg">mdi-send</v-icon>
       </div>
     </v-footer>
   </v-app>
@@ -500,11 +504,14 @@ import {MediaService} from '../service/MediaService'
 import MyVideo from "../components/myVideo"
 import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
+import {virtualBackground} from "../service/VirtualBackgroundService";
+import SettingDialog from "../components/SettingsDialog";
 const moment = require("moment");
 
 export default {
   name: "mainPage.vue",
   components : {
+    SettingDialog,
     UploadFile,
     DownloadFile,
     MyVideo,
@@ -557,19 +564,28 @@ export default {
       mainFollowUserId : null,
       subFollowUserIds : [],
       mediaDevice : null,
+      originVideoTracks : null,
       myMediaStream : null,
+      myAudioStream : null,
       video : false,
       audio : false,
       moment : moment,
       placeholdOfMsg : '发送消息 to 所有人',
       privateChatPeerId : null,
       file : null,
+      vb : null,
+      processVideoType : 'normal',
+      stopRAFId : null
     }
   },
   methods: {
     async videoSwitch () {
       if (this.video) {
         this.video = false
+        this.closeRAF()
+        this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
         let tracks = this.myMediaStream.getVideoTracks()
         for (const track of tracks) {
           await this.mediaService.closeTrack(track)
@@ -588,11 +604,11 @@ export default {
     async microSwitch () {
       if (this.microIcon.icon === 'mdi-microphone-outline') {
         this.audio = false
-        let tracks = this.myMediaStream.getAudioTracks()
+        let tracks = this.myAudioStream.getAudioTracks()
         for (const track of tracks){
           await this.mediaService.closeTrack(track)
           track.stop()
-          this.myMediaStream.removeTrack(track)
+          this.myAudioStream.removeTrack(track)
         }
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
@@ -762,11 +778,15 @@ export default {
     },
     async leaveMeeting () {
       try {
+        this.closeRAF()
         if (this.myMediaStream) {
           this.myMediaStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
+        this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
         await this.mediaService.leaveMeeting()
       } catch (error) {
         console.log('[LEAVE]', error)
@@ -775,6 +795,9 @@ export default {
       this.$emit('back')
     },
     sendMediaStream (video, audio) {
+      if (!video &&  !audio) {
+        return
+      }
       let constraint = {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
@@ -782,14 +805,31 @@ export default {
 
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-            this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : null
-            await this.mediaService.sendMediaStream(mediaStream)
+            this.closeRAF()
 
+            if (this.processVideoType === 'normal') {
+              this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
+              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+              await this.mediaService.sendMediaStream(mediaStream)
+            } else {
+              this.originVideoTracks = mediaStream.getVideoTracks()
+              let inVideo = document.getElementById('invisibleVideo')
+              inVideo.srcObject = mediaStream
+              inVideo.onloadeddata = async () => {
+                if (this.processVideoType === 'blur') {
+                  this.blurBackground()
+                } else {
+                  this.replaceBackground()
+                }
+                this.myMediaStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
+                this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+                let tracks = this.myMediaStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
+                await this.mediaService.sendMediaStream(new MediaStream(tracks))
+              }
+            }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
             }
-
-            console.log('[Send Video]')
           }).catch((error) => {
         console.log(error)
       })
@@ -805,13 +845,47 @@ export default {
         }
       }
     },
+    muteAll(){
+      this.mediaService.mutePeer();
+    },
+    blurBackground () {
+      let frame = document.getElementById('invisibleVideo')
+      this.vb.blurBackground(frame)
+      this.stopRAFId = requestAnimationFrame(this.blurBackground)
+    },
+    replaceBackground () {
+      let frame = document.getElementById('invisibleVideo')
+      this.vb.replaceBackground(frame)
+      this.stopRAFId = requestAnimationFrame(this.replaceBackground)
+    },
+    changeSettings(blur, replace, backgroundImg) {
+      if (blur) {
+        this.processVideoType = 'blur'
+      } else if (replace) {
+        this.processVideoType = 'replace'
+        let img = new Image()
+        img.src = backgroundImg
+        this.vb.setVBConfig(img)
+      } else {
+        this.processVideoType = 'normal'
+      }
+
+      if (this.video) {
+          this.sendMediaStream(this.video, this.audio)
+      }
+    },
+    closeRAF () {
+      if (this.stopRAFId) {
+        cancelAnimationFrame(this.stopRAFId)
+        this.stopRAFId = null
+      }
+    }
   },
   async created() {
     this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update]')
       this.allUsers = this.mediaService.getPeerDetails()
-      console.log(this.allUsers[0].getPeerInfo())
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -825,6 +899,21 @@ export default {
 
     this.mediaService.registerMeetingEndListener('updateListener',() => {
 
+    })
+
+    this.mediaService.registerBeMutedListener('mutedListener', async () => {
+      console.log('Be Muted')
+      if (this.audio){
+        this.audio = false
+        let tracks = this.myAudioStream.getAudioTracks()
+        for (const track of tracks){
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myAudioStream.removeTrack(track)
+        }
+        this.microIcon.icon = 'mdi-microphone-off'
+        this.microIcon.color = 'gray'
+      }
     })
 
     await this.mediaService.joinMeeting(
@@ -860,6 +949,8 @@ export default {
     }
 
     moment.locale('zh-cn')
+
+    this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
   },
   computed : {
     filteredUsers () {
@@ -921,6 +1012,9 @@ export default {
       })
 
       return subUsers
+    },
+    isHost(){
+      return this.GLOBAL.userInfo.id === this.GLOBAL.roomInfo.host
     }
   }
 }

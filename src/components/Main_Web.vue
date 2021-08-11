@@ -303,7 +303,7 @@
     </div>
     <button
         :class="['mymeeting-btn', {'active':click4}]"
-        @mouseenter="getMeetings">
+        @click="getMeetings">
       {{'我的会议'+ (click4 ? '>' : '&lt;')}}</button>
     <div
         :class="['mymeeting-list', {'active':click4}]"
@@ -703,7 +703,7 @@ export default {
   background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
   right: 0;
   outline: none;
-  transition: 0.3s ease-in-out;
+  transition: 0.2s ease-in-out;
   border-bottom-left-radius: 10px;
   border-top-left-radius: 10px;
 }
@@ -715,7 +715,7 @@ export default {
 .mymeeting-btn.active{
   right: 40%;
   bottom: 70%;
-  transition: 0.3s ease-in-out;
+  transition: 0.2s ease-in-out;
   background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);
 }
 
