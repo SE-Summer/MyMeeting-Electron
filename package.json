@@ -13,6 +13,8 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@tensorflow-models/body-pix": "^2.2.0",
+    "@tensorflow/tfjs": "^3.8.0",
     "agora-rtc-sdk-ng": "^4.6.2",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
@@ -30,7 +32,7 @@
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
     "babel-eslint": "^10.1.0",
-    "electron": "^11.0.0",
+    "electron": "^13.0.0",
     "electron-devtools-installer": "^3.1.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",

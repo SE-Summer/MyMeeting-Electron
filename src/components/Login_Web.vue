@@ -113,7 +113,7 @@ export default {
         this.snack = true;
         this.loading = false;
         console.log(response);
-        setTimeout(()=>{this.$emit('login');},1000)
+        setTimeout(()=>{this.$emit('login');},200)
       }catch(error){
         if (error.response){
           this.snackText = error.response.data.error;
@@ -148,4 +148,5 @@ export default {
   background-image: linear-gradient(to bottom, #26A69A00, #26A69Add);
   border-bottom: 5px solid #A7FFEB;
 }
+
 </style>

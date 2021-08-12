@@ -111,12 +111,7 @@
           <v-icon>{{ this.screenIcon.icon }}</v-icon>
         </v-btn>
 
-        <v-btn
-            icon
-            class="d-block text-center mx-auto mb-9"
-            color="gray">
-          <v-icon>mdi-cog-outline</v-icon>
-        </v-btn>
+        <setting-dialog @changeSettings="changeSettings"></setting-dialog>
 
         <v-btn
             icon
@@ -125,11 +120,11 @@
             v-if="isHost"
             @click="muteAll">
           <v-badge
-            color="yellow darken-3"
-            content="all"
-            light
-            offset-x="28px"
-            offset-y="-1px">
+              color="yellow darken-3"
+              content="all"
+              light
+              offset-x="28px"
+              offset-y="-1px">
             <v-icon>mdi-microphone-off</v-icon>
           </v-badge>
         </v-btn>
@@ -138,7 +133,7 @@
 
       <v-sheet
           color="grey lighten-5"
-          height="108"
+          height="120"
           width="100%"
       >
         <div id="sheetDiv">
@@ -163,16 +158,16 @@
         <v-list-item class="teal lighten-4">
           <v-list-item-avatar>
             <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
-            <template v-slot:placeholder>
-              <div style="margin-top: 7px; margin-left: 8px">
-                <v-progress-circular
-                        indeterminate
-                        size="20"
-                        color="grey lighten-5"
-                ></v-progress-circular>
-              </div>
-            </template>
-          </v-img>
+              <template v-slot:placeholder>
+                <div style="margin-top: 7px; margin-left: 8px">
+                  <v-progress-circular
+                      indeterminate
+                      size="20"
+                      color="grey lighten-5"
+                  ></v-progress-circular>
+                </div>
+              </template>
+            </v-img>
           </v-list-item-avatar>
           <v-list-item-content style="font-size: small">
             {{GLOBAL.userInfo.nickname}}
@@ -214,22 +209,22 @@
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
             <v-menu
-                    top
-                    nudge-left="10px"
-                    attach>
+                top
+                nudge-left="10px"
+                attach>
               <template v-slot:activator="{on, attrs}">
                 <v-btn
-                        v-bind="attrs"
-                        v-on="on"
-                        icon>
+                    v-bind="attrs"
+                    v-on="on"
+                    icon>
                   <v-icon>mdi-cog-outline</v-icon>
                 </v-btn>
               </template>
               <v-list class="white" dense>
                 <v-list-item
-                        v-for="(item, index) in menuItems"
-                        :key="index"
-                        @click="switchMenuFunc(index, user.getPeerInfo().id)">
+                    v-for="(item, index) in menuItems"
+                    :key="index"
+                    @click="switchMenuFunc(index, user.getPeerInfo().id)">
                   <v-list-item-icon>
                     <v-icon :color="item.color">
                       {{item.icon}}
@@ -241,12 +236,12 @@
             </v-menu>
           </v-list-item-content>
           <v-list-item-content style="display: inline-block">
-            <v-btn icon @click="mediaService.mutePeer(user.getPeerInfo().id)">
+            <v-btn icon>
               <v-icon>mdi-microphone-off</v-icon>
             </v-btn>
           </v-list-item-content>
-          <v-list-item-content style="display: inline-block" v-if="isHost">
-            <v-btn icon @click="mediaService.kickPeer(user.getPeerInfo().id)">
+          <v-list-item-content style="display: inline-block">
+            <v-btn icon>
               <v-icon color="yellow darken-3">mdi-account-remove</v-icon>
             </v-btn>
           </v-list-item-content>
@@ -267,11 +262,11 @@
         >
           <v-list-item-content>
             <v-hover v-slot="{hover}">
-                <v-card
+              <v-card
                   height="150px"
                   outlined
                   elevation="13">
-                  <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" style="width: 100%; height: 100%"></my-video>
+                <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" process-video-type="blur" style="width: 100%; height: 100%"></my-video>
                 <template>
                   <v-expand-transition>
                     <div
@@ -291,7 +286,7 @@
                         <v-icon color="yellow darken-3">
                           mdi-close
                         </v-icon>
-                    </v-btn>
+                      </v-btn>
                     </div>
                   </v-expand-transition>
                 </template>
@@ -306,7 +301,7 @@
       <div id="mainVideo">
         <v-hover v-slot="{hover}">
           <v-card color="grey lighten-4" height="100%" width="100%">
-            <my-video style="height: 100%; width: 100%" my-id="main-video" :src-object="mainFollowUser.mediaStream"></my-video>
+            <my-video style="height: 100%; width: 100%" my-id="main-video" :src-object="mainFollowUser.mediaStream" process-video-type="blur"></my-video>
             <v-expand-transition>
               <div v-if="hover"
                    class="transition-fast-in-fast-out v-card--reveal-1"
@@ -326,53 +321,55 @@
         <v-container id="chatContainer">
           <v-row v-for="(msg, index) in allMsgs" :key="index">
             <v-col>
-                <v-card
-                    id="messageCard"
-                    shaped
-                    :color="(msg.fromMyself) ? '#26A69A' : 'white'"
-                    width="600px"
-                    max-height="300px">
-                  <v-card-text  style="height: 30px; font-size: 15px; color: black;">
-                    <template>
-                      <v-avatar
-                          color="grey darken-1"
-                          size="25"
-                          style="margin-right: 8px;">
-                        <v-img :src="(msg.fromMyself) ?
+              <v-card
+                  id="messageCard"
+                  shaped
+                  :color="(msg.fromMyself) ? '#26A69A' : 'white'"
+                  width="600px"
+                  max-height="300px">
+                <v-card-text  style="height: 30px; font-size: 15px; color: black;">
+                  <template>
+                    <v-avatar
+                        color="grey darken-1"
+                        size="25"
+                        style="margin-right: 8px;">
+                      <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
                         mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
-                          <template v-slot:placeholder>
-                            <div style="margin-top: 7px">
-                              <v-progress-circular
-                                  indeterminate
-                                  size="20"
-                                  color="grey lighten-5"
-                              ></v-progress-circular>
-                            </div>
-                          </template>
-                        </v-img>
-                      </v-avatar>
-                    </template>
-                    <div style="display: inline-block">
+                        <template v-slot:placeholder>
+                          <div style="margin-top: 7px">
+                            <v-progress-circular
+                                indeterminate
+                                size="20"
+                                color="grey lighten-5"
+                            ></v-progress-circular>
+                          </div>
+                        </template>
+                      </v-img>
+                    </v-avatar>
+                  </template>
+                  <div style="display: inline-block">
                       <span style="font-weight: bold">{{(msg.fromMyself) ?
-                              GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
-                      <span> to </span>
-                      <span :class="[{'private-chat': !msg.broadcast}]">{{formatToPeerName(msg)}} </span>
-                      <span>{{moment(msg.timestamp).format('llll')}}</span>
-                    </div>
-                    </v-card-text>
-                  <v-card-text id="messageText" v-if="msg.type === 'text'">{{msg.text}}</v-card-text>
-                  <upload-file
-                      :file="msg.file"
-                      v-else-if="msg.type === 'file'&&msg.fromMyself"
-                      @file-sended="sendFile"></upload-file>
-                  <download-file :message="msg" v-else></download-file>
-                </v-card>
+                          GLOBAL.userInfo.nickname :
+                          mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                    <span> to </span>
+                    <span :class="[{'private-chat': !msg.broadcast}]">{{formatToPeerName(msg)}} </span>
+                    <span>{{moment(msg.timestamp).format('llll')}}</span>
+                  </div>
+                </v-card-text>
+                <v-card-text id="messageText" v-if="msg.type === 'text'">{{msg.text}}</v-card-text>
+                <upload-file
+                    :file="msg.file"
+                    v-else-if="msg.type === 'file'&&msg.fromMyself"
+                    @file-sended="sendFile"></upload-file>
+                <download-file :message="msg" v-else></download-file>
+              </v-card>
             </v-col>
           </v-row>
         </v-container>
       </div>
+      <canvas id="invisibleCanvas" v-show="false"></canvas>
+      <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
 
     <v-footer
@@ -384,14 +381,14 @@
       <div @click="switchChat(null)" style="margin-right: 5px">
         <v-btn icon>
           <v-fab-transition>
-          <v-badge
-               v-if="!chatOverlay"
-               :color="this.chatBadge"
-               light
-               dot>
-            <v-icon color="teal">mdi-chat-outline</v-icon>
-          </v-badge>
-          <v-icon v-else color="teal">mdi-chat-remove-outline</v-icon>
+            <v-badge
+                v-if="!chatOverlay"
+                :color="this.chatBadge"
+                light
+                dot>
+              <v-icon color="teal">mdi-chat-outline</v-icon>
+            </v-badge>
+            <v-icon v-else color="teal">mdi-chat-remove-outline</v-icon>
           </v-fab-transition>
         </v-btn>
       </div>
@@ -409,21 +406,21 @@
       >
         <template v-slot:append>
           <v-menu
-                  top
-                  left
-                  nudge-top="50px"
-                  nudge-right="50px"
-                  min-width="150px"
-                  max-width="500px"
-                  attach
-                  close-on-content-click
-                  transition="scale-transition">
+              top
+              left
+              nudge-top="50px"
+              nudge-right="50px"
+              min-width="150px"
+              max-width="500px"
+              attach
+              close-on-content-click
+              transition="scale-transition">
             <template v-slot:activator="{on, attrs}">
               <v-icon
-                      :disabled="!chatOverlay"
-                      color="teal"
-                      v-bind="attrs"
-                      v-on="on">
+                  :disabled="!chatOverlay"
+                  color="teal"
+                  v-bind="attrs"
+                  v-on="on">
                 mdi-broadcast</v-icon>
             </template>
             <v-list dense shaped>
@@ -433,10 +430,10 @@
                 </v-list-item-content>
               </v-list-item>
               <v-list-item
-                      v-for="(user, index) in allUsers"
-                      :key="index"
-                      link
-                      @click="privateChat(user.getPeerInfo().id)">
+                  v-for="(user, index) in allUsers"
+                  :key="index"
+                  link
+                  @click="privateChat(user.getPeerInfo().id)">
                 <v-list-item-content style="font-size: 15px; font-family: 'Cascadia Mono'">
                   {{user.getPeerInfo().displayName}}
                 </v-list-item-content>
@@ -447,28 +444,28 @@
       </v-text-field>
       <div>
         <v-menu
-              top
-              left
-              nudge-top="50px"
-              nudge-right="50px"
-              attach
-              transition="scale-transition"
-              :close-on-content-click="false">
-            <template v-slot:activator="{on, attrs}">
-              <v-icon
-                  color="yellow darken-3"
-                  :disabled="!chatOverlay"
-                  style="margin-left:5px;"
-                  @click="showEmojiPicker = !showEmojiPicker"
-                  v-bind="attrs"
-                  v-on="on">
-                mdi-emoticon-outline</v-icon>
-            </template>
-            <v-emoji-picker
-                :emojiSize="24"
-                :emojisByRow="5"
-                @select="selectEmoji"></v-emoji-picker>
-          </v-menu>
+            top
+            left
+            nudge-top="50px"
+            nudge-right="50px"
+            attach
+            transition="scale-transition"
+            :close-on-content-click="false">
+          <template v-slot:activator="{on, attrs}">
+            <v-icon
+                color="yellow darken-3"
+                :disabled="!chatOverlay"
+                style="margin-left:5px;"
+                @click="showEmojiPicker = !showEmojiPicker"
+                v-bind="attrs"
+                v-on="on">
+              mdi-emoticon-outline</v-icon>
+          </template>
+          <v-emoji-picker
+              :emojiSize="24"
+              :emojisByRow="5"
+              @select="selectEmoji"></v-emoji-picker>
+        </v-menu>
         <v-menu
             top
             left
@@ -507,12 +504,14 @@ import {MediaService} from '../service/MediaService'
 import MyVideo from "../components/myVideo"
 import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
-import axios from "axios";
+import {virtualBackground} from "../service/VirtualBackgroundService";
+import SettingDialog from "../components/SettingsDialog";
 const moment = require("moment");
 
 export default {
   name: "mainPage.vue",
   components : {
+    SettingDialog,
     UploadFile,
     DownloadFile,
     MyVideo,
@@ -565,19 +564,28 @@ export default {
       mainFollowUserId : null,
       subFollowUserIds : [],
       mediaDevice : null,
+      originVideoTracks : null,
       myMediaStream : null,
+      myAudioStream : null,
       video : false,
       audio : false,
       moment : moment,
       placeholdOfMsg : '发送消息 to 所有人',
       privateChatPeerId : null,
       file : null,
+      vb : null,
+      processVideoType : 'normal',
+      stopRAFId : null
     }
   },
   methods: {
     async videoSwitch () {
       if (this.video) {
         this.video = false
+        this.closeRAF()
+        this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
         let tracks = this.myMediaStream.getVideoTracks()
         for (const track of tracks) {
           await this.mediaService.closeTrack(track)
@@ -726,7 +734,7 @@ export default {
         text : this.inputMsg,
         timestamp : timestamp,
         toPeerName : (!this.privateChatPeerId) ? '' :
-          this.mediaService.getPeerDetailsByPeerId(this.privateChatPeerId).getPeerInfo().displayName
+            this.mediaService.getPeerDetailsByPeerId(this.privateChatPeerId).getPeerInfo().displayName
       })
       this.inputMsg = ''
 
@@ -755,7 +763,7 @@ export default {
       }
     },
     selectEmoji (emoji) {
-        this.inputMsg += emoji.data
+      this.inputMsg += emoji.data
     },
     sub2Main (index) {
       let userId = this.subFollowUserIds[index]
@@ -770,11 +778,15 @@ export default {
     },
     async leaveMeeting () {
       try {
+        this.closeRAF()
         if (this.myMediaStream) {
           this.myMediaStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
+        this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
         await this.mediaService.leaveMeeting()
       } catch (error) {
         console.log('[LEAVE]', error)
@@ -783,6 +795,9 @@ export default {
       this.$emit('back')
     },
     sendMediaStream (video, audio) {
+      if (!video &&  !audio) {
+        return
+      }
       let constraint = {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
@@ -790,15 +805,31 @@ export default {
 
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-            this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : null
-            this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : null
-            await this.mediaService.sendMediaStream(mediaStream)
+            this.closeRAF()
 
+            if (this.processVideoType === 'normal') {
+              this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
+              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+              await this.mediaService.sendMediaStream(mediaStream)
+            } else {
+              this.originVideoTracks = mediaStream.getVideoTracks()
+              let inVideo = document.getElementById('invisibleVideo')
+              inVideo.srcObject = mediaStream
+              inVideo.onloadeddata = async () => {
+                if (this.processVideoType === 'blur') {
+                  this.blurBackground()
+                } else {
+                  this.replaceBackground()
+                }
+                this.myMediaStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
+                this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+                let tracks = this.myMediaStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
+                await this.mediaService.sendMediaStream(new MediaStream(tracks))
+              }
+            }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
             }
-
-            console.log('[Send Video]')
           }).catch((error) => {
         console.log(error)
       })
@@ -815,36 +846,46 @@ export default {
       }
     },
     muteAll(){
-      this.mediaService.mutePeer(null);
-      console.log('Send Mute All Request')
+      this.mediaService.mutePeer();
     },
-    async getRoomInfo(){
-      try{
-        const response = await axios(
-            {
-              method : 'post',
-              url : this.GLOBAL.baseURL + '/getRoom',
-              data : {
-                'id' : this.GLOBAL.roomInfo.id,
-                'password' : this.GLOBAL.roomInfo.password,
-              }
-            })
-        this.GLOBAL.roomInfo = response.data.room;
-      }catch(error){
-        console.error(error)
+    blurBackground () {
+      let frame = document.getElementById('invisibleVideo')
+      this.vb.blurBackground(frame)
+      this.stopRAFId = requestAnimationFrame(this.blurBackground)
+    },
+    replaceBackground () {
+      let frame = document.getElementById('invisibleVideo')
+      this.vb.replaceBackground(frame)
+      this.stopRAFId = requestAnimationFrame(this.replaceBackground)
+    },
+    changeSettings(blur, replace, backgroundImg) {
+      if (blur) {
+        this.processVideoType = 'blur'
+      } else if (replace) {
+        this.processVideoType = 'replace'
+        let img = new Image()
+        img.src = backgroundImg
+        this.vb.setVBConfig(img)
+      } else {
+        this.processVideoType = 'normal'
+      }
+
+      if (this.video) {
+        this.sendMediaStream(this.video, this.audio)
+      }
+    },
+    closeRAF () {
+      if (this.stopRAFId) {
+        cancelAnimationFrame(this.stopRAFId)
+        this.stopRAFId = null
       }
     }
   },
   async created() {
     this.mediaService = new MediaService()
-    this.mediaService.registerPeerUpdateListener('updateListener', async () => {
+    this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update]')
       this.allUsers = this.mediaService.getPeerDetails()
-      if (this.mediaService.getHostPeerId() !== this.GLOBAL.userInfo.token && this.isHost){
-        await this.getRoomInfo();
-      }else if(this.mediaService.getHostPeerId() === this.GLOBAL.userInfo.token && !this.isHost){
-        await this.getRoomInfo();
-      }
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -876,17 +917,17 @@ export default {
     })
 
     await this.mediaService.joinMeeting(
-      this.GLOBAL.roomInfo.token,
-      this.GLOBAL.userInfo.token,
-      this.GLOBAL.userInfo.token,
-      this.GLOBAL.userInfo.nickname,
-      this.GLOBAL.userInfo.nickname + '\'s PC',
-      this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
+        this.GLOBAL.roomInfo.token,
+        this.GLOBAL.userInfo.token,
+        this.GLOBAL.userInfo.token,
+        this.GLOBAL.userInfo.nickname,
+        this.GLOBAL.userInfo.nickname + '\'s PC',
+        this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
 
     navigator.getUserMedia  = navigator.getUserMedia ||
-      navigator.webkitGetUserMedia ||
-      navigator.mozGetUserMedia ||
-      navigator.msGetUserMedia;
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia;
 
     if (!navigator.getUserMedia) {
       console.log('Browser DOES NOT support!')
@@ -908,6 +949,8 @@ export default {
     }
 
     moment.locale('zh-cn')
+
+    this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
   },
   computed : {
     filteredUsers () {
@@ -916,7 +959,7 @@ export default {
       }
       else {
         return this.allUsers.filter(user => {
-           return user.getPeerInfo().displayName.search(this.filterText) !== -1
+          return user.getPeerInfo().displayName.search(this.filterText) !== -1
         })
       }
     },
@@ -1001,11 +1044,11 @@ export default {
   font-weight: bold;
   font-size: large;
   color: gray;
-  margin-top: 20px
 }
 
 #sheetDiv {
   margin-left: 60px;
+  padding-top: 20px;
   text-align: center;
 }
 
@@ -1019,14 +1062,14 @@ export default {
 }
 
 .v-card--reveal-1 {
-    background-color: #00000066;
-    position: absolute;
-    justify-content: center;
-    left: 0;
-    right: 0;
-    top: 0;
-    margin : auto;
-    width: 20%;
+  background-color: #00000066;
+  position: absolute;
+  justify-content: center;
+  left: 0;
+  right: 0;
+  top: 0;
+  margin : auto;
+  width: 20%;
 }
 
 #messageCard {
@@ -1068,7 +1111,7 @@ export default {
 }
 
 .private-chat {
-    color: #FF9800;
-    font-weight: bold;
+  color: #FF9800;
+  font-weight: bold;
 }
 </style>

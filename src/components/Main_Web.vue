@@ -36,10 +36,10 @@
                 mdi-arrow-right-thick
               </v-icon>
               <p class="card-title teal--text text--darken-4">
-                快速入会
+                加入会议
               </p>
               <p class="card-text teal--text text--darken-4">
-                使用会议号和密码，加入一场现有的会议
+                立即加入一场正在进行的会议
               </p>
               <v-form v-model="valid1" ref="form">
                 <v-container v-if="click1">
@@ -97,7 +97,7 @@
                 创建会议
               </p>
               <p class="card-text teal--text text--darken-4">
-                作为主持人，立即开始一次会议
+                立即创建并开始一次会议
               </p>
               <v-form v-model="valid2" ref="form">
                 <v-container v-if="click2">
@@ -105,11 +105,22 @@
                     <v-col>
                       <v-text-field
                           v-model="topic"
+                          :rules="topicRules"
                           height="60px"
                           outlined
-                          :rules="topicRules"
                           append-icon="mdi-format-title"
                           label="会议主题"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field>
+                    </v-col>
+                    <v-col>
+                      <v-text-field
+                          v-model="max_num"
+                          height="60px"
+                          outlined
+                          append-icon="mdi-numeric"
+                          label="最大人数"
                           color="teal darken-1"
                           required
                       ></v-text-field>
@@ -199,7 +210,7 @@
                 预约会议
               </p>
               <p class="card-text teal--text text--darken-4">
-                作为主持人，预约未来某时刻的会议
+                预约或创建未来某时刻的会议
               </p>
               <v-form v-model="valid3" ref="form">
                 <v-container v-if="click3">
@@ -493,7 +504,7 @@ export default {
                   'topic' : this.topic,
                   'password' : this.password,
                   'start_time' : moment().format("YYYY-MM-DD HH:mm:ss"),
-                  'end_time' : moment().add(2, 'h').format("YYYY-MM-DD HH:mm:ss"),
+                  'end_time' : moment().add(4, 'h').format("YYYY-MM-DD HH:mm:ss"),
                   'max_num' : this.max_num,
                 }
               })
@@ -578,9 +589,9 @@ export default {
   overflow: auto;
   width: 100%;
   height: 100%;
-//background-size: contain;
+  background-size: cover;
   background: #000000;
-//background-image: url("https://unity-cn-cms-prd-1254078910.cos.ap-shanghai.myqcloud.com/assetstore-cms-media/img-176409f9-fa82-4a95-ab0c-1ecaffe87f55");
+  //background-image: url("http://se-summer.cn:4446/static/images/bg2.gif");
 }
 .teal-cover{
   overflow: hidden;
@@ -665,7 +676,7 @@ export default {
 }
 .arrow{
   position: absolute;
-  top: 100px;
+  bottom: -50px;
   left: -90px;
   transition: all 0.15s ease-in;
 }
@@ -676,7 +687,7 @@ export default {
 }
 .arrow.pos2{
   transition: all 0.3s ease-in;
-  top: 30px;
+  bottom: auto;
   left: 80%;
   cursor: pointer;
 }

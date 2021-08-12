@@ -79,6 +79,7 @@ export default {
         'text/x-shellscript' : 'powershell',
         'text/x-perl' : 'file-document-outline',
         'text/x-sql' : 'file-document-outline',
+        'application/x-msdownload' : 'download',
         'application/postscript' : 'file-question-outline',
         'application/octet-stream' : 'file-question-outline',
         'application/vnd.ms-word' : 'file-word-outline',

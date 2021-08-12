@@ -36,10 +36,10 @@
                 mdi-arrow-right-thick
               </v-icon>
               <p class="card-title teal--text text--darken-4">
-                快速入会
+                加入会议
               </p>
               <p class="card-text teal--text text--darken-4">
-                使用会议号和密码，加入一场现有的会议
+                加入一场正在进行的会议
               </p>
               <v-form v-model="valid1" ref="form">
                 <v-container v-if="click1">
@@ -105,11 +105,22 @@
                     <v-col>
                       <v-text-field
                           v-model="topic"
+                          :rules="topicRules"
                           height="60px"
                           outlined
-                          :rules="topicRules"
                           append-icon="mdi-format-title"
                           label="会议主题"
+                          color="teal darken-1"
+                          required
+                      ></v-text-field>
+                    </v-col>
+                    <v-col>
+                      <v-text-field
+                          v-model="max_num"
+                          height="60px"
+                          outlined
+                          append-icon="mdi-numeric"
+                          label="最大人数"
                           color="teal darken-1"
                           required
                       ></v-text-field>
@@ -199,7 +210,7 @@
                 预约会议
               </p>
               <p class="card-text teal--text text--darken-4">
-                作为主持人，预约未来某时刻的会议
+                预约或创建未来某时刻的会议
               </p>
               <v-form v-model="valid3" ref="form">
                 <v-container v-if="click3">
@@ -301,9 +312,13 @@
         </v-row>
       </v-container>
     </div>
-    <button :class="['mymeeting-btn', {'active':click4}]" @click="getMeetings" @focusout="click4 = false">
+    <button
+        :class="['mymeeting-btn', {'active':click4}]"
+        @click="getMeetings">
       {{'我的会议'+ (click4 ? '>' : '&lt;')}}</button>
-    <div :class="['mymeeting-list', {'active':click4}]">
+    <div
+        :class="['mymeeting-list', {'active':click4}]"
+        @mouseleave="click4 = false">
       <v-container>
         <h2 class="title3">
           我的会议
@@ -490,8 +505,8 @@ export default {
                   'token' : this.GLOBAL.userInfo.token,
                   'topic' : this.topic,
                   'password' : this.password,
-                  'start_time' : moment().add(1, 'm').format("YYYY-MM-DD HH:mm:ss"),
-                  'end_time' : moment().add(2, 'h').format("YYYY-MM-DD HH:mm:ss"),
+                  'start_time' : moment().format("YYYY-MM-DD HH:mm:ss"),
+                  'end_time' : moment().add(4, 'h').format("YYYY-MM-DD HH:mm:ss"),
                   'max_num' : this.max_num,
                 }
               })
