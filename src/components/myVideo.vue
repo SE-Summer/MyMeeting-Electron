@@ -11,7 +11,6 @@
     props: ["srcObject", "myId"],
     watch: {
       srcObject(newValue) {
-        console.log('[My Video]', newValue)
           document.getElementById(this.myId).srcObject = newValue
       }
     }
