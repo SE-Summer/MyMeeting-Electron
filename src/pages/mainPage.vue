@@ -814,7 +814,7 @@ export default {
             } else {
               this.originVideoTracks = mediaStream.getVideoTracks()
               let inVideo = document.getElementById('invisibleVideo')
-              inVideo.srcObject = mediaStream
+              inVideo.srcObject = new MediaStream(this.originVideoTracks)
               inVideo.onloadeddata = async () => {
                 if (this.processVideoType === 'blur') {
                   this.blurBackground()
