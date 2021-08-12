@@ -34,7 +34,7 @@ export const serviceConfig = {
 
 export const SignalType = {
     request : 'request',
-        notify : 'notify'
+    notify : 'notify'
 }
 
 export const MediaKind= {
