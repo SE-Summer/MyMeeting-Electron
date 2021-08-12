@@ -79,8 +79,8 @@ export default {
   },
   data(){
     return{
-      email : "jz2000@sjtu.edu.cn",
-      password : "",
+      email : "847361724@qq.com",
+      password : "123456",
       loading : false,
       snackText: "",
       snack : false,
