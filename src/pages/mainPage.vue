@@ -564,9 +564,9 @@ export default {
       mainFollowUserId : null,
       subFollowUserIds : [],
       mediaDevice : null,
-      originVideoTracks : null,
-      myMediaStream : null,
-      myAudioStream : null,
+      originVideoTracks : [],
+      myMediaStream : new MediaStream(),
+      myAudioStream : new MediaStream(),
       video : false,
       audio : false,
       moment : moment,
@@ -794,13 +794,21 @@ export default {
 
       this.$emit('back')
     },
-    sendMediaStream (video, audio) {
+    async sendMediaStream (video, audio) {
       if (!video &&  !audio) {
         return
       }
       let constraint = {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
+      }
+
+      for (let track of this.myMediaStream.getVideoTracks()){
+        await this.mediaService.closeTrack(track)
+      }
+
+      for (let track of this.myAudioStream.getVideoTracks()){
+        await this.mediaService.closeTrack(track)
       }
 
       navigator.mediaDevices.getUserMedia(constraint)
@@ -810,6 +818,7 @@ export default {
             if (this.processVideoType === 'normal') {
               this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+              document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
             } else {
               this.originVideoTracks = mediaStream.getVideoTracks()
@@ -1021,10 +1030,6 @@ export default {
 </script>
 
 <style scoped>
-
-#userSearchBar {
-}
-
 #appBarContent {
   margin-top: 15px;
 }
