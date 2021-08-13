@@ -421,6 +421,7 @@ export default {
       ],
       idRules :[
         v => !!v || '请输入会议号',
+        v => /^[0-9]*$/.test(v) || '会议号是数字',
       ],
       passwordRules: [
         v => /^[0-9]{8}$/.test(v) || '密码是八位数字',

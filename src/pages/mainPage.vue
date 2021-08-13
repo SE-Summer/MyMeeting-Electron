@@ -1,5 +1,13 @@
 <template>
   <v-app id="mainWindow">
+    <v-snackbar
+        top
+        color="red white--text"
+        timeout="1600"
+        light
+        v-model="snack">
+      {{snackText}}
+    </v-snackbar>
     <v-app-bar
         app
         clipped-right
@@ -240,7 +248,7 @@
               <v-icon>mdi-microphone-off</v-icon>
             </v-btn>
           </v-list-item-content>
-          <v-list-item-content style="display: inline-block">
+          <v-list-item-content style="display: inline-block" v-if="isHost">
             <v-btn icon>
               <v-icon color="yellow darken-3">mdi-account-remove</v-icon>
             </v-btn>
@@ -506,6 +514,7 @@ import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
 import {virtualBackground} from "../service/VirtualBackgroundService";
 import SettingDialog from "../components/SettingsDialog";
+import axios from "axios";
 const moment = require("moment");
 
 export default {
@@ -575,7 +584,9 @@ export default {
       file : null,
       vb : null,
       processVideoType : 'normal',
-      stopRAFId : null
+      stopRAFId : null,
+      snack : false,
+      snackText : ""
     }
   },
   methods: {
@@ -888,13 +899,39 @@ export default {
         cancelAnimationFrame(this.stopRAFId)
         this.stopRAFId = null
       }
+    },
+    async getRoomInfo(){
+      try{
+        console.log('GET ROOM', this.GLOBAL.roomInfo)
+        const response = await axios(
+            {
+              method : 'post',
+              url : this.GLOBAL.baseURL + '/getRoom',
+              data : {
+                'id' : this.GLOBAL.roomInfo.id,
+                'password' : this.GLOBAL.roomInfo.password,
+              }
+            })
+        this.GLOBAL.roomInfo = response.data.room;
+        this.snackText = '房主变更';
+        this.snack = true;
+      }catch(error){
+        this.snackText = "与服务器失去连接"
+        this.snack = true;
+        setTimeout(()=>{this.$emit('back')},1600)
+      }
     }
   },
   async created() {
     this.mediaService = new MediaService()
-    this.mediaService.registerPeerUpdateListener('updateListener', () => {
+    this.mediaService.registerPeerUpdateListener('updateListener', async () => {
       console.log('[User Update]')
       this.allUsers = this.mediaService.getPeerDetails()
+
+      if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.hostToken){
+        await this.getRoomInfo();
+        this.GLOBAL.roomInfo.hostToken = this.mediaService.getHostPeerId();
+      }
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -925,13 +962,21 @@ export default {
       }
     })
 
-    await this.mediaService.joinMeeting(
-        this.GLOBAL.roomInfo.token,
-        this.GLOBAL.userInfo.token,
-        this.GLOBAL.userInfo.token,
-        this.GLOBAL.userInfo.nickname,
-        this.GLOBAL.userInfo.nickname + '\'s PC',
-        this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
+    try {
+      await this.mediaService.joinMeeting(
+          this.GLOBAL.roomInfo.token,
+          this.GLOBAL.userInfo.token,
+          this.GLOBAL.userInfo.token,
+          this.GLOBAL.userInfo.nickname,
+          this.GLOBAL.userInfo.nickname + '\'s PC',
+          this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
+    }catch (e){
+      this.snackText = '房主尚未入会';
+      this.snack = true;
+      setTimeout(()=>{
+        this.$emit('back');
+      }, 1600);
+    }
 
     navigator.getUserMedia  = navigator.getUserMedia ||
         navigator.webkitGetUserMedia ||
