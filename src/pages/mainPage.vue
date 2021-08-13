@@ -1120,15 +1120,17 @@ export default {
   padding: 10px 0 0 10px;
   border-top: 6px solid #00838f;
   border-top-right-radius: 30px;
+  border-top-left-radius: 12px;
 }
 
 .messageText {
-  margin: 10px 15px 0;
+  margin: 10px 0 0 15px;
   padding: 0 20px 10px 20px;
   display: block;
   border-bottom-left-radius: 30px;
-  border-left: 4px solid #00838f;
-  border-bottom: 1px solid #00838f;
+  border-top-right-radius: 6px;
+  border-bottom: 2px solid #00838f;
+  border-right: 4px solid #00838f;
 }
 
 #chatContainer {
@@ -1164,13 +1166,27 @@ export default {
   font-weight: bold;
 }
 .not-host-item.host-item{
-  border-left: 10px solid #ff9800;
+  border-left: 8px solid #ff9800aa;
+  border-top: 3px solid #ff9800aa;
+  border-bottom-left-radius:40px;
+  transition: 0.1s ease-in-out;
+}
+.not-host-item.host-item:hover{
+  border-left: 12px solid #ff9800;
   border-top: 3px solid #ff9800;
   border-bottom-left-radius:40px;
+  transition: 0.1s ease-in-out;
 }
 .not-host-item{
-  border-left: 10px solid #80CBC4;
-  border-top: 3px solid #80CBC4;
+  border-left: 8px solid #90CBC488;
+  border-top: 2px solid #90CBC488;
   border-bottom-left-radius: 40px;
+  transition: 0.1s ease-in-out;
+}
+.not-host-item:hover{
+  border-left: 12px solid #80CBC4;
+  border-top: 2px solid #80CBC4;
+  border-bottom-left-radius: 40px;
+  transition: 0.1s ease-in-out;
 }
 </style>

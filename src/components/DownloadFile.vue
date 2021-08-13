@@ -149,9 +149,10 @@ export default {
 <style scoped>
 .file-card{
   background : white;
-  border-bottom-left-radius: 20px;
-  border-left: 6px solid teal;
-  border-bottom: 1px solid teal;
+  border-bottom-left-radius: 30px;
+  border-top-right-radius: 6px;
+  border-bottom: 2px solid #00838f;
+  border-right: 4px solid #00838f;
   width: 600px;
   margin: 0;
 }
