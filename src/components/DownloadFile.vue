@@ -148,10 +148,12 @@ export default {
 
 <style scoped>
 .file-card{
-  background: white;
-  border-radius: 10px;
-  border: 3px solid teal;
-  margin: 15px 0;
+  background : white;
+  border-bottom-left-radius: 20px;
+  border-left: 6px solid teal;
+  border-bottom: 1px solid teal;
+  width: 600px;
+  margin: 0;
 }
 .file-card-text{
   font-family: "Microsoft YaHei UI", serif;

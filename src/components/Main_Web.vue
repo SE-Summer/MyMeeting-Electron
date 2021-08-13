@@ -759,10 +759,10 @@ export default {
 }
 @keyframes effect {
   from {
-    background-image: linear-gradient(to bottom left, #00897B00, #00897Bdd);;
+    background-image: linear-gradient(to bottom left, #00897B00, #00897Bdd);
   }
   to {
-    background-image: linear-gradient(to bottom left, #00897Bdd, #00897B00);;
+    background-image: linear-gradient(to bottom left, #00897Bdd, #00897B00);
   }
 }
 </style>

@@ -67,7 +67,7 @@
     <v-navigation-drawer
         v-model="drawer"
         app
-        width="300"
+        width="320"
     >
       <v-navigation-drawer
           v-model="drawer"
@@ -151,7 +151,7 @@
           <v-text-field
               label="搜索成员"
               id="userSearchBar"
-              color="green darken-3"
+              color="teal"
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
               clearable
@@ -163,97 +163,99 @@
           class="pl-14"
           shaped
       >
-        <v-list-item class="teal lighten-4">
-          <v-list-item-avatar>
-            <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
-              <template v-slot:placeholder>
-                <div style="margin-top: 7px; margin-left: 8px">
-                  <v-progress-circular
-                      indeterminate
-                      size="20"
-                      color="grey lighten-5"
-                  ></v-progress-circular>
-                </div>
-              </template>
-            </v-img>
-          </v-list-item-avatar>
-          <v-list-item-content style="font-size: small">
-            {{GLOBAL.userInfo.nickname}}
-          </v-list-item-content>
-          <v-list-item-content style="display: inline-block">
-            <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
-              <v-icon color="teal">
-                mdi-account-star
-              </v-icon>
-            </v-btn>
-          </v-list-item-content>
-          <v-list-item-content style="display: inline-block">
-            <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
-              <v-icon color="teal">
-                mdi-account-plus
-              </v-icon>
-            </v-btn>
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
-            v-for="(user, index) in this.filteredUsers"
-            :key="index"
-        >
-          <v-list-item-avatar>
-            <v-img :src="user.getPeerInfo().avatar">
-              <template v-slot:placeholder>
-                <div style="margin-top: 7px; margin-left: 8px">
-                  <v-progress-circular
-                      indeterminate
-                      size="20"
-                      color="grey lighten-5"
-                  ></v-progress-circular>
-                </div>
-              </template>
-            </v-img>
-          </v-list-item-avatar>
-          <v-list-item-content style="font-size: small">
-            {{user.getPeerInfo().displayName}}
-          </v-list-item-content>
-          <v-list-item-content style="display: inline-block">
-            <v-menu
-                top
-                nudge-left="10px"
-                attach>
-              <template v-slot:activator="{on, attrs}">
-                <v-btn
-                    v-bind="attrs"
-                    v-on="on"
-                    icon>
-                  <v-icon>mdi-cog-outline</v-icon>
+        <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="10px" offset-y="15px">
+          <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>
+            <v-list-item-avatar style="border: 1px solid teal" size="44">
+              <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
+                <template v-slot:placeholder>
+                  <div style="margin-top: 7px; margin-left: 8px">
+                    <v-progress-circular
+                        indeterminate
+                        size="20"
+                        color="grey lighten-5"
+                    ></v-progress-circular>
+                  </div>
+                </template>
+              </v-img>
+            </v-list-item-avatar>
+            <v-list-item-content>
+              <v-list-item-title align="center" style="font-size: 18px; font-weight: bold; width: 120px">
+                {{GLOBAL.userInfo.nickname}}
+              </v-list-item-title>
+              <v-list-item-subtitle align="center">
+                <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
+                  <v-icon color="teal" size="20">
+                    mdi-account-star
+                  </v-icon>
                 </v-btn>
-              </template>
-              <v-list class="white" dense>
-                <v-list-item
-                    v-for="(item, index) in menuItems"
-                    :key="index"
-                    @click="switchMenuFunc(index, user.getPeerInfo().id)">
-                  <v-list-item-icon>
-                    <v-icon :color="item.color">
-                      {{item.icon}}
-                    </v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-title>{{item.text}}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </v-list-item-content>
-          <v-list-item-content style="display: inline-block">
-            <v-btn icon>
-              <v-icon>mdi-microphone-off</v-icon>
-            </v-btn>
-          </v-list-item-content>
-          <v-list-item-content style="display: inline-block" v-if="isHost">
-            <v-btn icon>
-              <v-icon color="yellow darken-3">mdi-account-remove</v-icon>
-            </v-btn>
-          </v-list-item-content>
-        </v-list-item>
+                <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
+                  <v-icon color="teal" size="20">
+                    mdi-account-plus
+                  </v-icon>
+                </v-btn>
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-badge>
+        <v-badge :value="GLOBAL.roomInfo.hostToken === user.getPeerInfo().id" icon="mdi-crown" color="orange--text"
+                 overlap offset-x="10px" offset-y="15px"
+                 v-for="(user, index) in this.filteredUsers"
+                 :key="index">
+          <v-list-item style="width: 100%" dense
+               :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostToken === user.getPeerInfo().id}]"
+          >
+            <v-list-item-avatar style="border: 1px solid teal" size="44">
+              <v-img :src="user.getPeerInfo().avatar">
+                <template v-slot:placeholder>
+                  <div style="margin-top: 7px; margin-left: 8px">
+                    <v-progress-circular
+                        indeterminate
+                        size="20"
+                        color="grey lighten-5"
+                    ></v-progress-circular>
+                  </div>
+                </template>
+              </v-img>
+            </v-list-item-avatar>
+            <v-list-item-content>
+              <v-list-item-title style="font-size: 18px; font-weight: bold; width: 120px" align="center">
+                {{user.getPeerInfo().displayName}}
+              </v-list-item-title>
+              <v-list-item-subtitle align="center">
+                <v-menu
+                    attach>
+                  <template v-slot:activator="{on, attrs}">
+                    <v-btn
+                        v-bind="attrs"
+                        v-on="on"
+                        icon>
+                      <v-icon size="20">mdi-cog-outline</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-list class="white" dense>
+                    <v-list-item
+                        v-for="(item, index) in menuItems"
+                        :key="index"
+                        @click="switchMenuFunc(index, user.getPeerInfo().id)">
+                      <v-list-item-icon>
+                        <v-icon :color="item.color">
+                          {{item.icon}}
+                        </v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-title>{{item.text}}</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+                <v-btn icon v-if="isHost">
+                  <v-icon color="orange" size="20">mdi-microphone-off</v-icon>
+                </v-btn>
+                <v-btn icon v-if="isHost">
+                  <v-icon color="orange" size="20px">mdi-account-remove</v-icon>
+                </v-btn>
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-badge>
       </v-list>
     </v-navigation-drawer>
 
@@ -329,49 +331,40 @@
         <v-container id="chatContainer">
           <v-row v-for="(msg, index) in allMsgs" :key="index">
             <v-col>
-              <v-card
-                  id="messageCard"
-                  shaped
-                  :color="(msg.fromMyself) ? '#26A69A' : 'white'"
-                  width="600px"
-                  max-height="300px">
-                <v-card-text  style="height: 30px; font-size: 15px; color: black;">
-                  <template>
-                    <v-avatar
-                        color="grey darken-1"
-                        size="25"
-                        style="margin-right: 8px;">
-                      <v-img :src="(msg.fromMyself) ?
+              <div style="display: inline-block" class="messageCard">
+                  <v-avatar
+                      color="grey darken-1"
+                      size="35"
+                      style="margin-right: 8px;">
+                    <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
                         mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
-                        <template v-slot:placeholder>
-                          <div style="margin-top: 7px">
-                            <v-progress-circular
-                                indeterminate
-                                size="20"
-                                color="grey lighten-5"
-                            ></v-progress-circular>
-                          </div>
-                        </template>
-                      </v-img>
-                    </v-avatar>
-                  </template>
-                  <div style="display: inline-block">
+                      <template v-slot:placeholder>
+                        <div style="margin-top: 7px">
+                          <v-progress-circular
+                              indeterminate
+                              size="20"
+                              color="grey lighten-5"
+                          ></v-progress-circular>
+                        </div>
+                      </template>
+                    </v-img>
+                  </v-avatar>
+                  <div style="display: inline-block; font-size: 20px">
                       <span style="font-weight: bold">{{(msg.fromMyself) ?
                           GLOBAL.userInfo.nickname :
                           mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
-                    <span> to </span>
-                    <span :class="[{'private-chat': !msg.broadcast}]">{{formatToPeerName(msg)}} </span>
-                    <span>{{moment(msg.timestamp).format('llll')}}</span>
+                    <span v-if="!msg.broadcast"> to </span>
+                    <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
+                    <span style="margin:0 20px">{{moment(msg.timestamp).format('hh:mm:ss')}}</span>
                   </div>
-                </v-card-text>
-                <v-card-text id="messageText" v-if="msg.type === 'text'">{{msg.text}}</v-card-text>
+                <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
                 <upload-file
                     :file="msg.file"
                     v-else-if="msg.type === 'file'&&msg.fromMyself"
-                    @file-sended="sendFile"></upload-file>
-                <download-file :message="msg" v-else></download-file>
-              </v-card>
+                    @file-sended="sendFile" style="margin-top:20px"></upload-file>
+                <download-file :message="msg" v-else style="margin-top:20px"></download-file>
+              </div>
             </v-col>
           </v-row>
         </v-container>
@@ -530,6 +523,7 @@ export default {
     return {
       mediaService : null,
       drawer: null,
+      isHost : false,
       videoIcon : {
         icon : 'mdi-video-outline',
         color : 'teal'
@@ -923,15 +917,18 @@ export default {
     }
   },
   async created() {
+    this.GLOBAL.roomInfo.hostToken = "";
     this.mediaService = new MediaService()
-    this.mediaService.registerPeerUpdateListener('updateListener', async () => {
-      console.log('[User Update]')
+    this.mediaService.registerPeerUpdateListener('updateListener', () => {
+      console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
       this.allUsers = this.mediaService.getPeerDetails()
 
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.hostToken){
-        await this.getRoomInfo();
         this.GLOBAL.roomInfo.hostToken = this.mediaService.getHostPeerId();
+        this.snackText = "房主变更";
+        this.snack = true;
       }
+      this.isHost = this.GLOBAL.roomInfo.hostToken === this.GLOBAL.userInfo.token;
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -1066,9 +1063,6 @@ export default {
       })
 
       return subUsers
-    },
-    isHost(){
-      return this.GLOBAL.userInfo.id === this.GLOBAL.roomInfo.host
     }
   }
 }
@@ -1122,13 +1116,19 @@ export default {
   width: 20%;
 }
 
-#messageCard {
-  background-color: #aaaaaa88;
+.messageCard {
+  padding: 10px 0 0 10px;
+  border-top: 6px solid #00838f;
+  border-top-right-radius: 30px;
 }
 
-#messageText {
-  color: black;
-  font-family: "JetBrains Mono ExtraBold";
+.messageText {
+  margin: 10px 15px 0;
+  padding: 0 20px 10px 20px;
+  display: block;
+  border-bottom-left-radius: 30px;
+  border-left: 4px solid #00838f;
+  border-bottom: 1px solid #00838f;
 }
 
 #chatContainer {
@@ -1157,11 +1157,20 @@ export default {
 #rightSideBarText {
   font-size: small;
   margin-top: 18px;
-  font-family: "JetBrains Mono ExtraBold";
 }
 
 .private-chat {
   color: #FF9800;
   font-weight: bold;
+}
+.not-host-item.host-item{
+  border-left: 10px solid #ff9800;
+  border-top: 3px solid #ff9800;
+  border-bottom-left-radius:40px;
+}
+.not-host-item{
+  border-left: 10px solid #80CBC4;
+  border-top: 3px solid #80CBC4;
+  border-bottom-left-radius: 40px;
 }
 </style>
