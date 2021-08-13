@@ -1,35 +1,37 @@
 <template>
   <div class="file-card">
-    <v-container>
-      <v-row>
-        <v-col cols="1">
-          <v-badge
-              bordered
-              color="success"
-              icon="mdi-check"
-              overlap
-              :value="uploaded"
-          >
-            <v-icon color="teal" size="40px">mdi-{{icon}}</v-icon>
-          </v-badge>
-        </v-col>
-        <v-col cols="7">
-          <p class="file-card-text"> {{this.file.name}} </p>
-        </v-col>
-        <v-col align="right" cols="2">
-          <p class="file-card-progress"> {{this.progress}}% </p>
-        </v-col>
-        <v-col align="center" cols="2">
-          <v-btn text @click="upload" color="teal" :loading="uploading" v-show="!uploaded"> 重新上传 </v-btn>
-        </v-col>
-      </v-row>
-      <v-row dense>
-        <v-col>
-          <v-progress-linear v-model="progress" color="teal">
-          </v-progress-linear>
-        </v-col>
-      </v-row>
-    </v-container>
+    <div class="file-content">
+      <v-container>
+        <v-row>
+          <v-col cols="1">
+            <v-badge
+                bordered
+                color="success"
+                icon="mdi-check"
+                overlap
+                :value="uploaded"
+            >
+              <v-icon color="teal" size="40px">mdi-{{icon}}</v-icon>
+            </v-badge>
+          </v-col>
+          <v-col cols="7">
+            <p class="file-card-text"> {{this.file.name}} </p>
+          </v-col>
+          <v-col align="right" cols="2">
+            <p class="file-card-progress"> {{this.progress}}% </p>
+          </v-col>
+          <v-col align="center" cols="2">
+            <v-btn text @click="upload" color="teal" :loading="uploading"> 重新上传 </v-btn>
+          </v-col>
+        </v-row>
+        <v-row dense>
+          <v-col>
+            <v-progress-linear v-model="progress" color="teal">
+            </v-progress-linear>
+          </v-col>
+        </v-row>
+      </v-container>
+    </div>
   </div>
 </template>
 
@@ -146,14 +148,16 @@ export default {
 
 <style scoped>
 .file-card{
-  background : white;
-
   border-bottom-left-radius: 30px;
   border-top-right-radius: 6px;
   border-bottom: 2px solid #00838f;
-  border-right: 4px solid #00838f;
+  padding: 10px 15px;
+}
+.file-content{
+  background : white;
   width: 600px;
-  margin: 0;
+  border-radius: 20px;
+  border: 3px solid teal;
 }
 .file-card-text{
   font-family: "Microsoft YaHei UI", serif;
@@ -171,7 +175,7 @@ export default {
   font-size: 14px;
   color: #00796B;
   padding: 0;
-  margin: 6px 0 0 0;
+  margin: 8px 0 0 0;
   text-align: right;
 }
 </style>

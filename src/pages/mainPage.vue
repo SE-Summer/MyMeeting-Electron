@@ -34,8 +34,8 @@
               <div>会议主题 : {{GLOBAL.roomInfo.topic}}</div>
               <div>会议号 : {{GLOBAL.roomInfo.id}}</div>
               <div>会议密码 : {{GLOBAL.roomInfo.password}}</div>
-              <div>会议开始时间 : {{GLOBAL.roomInfo.start_time}}</div>
-              <div>会议开始时间 : {{GLOBAL.roomInfo.end_time}}</div>
+              <div>开始时间 : {{GLOBAL.roomInfo.start_time}}</div>
+              <div>结束时间 : {{GLOBAL.roomInfo.end_time}}</div>
             </v-card-text>
           </v-card>
         </v-menu>
@@ -48,17 +48,14 @@
       <v-spacer></v-spacer>
 
       <div>
-        <v-chip small style="color: gray; font-weight: lighter">
+        <v-chip small>
           <v-icon left>
             mdi-clock-outline
           </v-icon>
-          00:00
+          {{currTime}}
         </v-chip>
-        <v-btn small icon color="gray" style="margin-left: 5px">
-          <v-icon>mdi-window-restore</v-icon>
-        </v-btn>
-        <v-btn small icon color="red" style="margin-left: 5px" @click="leaveMeeting">
-          <v-icon>mdi-exit-to-app</v-icon>
+        <v-btn text color="red" @click="leaveMeeting">
+          <v-icon color="red" left size="20">mdi-exit-to-app</v-icon>退出
         </v-btn>
       </div>
 
@@ -165,7 +162,7 @@
       >
         <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="10px" offset-y="15px">
           <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>
-            <v-list-item-avatar style="border: 1px solid teal" size="44">
+            <v-list-item-avatar style="border: 1px solid gray" size="44">
               <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
@@ -179,7 +176,7 @@
               </v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title align="center" style="font-size: 18px; font-weight: bold; width: 120px">
+              <v-list-item-title align="center" style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 3px">
                 {{GLOBAL.userInfo.nickname}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
@@ -204,7 +201,7 @@
           <v-list-item style="width: 100%" dense
                :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostToken === user.getPeerInfo().id}]"
           >
-            <v-list-item-avatar style="border: 1px solid teal" size="44">
+            <v-list-item-avatar style="border: 1px solid gray" size="44">
               <v-img :src="user.getPeerInfo().avatar">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
@@ -218,7 +215,7 @@
               </v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title style="font-size: 18px; font-weight: bold; width: 120px" align="center">
+              <v-list-item-title style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 3px" align="center">
                 {{user.getPeerInfo().displayName}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
@@ -229,7 +226,7 @@
                         v-bind="attrs"
                         v-on="on"
                         icon>
-                      <v-icon size="20">mdi-cog-outline</v-icon>
+                      <v-icon size="20" color="teal">mdi-cog-outline</v-icon>
                     </v-btn>
                   </template>
                   <v-list class="white" dense>
@@ -271,37 +268,31 @@
             link
         >
           <v-list-item-content>
-            <v-hover v-slot="{hover}">
               <v-card
                   height="150px"
-                  outlined
-                  elevation="13">
-                <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" process-video-type="blur" style="width: 100%; height: 100%"></my-video>
-                <template>
-                  <v-expand-transition>
-                    <div
-                        v-if="hover"
-                        class="d-flex transition-fast-in-fast-out white black--text v-card--reveal"
-                        style="height: 20%;">
-                      <p id="rightSideBarText">
-                        {{user.displayName}}
-                      </p>
-                      <v-spacer></v-spacer>
-                      <v-btn icon @click="sub2Main(index)">
-                        <v-icon color="blue lighten-2">
-                          mdi-account-star
-                        </v-icon>
-                      </v-btn>
-                      <v-btn icon @click="removeSubFollowUser(index)">
-                        <v-icon color="yellow darken-3">
-                          mdi-close
-                        </v-icon>
-                      </v-btn>
-                    </div>
-                  </v-expand-transition>
-                </template>
+                  outlined>
+
+                <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" process-video-type="blur"
+                          style="width: 100%; height: 100%"></my-video>
+                <div
+                    class="d-flex white black--text v-card--reveal"
+                    style="height: 15%; margin-bottom: 10px">
+                  <p id="rightSideBarText" style="text-align: center">
+                    {{user.displayName}}
+                  </p>
+                  <v-spacer></v-spacer>
+                  <v-btn icon @click="sub2Main(index)">
+                    <v-icon color="teal">
+                      mdi-account-star
+                    </v-icon>
+                  </v-btn>
+                  <v-btn icon @click="removeSubFollowUser(index)">
+                    <v-icon color="teal">
+                      mdi-close
+                    </v-icon>
+                  </v-btn>
+                </div>
               </v-card>
-            </v-hover>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -334,7 +325,7 @@
               <div style="display: inline-block" class="messageCard">
                   <v-avatar
                       color="grey darken-1"
-                      size="35"
+                      size="30"
                       style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
@@ -351,20 +342,20 @@
                     </v-img>
                   </v-avatar>
                   <div style="display: inline-block; font-size: 20px">
-                      <span style="font-weight: bold">{{(msg.fromMyself) ?
+                      <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
                           GLOBAL.userInfo.nickname :
                           mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
-                    <span style="margin:0 20px">{{moment(msg.timestamp).format('hh:mm:ss')}}</span>
                   </div>
                 <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
                 <upload-file
                     :file="msg.file"
                     v-else-if="msg.type === 'file'&&msg.fromMyself"
-                    @file-sended="sendFile" style="margin-top:20px"></upload-file>
-                <download-file :message="msg" v-else style="margin-top:20px"></download-file>
+                    @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
+                <download-file :message="msg" v-else style="margin-top:15px"></download-file>
               </div>
+              <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
             </v-col>
           </v-row>
         </v-container>
@@ -580,7 +571,8 @@ export default {
       processVideoType : 'normal',
       stopRAFId : null,
       snack : false,
-      snackText : ""
+      snackText : "",
+      currTime : moment(moment()-moment(this.GLOBAL.roomInfo.start_time)).format('hh:mm:ss'),
     }
   },
   methods: {
@@ -914,7 +906,12 @@ export default {
         this.snack = true;
         setTimeout(()=>{this.$emit('back')},1600)
       }
-    }
+    },
+  },
+  mounted() {
+    setInterval(()=>{
+      this.currTime =  moment(moment()-moment(this.GLOBAL.roomInfo.start_time)).format('hh:mm:ss');
+    }, 1000)
   },
   async created() {
     this.GLOBAL.roomInfo.hostToken = "";
@@ -1064,7 +1061,7 @@ export default {
 
       return subUsers
     }
-  }
+  },
 }
 </script>
 
@@ -1117,20 +1114,19 @@ export default {
 }
 
 .messageCard {
-  padding: 10px 0 0 10px;
+  padding: 5px 0 0 10px;
   border-top: 6px solid #00838f;
+  border-right: 2px solid #00838f;
   border-top-right-radius: 30px;
   border-top-left-radius: 12px;
 }
 
 .messageText {
-  margin: 10px 0 0 15px;
-  padding: 0 20px 10px 20px;
+  margin: 5px 0 0 10px;
+  padding: 0 10px 5px 20px;
   display: block;
   border-bottom-left-radius: 30px;
-  border-top-right-radius: 6px;
   border-bottom: 2px solid #00838f;
-  border-right: 4px solid #00838f;
 }
 
 #chatContainer {
@@ -1142,14 +1138,12 @@ export default {
 
 #chatOverlay {
   position: absolute;
-  width: 1000px ;
+  width: 1000px;
   height: 560px;
   left: 0;
-  right: 0;
-  top: 0;
   bottom: 0;
-  margin: auto;
-  background-color: #88888855;
+  background-color: #ffffff66;
+  border: 2px solid #00838f44;
 }
 
 #chatOverlay::-webkit-scrollbar{
@@ -1157,8 +1151,8 @@ export default {
 }
 
 #rightSideBarText {
-  font-size: small;
-  margin-top: 18px;
+  margin-top: 14px;
+  margin-left: 4px;
 }
 
 .private-chat {
@@ -1166,7 +1160,7 @@ export default {
   font-weight: bold;
 }
 .not-host-item.host-item{
-  border-left: 8px solid #ff9800aa;
+  border-left: 3px solid #ff9800aa;
   border-top: 3px solid #ff9800aa;
   border-bottom-left-radius:40px;
   transition: 0.1s ease-in-out;
@@ -1178,14 +1172,14 @@ export default {
   transition: 0.1s ease-in-out;
 }
 .not-host-item{
-  border-left: 8px solid #90CBC488;
-  border-top: 2px solid #90CBC488;
+  border-left: 2px solid #00838f88;
+  border-top: 2px solid #00838f88;
   border-bottom-left-radius: 40px;
   transition: 0.1s ease-in-out;
 }
 .not-host-item:hover{
-  border-left: 12px solid #80CBC4;
-  border-top: 2px solid #80CBC4;
+  border-left: 12px solid #00838f;
+  border-top: 2px solid #00838f;
   border-bottom-left-radius: 40px;
   transition: 0.1s ease-in-out;
 }
