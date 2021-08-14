@@ -573,6 +573,7 @@ export default {
       snack : false,
       snackText : "",
       currTime : moment(moment()-moment(this.GLOBAL.roomInfo.start_time)).format('hh:mm:ss'),
+      clock: null,
     }
   },
   methods: {
@@ -909,9 +910,13 @@ export default {
     },
   },
   mounted() {
-    setInterval(()=>{
-      this.currTime =  moment(moment()-moment(this.GLOBAL.roomInfo.start_time)).format('hh:mm:ss');
+    this.clock = setInterval(()=>{
+      let dur = moment.duration(moment().format('x')-moment(this.GLOBAL.roomInfo.start_time).format('x'));
+      this.currTime = dur.hours() + ":" + dur.minutes() + ":" + dur.seconds();
     }, 1000)
+  },
+  destroyed() {
+    clearInterval(this.clock);
   },
   async created() {
     this.GLOBAL.roomInfo.hostToken = "";
