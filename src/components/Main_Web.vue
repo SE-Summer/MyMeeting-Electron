@@ -419,6 +419,7 @@ export default {
       ],
       idRules :[
         v => !!v || '请输入会议号',
+        v => /^[0-9]*$/.test(v) || '会议号是数字',
       ],
       passwordRules: [
         v => /^[0-9]{8}$/.test(v) || '密码是八位数字',
@@ -448,7 +449,7 @@ export default {
           this.snack = true;
           this.loading = false;
           this.click1 = false;
-          setTimeout(()=>{this.$emit('join');},1000)
+          setTimeout(()=>{this.$emit('join');},1600)
         }catch(error){
           if (error.response){
             this.snackText = error.response.data.error;
@@ -758,10 +759,10 @@ export default {
 }
 @keyframes effect {
   from {
-    background-image: linear-gradient(to bottom left, #00897B00, #00897Bdd);;
+    background-image: linear-gradient(to bottom left, #00897B00, #00897Bdd);
   }
   to {
-    background-image: linear-gradient(to bottom left, #00897Bdd, #00897B00);;
+    background-image: linear-gradient(to bottom left, #00897Bdd, #00897B00);
   }
 }
 </style>
