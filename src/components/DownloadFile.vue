@@ -150,20 +150,19 @@ export default {
 
 <style scoped>
 .file-card{
-  border-bottom-left-radius: 30px;
-  border-top-right-radius: 6px;
-  border-bottom: 2px solid #00838f;
+  border-left: 1px solid #00838f;
+  border-bottom: 1px solid #00838f;
   padding: 10px 15px;
 }
 .file-content{
   background : white;
   width: 600px;
-  border-radius: 20px;
-  border: 3px solid teal;
+  border-radius: 10px;
+  border: 2px solid teal;
 }
 .file-card-text{
   font-family: "Microsoft YaHei UI", serif;
-  font-size: 24px;
+  font-size: 22px;
   color: #00796B;
   padding: 0;
   width: 300px;
