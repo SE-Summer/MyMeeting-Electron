@@ -777,6 +777,7 @@ export default {
     async leaveMeeting () {
       try {
         this.closeRAF()
+        clearInterval(this.clockIntervalId)
         if (this.myMediaStream) {
           this.myMediaStream.getTracks().forEach((track) => {
             track.stop()
@@ -1004,6 +1005,8 @@ export default {
     moment.locale('zh-cn')
 
     this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
+
+    this.clockIntervalId = setInterval(this.addSec, 1000)
   },
   computed : {
     filteredUsers () {
