@@ -572,7 +572,7 @@ export default {
       stopRAFId : null,
       snack : false,
       snackText : "",
-      currTime : moment(moment()-moment(this.GLOBAL.roomInfo.start_time)).format('hh:mm:ss'),
+      currTime : "",
       clock: null,
     }
   },
