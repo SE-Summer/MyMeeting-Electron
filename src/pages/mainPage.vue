@@ -44,7 +44,7 @@
           <v-icon left>
             mdi-clock-outline
           </v-icon>
-          00:00
+          {{displayHour + ':' + displayMin + ':' + displaySec}}
         </v-chip>
         <v-btn small icon color="gray" style="margin-left: 5px">
           <v-icon>mdi-window-restore</v-icon>
@@ -575,7 +575,11 @@ export default {
       file : null,
       vb : null,
       processVideoType : 'normal',
-      stopRAFId : null
+      stopRAFId : null,
+      second : 0,
+      minute : 0,
+      hour : 0,
+      clockIntervalId : null
     }
   },
   methods: {
@@ -779,6 +783,7 @@ export default {
     async leaveMeeting () {
       try {
         this.closeRAF()
+        clearInterval(this.clockIntervalId)
         if (this.myMediaStream) {
           this.myMediaStream.getTracks().forEach((track) => {
             track.stop()
@@ -888,6 +893,22 @@ export default {
         cancelAnimationFrame(this.stopRAFId)
         this.stopRAFId = null
       }
+    },
+    addSec () {
+      ++this.second
+      if (this.second >= 60) {
+        this.second = 0
+        ++this.minute
+        if (this.minute >= 60) {
+          this.minute = 0
+          ++this.hour
+          if (this.hour > 99) {
+            this.hour = 0
+            this.minute = 0
+            this.second = 0
+          }
+        }
+      }
     }
   },
   async created() {
@@ -960,6 +981,8 @@ export default {
     moment.locale('zh-cn')
 
     this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
+
+    this.clockIntervalId = setInterval(this.addSec, 1000)
   },
   computed : {
     filteredUsers () {
@@ -1024,6 +1047,24 @@ export default {
     },
     isHost(){
       return this.GLOBAL.userInfo.id === this.GLOBAL.roomInfo.host
+    },
+    displaySec () {
+      if (this.second < 10) {
+        return '0' + this.second.toString()
+      }
+      return this.second.toString()
+    },
+    displayMin () {
+      if (this.minute < 10) {
+        return '0' + this.minute.toString()
+      }
+      return this.minute.toString()
+    },
+    displayHour () {
+      if (this.hour < 10) {
+        return '0' + this.hour.toString()
+      }
+      return this.hour.toString()
     }
   }
 }
