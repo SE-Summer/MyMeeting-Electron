@@ -180,12 +180,12 @@
                 {{GLOBAL.userInfo.nickname}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
-                <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
+                <v-btn icon @click="mainVideo(GLOBAL.userInfo.token)">
                   <v-icon color="teal" size="20">
                     mdi-account-star
                   </v-icon>
                 </v-btn>
-                <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
+                <v-btn icon @click="subVideo(GLOBAL.userInfo.token)">
                   <v-icon color="teal" size="20">
                     mdi-account-plus
                   </v-icon>
@@ -707,7 +707,7 @@ export default {
         return;
       }
 
-      if (userId === this.GLOBAL.userInfo.id) {
+      if (userId === this.GLOBAL.userInfo.token) {
         this.subFollowUserIds.push(userId)
         return
       }
@@ -728,7 +728,7 @@ export default {
         type : 'text',
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
-        fromPeerId : this.GLOBAL.userInfo.id,
+        fromPeerId : this.GLOBAL.userInfo.token,
         text : this.inputMsg,
         timestamp : timestamp,
         toPeerName : (!this.privateChatPeerId) ? '' :
@@ -754,7 +754,7 @@ export default {
           file : this.file,
           broadcast : true,
           fromMyself : true,
-          fromPeerId : this.GLOBAL.userInfo.id,
+          fromPeerId : this.GLOBAL.userInfo.token,
           timestamp : timestamp,
         })
 
@@ -764,8 +764,8 @@ export default {
       this.inputMsg += emoji.data
     },
     sub2Main (index) {
-      let userId = this.subFollowUserIds[index]
-      this.subFollowUserIds.splice(index, 1)
+      let userId = this.subFollowUsers[index].id
+      this.subFollowUserIds.splice(this.subFollowUserIds.indexOf(userId), 1)
       this.mainFollowUserId = userId
     },
     removeSubFollowUser (index) {
@@ -835,8 +835,8 @@ export default {
                 await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
             }
-            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.token && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.token) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.token)
             }
           }).catch((error) => {
         console.log(error)
@@ -1027,7 +1027,7 @@ export default {
           mediaStream : null
         }
       }
-      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
+      if (this.mainFollowUserId === this.GLOBAL.userInfo.token) {
         return {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
@@ -1049,9 +1049,9 @@ export default {
     },
     subFollowUsers () {
       let subUsers = []
-      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) > -1) {
+      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.token) > -1) {
         subUsers.push({
-          id: this.GLOBAL.userInfo.id,
+          id: this.GLOBAL.userInfo.token,
           displayName: this.GLOBAL.userInfo.nickname,
           mediaStream: this.myMediaStream
         })
