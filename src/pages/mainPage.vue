@@ -158,11 +158,10 @@
 
       <v-list
           class="pl-14"
-          shaped
       >
-        <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="10px" offset-y="15px">
+        <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="20px" offset-y="18px">
           <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>
-            <v-list-item-avatar style="border: 1px solid gray" size="44">
+            <v-list-item-avatar style="border: 1px solid gray" size="40">
               <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
@@ -176,7 +175,7 @@
               </v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title align="center" style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 3px">
+              <v-list-item-title align="center" style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 8px">
                 {{GLOBAL.userInfo.nickname}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
@@ -195,13 +194,13 @@
           </v-list-item>
         </v-badge>
         <v-badge :value="GLOBAL.roomInfo.hostToken === user.getPeerInfo().id" icon="mdi-crown" color="orange--text"
-                 overlap offset-x="10px" offset-y="15px"
+                 overlap offset-x="20px" offset-y="18px"
                  v-for="(user, index) in this.filteredUsers"
                  :key="index">
           <v-list-item style="width: 100%" dense
                :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostToken === user.getPeerInfo().id}]"
           >
-            <v-list-item-avatar style="border: 1px solid gray" size="44">
+            <v-list-item-avatar style="border: 1px solid gray" size="40">
               <v-img :src="user.getPeerInfo().avatar">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
@@ -215,7 +214,7 @@
               </v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 3px" align="center">
+              <v-list-item-title style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 8px" align="center">
                 {{user.getPeerInfo().displayName}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
@@ -341,7 +340,7 @@
                       </template>
                     </v-img>
                   </v-avatar>
-                  <div style="display: inline-block; font-size: 20px">
+                  <div style="display: inline-block; font-size: 18px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
                           GLOBAL.userInfo.nickname :
                           mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
@@ -572,7 +571,7 @@ export default {
       stopRAFId : null,
       snack : false,
       snackText : "",
-      currTime : moment(moment()-moment(this.GLOBAL.roomInfo.start_time)).format('hh:mm:ss'),
+      currTime : "",
       clock: null,
     }
   },
@@ -1123,18 +1122,16 @@ export default {
 
 .messageCard {
   padding: 5px 0 0 10px;
-  border-top: 6px solid #00838f;
-  border-right: 2px solid #00838f;
-  border-top-right-radius: 30px;
-  border-top-left-radius: 12px;
+  border-top: 1px solid #00838f;
+  border-right: 1px solid #00838f;
 }
 
 .messageText {
   margin: 5px 0 0 10px;
   padding: 0 10px 5px 20px;
   display: block;
-  border-bottom-left-radius: 30px;
-  border-bottom: 2px solid #00838f;
+  border-bottom: 1px solid #00838f;
+  border-left: 1px solid #00838f;
 }
 
 #chatContainer {
@@ -1148,8 +1145,11 @@ export default {
   position: absolute;
   width: 1000px;
   height: 560px;
+  top: 0;
   left: 0;
+  right: 0;
   bottom: 0;
+  margin: auto;
   background-color: #ffffff66;
   border: 2px solid #00838f44;
 }
@@ -1168,27 +1168,21 @@ export default {
   font-weight: bold;
 }
 .not-host-item.host-item{
-  border-left: 3px solid #ff9800aa;
-  border-top: 3px solid #ff9800aa;
-  border-bottom-left-radius:40px;
+  border-left: 1px solid #ff9800;
   transition: 0.1s ease-in-out;
 }
 .not-host-item.host-item:hover{
-  border-left: 12px solid #ff9800;
-  border-top: 3px solid #ff9800;
-  border-bottom-left-radius:40px;
+  background-color:  #ff980011;
+  border-left: 15px solid #ff9800;
   transition: 0.1s ease-in-out;
 }
 .not-host-item{
-  border-left: 2px solid #00838f88;
-  border-top: 2px solid #00838f88;
-  border-bottom-left-radius: 40px;
+  border-left: 1px solid #00838f;
   transition: 0.1s ease-in-out;
 }
 .not-host-item:hover{
-  border-left: 12px solid #00838f;
-  border-top: 2px solid #00838f;
-  border-bottom-left-radius: 40px;
+  background-color:  #00838f11;
+  border-left: 15px solid #00838f;
   transition: 0.1s ease-in-out;
 }
 </style>
