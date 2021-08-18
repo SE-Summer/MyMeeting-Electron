@@ -184,7 +184,7 @@
               </v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title align="center" style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 8px">
+              <v-list-item-title class="item-title" align="center" style="font-size: 18px;font-weight: bold;width: 120px;padding-top: 8px;">
                 {{GLOBAL.userInfo.nickname}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
@@ -231,7 +231,7 @@
               </v-img>
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title style="font-size: 18px; font-weight: bold; width: 120px; padding-top: 8px" align="center">
+              <v-list-item-title class="item-title" align="center" style="font-size: 18px;font-weight: bold;width: 120px;padding-top: 8px;">
                 {{user.getPeerInfo().displayName}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
@@ -579,8 +579,13 @@ export default {
       originVideoTracks : [],
       myMediaStream : new MediaStream(),
       myAudioStream : new MediaStream(),
+      myDisplayStream : new MediaStream(),
       video : false,
       audio : false,
+      display : false,
+      displayVideo: true,
+      displayAudio: true,
+      displaySourceId: null,
       moment : moment,
       placeholdOfMsg : '发送消息 to 所有人',
       privateChatPeerId : null,
@@ -635,11 +640,20 @@ export default {
         this.microIcon.color = 'teal'
       }
     },
-    screenSwitch () {
+    async screenSwitch () {
       if (this.screenIcon.icon === 'mdi-laptop') {
+        this.display = false
+        let tracks = this.myMediaStream.getTracks()
+        for (const track of tracks){
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myMediaStream.removeTrack(track)
+        }
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
       } else {
+        this.display = true
+        this.sendDisplayStream(this.display)
         this.screenIcon.icon = 'mdi-laptop'
         this.screenIcon.color = 'teal'
       }
@@ -804,6 +818,9 @@ export default {
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
+        this.myDisplayStream.getTracks().forEach((track) => {
+          track.stop()
+        })
         await this.mediaService.leaveMeeting()
       } catch (error) {
         console.log('[LEAVE]', error)
@@ -811,6 +828,37 @@ export default {
 
       this.$emit('back')
     },
+
+    async sendDisplayStream(){
+      for (let track of this.myMediaStream.getTracks()){
+        await this.mediaService.closeTrack(track)
+      }
+
+      let constraints;
+      if (this.displaySourceId){
+        constraints = {
+          audio: this.displayAudio ? {mandatory: {chromeMediaSource: 'desktop', chromeMediaSourceId: this.displaySourceId}} : false,
+          video: this.displayVideo ? {mandatory: {chromeMediaSource: 'desktop', chromeMediaSourceId: this.displaySourceId}} : false,
+        }
+      }else{
+        constraints = {
+          audio: this.displayAudio ? {mandatory: {chromeMediaSource: 'desktop'}} : false,
+          video: this.displayVideo ? {mandatory: {chromeMediaSource: 'desktop'}} : false,
+        }
+      }
+      navigator.mediaDevices.getUserMedia(constraints)
+          .then(async (mediaStream) => {
+            this.myMediaStream = new MediaStream(mediaStream.getTracks())
+            await this.mediaService.sendMediaStream(mediaStream)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+            }
+          }).catch((error) => {
+        console.log(error)
+      })
+
+    },
+
     async sendMediaStream (video, audio) {
       if (!video &&  !audio) {
         return
@@ -824,7 +872,7 @@ export default {
         await this.mediaService.closeTrack(track)
       }
 
-      for (let track of this.myAudioStream.getVideoTracks()){
+      for (let track of this.myAudioStream.getAudioTracks()){
         await this.mediaService.closeTrack(track)
       }
 
@@ -872,6 +920,8 @@ export default {
       }
     },
     muteAll(){
+      this.snackText = "已静音所有人";
+      this.snack = true;
       this.mediaService.mutePeer();
     },
     blurBackground () {
@@ -884,7 +934,7 @@ export default {
       this.vb.replaceBackground(frame)
       this.stopRAFId = requestAnimationFrame(this.replaceBackground)
     },
-    changeSettings(blur, replace, backgroundImg) {
+    changeSettings(blur, replace, backgroundImg, display) {
       if (blur) {
         this.processVideoType = 'blur'
       } else if (replace) {
@@ -895,9 +945,14 @@ export default {
       } else {
         this.processVideoType = 'normal'
       }
-
       if (this.video) {
         this.sendMediaStream(this.video, this.audio)
+      }
+      this.displayAudio = display.audio
+      this.displayVideo = display.video
+      this.displaySourceId = display.id
+      if (this.display){
+        this.sendDisplayStream()
       }
     },
     closeRAF () {
@@ -933,6 +988,7 @@ export default {
       let dur = moment.duration(moment().format('x')-moment(this.GLOBAL.roomInfo.start_time).format('x'));
       this.currTime = dur.hours() + ":" + dur.minutes() + ":" + dur.seconds();
     }, 1000)
+
   },
   destroyed() {
     clearInterval(this.clock);
@@ -1019,6 +1075,9 @@ export default {
       this.microIcon.icon = 'mdi-microphone-off'
       this.microIcon.color = 'gray'
     }
+
+    this.screenIcon.icon = 'mdi-laptop-off'
+    this.screenIcon.color = 'gray'
 
     moment.locale('zh-cn')
 
@@ -1206,5 +1265,10 @@ export default {
   background-color:  #00838f11;
   border-left: 15px solid #00838f;
   transition: 0.1s ease-in-out;
+}
+.item-avatar{
+}
+.item-avatar.has-audio{
+  border: 1px solid green;
 }
 </style>
