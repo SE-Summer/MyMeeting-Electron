@@ -20,7 +20,7 @@ export default {
         end_time : "",
         start_time: ""
     },
-    baseURL : "http://se-summer.cn:4446",
+    baseURL : "http://122.112.175.61:4446",
     openCameraWhenEnter : false,
     openMicrophoneWhenEnter : false,
     videoConstraint : {

@@ -24,21 +24,23 @@
           <v-tab>
             虚拟背景
           </v-tab>
+          <v-tab>
+            共享屏幕
+          </v-tab>
         </v-tabs>
       </v-card-title>
       <v-divider></v-divider>
       <v-tabs-items v-model="tab">
         <v-tab-item>
         </v-tab-item>
-        <v-tab-item style="margin-left: 25%">
+        <v-tab-item style="margin:0 25%">
           <v-switch
                   v-model="blurSwitch"
                   @click="clickVBSwitch('blur')"
                   label="背景虚化"
                   inset
                   dense
-                  color="teal"
-                  style="margin-left: 25%">
+                  color="teal">
           </v-switch>
           <v-switch
                   v-model="replaceSwitch"
@@ -46,8 +48,7 @@
                   label="虚拟背景"
                   inset
                   dense
-                  color="teal"
-                  style="margin-left: 25%">
+                  color="teal">
           </v-switch>
           <v-expand-transition>
             <div v-show="this.replaceSwitch" style="display: flex; align-items: center">
@@ -69,6 +70,30 @@
               </v-btn>
             </div>
           </v-expand-transition>
+        </v-tab-item>
+        <v-tab-item style="margin:0 25%">
+          <v-switch
+              v-model="displayVideo"
+              label="共享画面"
+              inset
+              dense
+              color="teal">
+          </v-switch>
+          <v-switch
+              v-model="displayAudio"
+              label="共享声音"
+              inset
+              dense
+              color="teal">
+          </v-switch>
+          <v-radio-group v-model="displaySourceId">
+            <v-radio
+                v-for="source in sources"
+                :key="source.id"
+                :label="source.name"
+                :value="source.id"
+            ></v-radio>
+          </v-radio-group>
         </v-tab-item>
       </v-tabs-items>
       <v-divider style="margin-top: 10px"></v-divider>
@@ -94,6 +119,8 @@
 </template>
 
 <script>
+  import {desktopCapturer} from "electron";
+
   export default {
     name: "settingDialog",
     components: {},
@@ -112,7 +139,7 @@
         this.oldBlurSwitch = this.blurSwitch
         this.oldReplaceSwitch = this.replaceSwitch
         this.oldImgIter = this.imgIter
-        this.$emit('changeSettings', this.blurSwitch, this.replaceSwitch, this.backgroundImgs[this.imgIter])
+        this.$emit('changeSettings', this.blurSwitch, this.replaceSwitch, this.backgroundImgs[this.imgIter], {video: this.displayVideo, audio: this.displayAudio, id: this.displaySourceId})
         this.dialog = false
       },
       cancelChangeSetting () {
@@ -127,6 +154,12 @@
       next () {
         this.imgIter = (this.imgIter === this.backgroundImgs.length - 1) ? 0 : this.imgIter + 1
       }
+    },
+    mounted() {
+      desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
+          sources=>{
+            this.sources = sources
+          })
     },
     data () {
       return{
@@ -145,6 +178,10 @@
         oldReplaceSwitch : false,
         imgIter : 0,
         oldImgIter : 0,
+        displayVideo: true,
+        displayAudio: true,
+        displaySourceId: null,
+        sources: [],
       }
     }
   }
