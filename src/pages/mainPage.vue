@@ -152,6 +152,7 @@
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
               clearable
+              style="margin-right: 5px"
               v-model="filterText"></v-text-field>
         </div>
       </v-sheet>
@@ -161,14 +162,22 @@
       >
         <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="20px" offset-y="18px">
           <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="0px" icon="mdi-video-outline" color="green--text" transition="fade-transition" v-show="this.video">
+              </v-badge>
+            </v-fade-transition>
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="15px" icon="mdi-microphone-outline" color="green--text" transition="scale-transition" v-show="this.audio">
+              </v-badge>
+            </v-fade-transition>
             <v-list-item-avatar style="border: 1px solid gray" size="40">
               <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
                     <v-progress-circular
-                        indeterminate
-                        size="20"
-                        color="grey lighten-5"
+                            indeterminate
+                            size="20"
+                            color="grey lighten-5"
                     ></v-progress-circular>
                   </div>
                 </template>
@@ -200,6 +209,14 @@
           <v-list-item style="width: 100%" dense
                :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostToken === user.getPeerInfo().id}]"
           >
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="0px" icon="mdi-video-outline" color="green--text" transition="fade-transition" v-show="user.hasVideo()">
+              </v-badge>
+            </v-fade-transition>
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="15px" icon="mdi-microphone-outline" color="green--text" transition="scale-transition" v-show="user.hasAudio()">
+              </v-badge>
+            </v-fade-transition>
             <v-list-item-avatar style="border: 1px solid gray" size="40">
               <v-img :src="user.getPeerInfo().avatar">
                 <template v-slot:placeholder>
@@ -317,48 +334,50 @@
           </v-card>
         </v-hover>
       </div>
-      <div id="chatOverlay" v-show="chatOverlay">
-        <v-container id="chatContainer">
-          <v-row v-for="(msg, index) in allMsgs" :key="index">
-            <v-col>
-              <div style="display: inline-block" class="messageCard">
+      <v-fade-transition>
+        <div id="chatOverlay" v-show="chatOverlay">
+          <v-container id="chatContainer">
+            <v-row v-for="(msg, index) in allMsgs" :key="index">
+              <v-col>
+                <div style="display: inline-block" class="messageCard">
                   <v-avatar
-                      color="grey darken-1"
-                      size="30"
-                      style="margin-right: 8px;">
+                          color="grey darken-1"
+                          size="30"
+                          style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
                         mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
                       <template v-slot:placeholder>
                         <div style="margin-top: 7px">
                           <v-progress-circular
-                              indeterminate
-                              size="20"
-                              color="grey lighten-5"
+                                  indeterminate
+                                  size="20"
+                                  color="grey lighten-5"
                           ></v-progress-circular>
                         </div>
                       </template>
                     </v-img>
                   </v-avatar>
-                  <div style="display: inline-block; font-size: 18px">
+                  <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
-                          GLOBAL.userInfo.nickname :
-                          mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              GLOBAL.userInfo.nickname :
+                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
-                <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
-                <upload-file
-                    :file="msg.file"
-                    v-else-if="msg.type === 'file'&&msg.fromMyself"
-                    @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
-                <download-file :message="msg" v-else style="margin-top:15px"></download-file>
-              </div>
-              <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
-            </v-col>
-          </v-row>
-        </v-container>
-      </div>
+                  <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
+                  <upload-file
+                          :file="msg.file"
+                          v-else-if="msg.type === 'file'&&msg.fromMyself"
+                          @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
+                  <download-file :message="msg" v-else style="margin-top:15px"></download-file>
+                </div>
+                <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </div>
+      </v-fade-transition>
       <canvas id="invisibleCanvas" v-show="false"></canvas>
       <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
@@ -1124,14 +1143,17 @@ export default {
   padding: 5px 0 0 10px;
   border-top: 1px solid #00838f;
   border-right: 1px solid #00838f;
+  border-left: 1px solid #00838f;
+  border-bottom: 1px solid #00838f;
+  border-bottom-right-radius: 10px;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
 }
 
 .messageText {
   margin: 5px 0 0 10px;
   padding: 0 10px 5px 20px;
   display: block;
-  border-bottom: 1px solid #00838f;
-  border-left: 1px solid #00838f;
 }
 
 #chatContainer {
