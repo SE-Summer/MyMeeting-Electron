@@ -152,6 +152,7 @@
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
               clearable
+              style="margin-right: 5px"
               v-model="filterText"></v-text-field>
         </div>
       </v-sheet>
@@ -161,14 +162,22 @@
       >
         <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="20px" offset-y="18px">
           <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>
-            <v-list-item-avatar :class="['item-avatar', {'has-audio':audio}]" size="40">
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="0px" icon="mdi-video-outline" color="green--text" transition="fade-transition" v-show="this.video">
+              </v-badge>
+            </v-fade-transition>
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="15px" icon="mdi-microphone-outline" color="green--text" transition="scale-transition" v-show="this.audio">
+              </v-badge>
+            </v-fade-transition>
+            <v-list-item-avatar style="border: 1px solid gray" size="40">
               <v-img :src="GLOBAL.baseURL + GLOBAL.userInfo.portrait">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
                     <v-progress-circular
-                        indeterminate
-                        size="20"
-                        color="grey lighten-5"
+                            indeterminate
+                            size="20"
+                            color="grey lighten-5"
                     ></v-progress-circular>
                   </div>
                 </template>
@@ -179,12 +188,12 @@
                 {{GLOBAL.userInfo.nickname}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
-                <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
+                <v-btn icon @click="mainVideo(GLOBAL.userInfo.token)">
                   <v-icon color="teal" size="20">
                     mdi-account-star
                   </v-icon>
                 </v-btn>
-                <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
+                <v-btn icon @click="subVideo(GLOBAL.userInfo.token)">
                   <v-icon color="teal" size="20">
                     mdi-account-plus
                   </v-icon>
@@ -200,7 +209,15 @@
           <v-list-item style="width: 100%" dense
                :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostToken === user.getPeerInfo().id}]"
           >
-            <v-list-item-avatar :class="['item-avatar', {'has-audio':user.hasAudio}]" style="border: 1px solid gray" size="40">
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="0px" icon="mdi-video-outline" color="green--text" transition="fade-transition" v-show="user.hasVideo()">
+              </v-badge>
+            </v-fade-transition>
+            <v-fade-transition>
+              <v-badge overlap offset-x="-40px" offset-y="15px" icon="mdi-microphone-outline" color="green--text" transition="scale-transition" v-show="user.hasAudio()">
+              </v-badge>
+            </v-fade-transition>
+            <v-list-item-avatar style="border: 1px solid gray" size="40">
               <v-img :src="user.getPeerInfo().avatar">
                 <template v-slot:placeholder>
                   <div style="margin-top: 7px; margin-left: 8px">
@@ -317,48 +334,50 @@
           </v-card>
         </v-hover>
       </div>
-      <div id="chatOverlay" v-show="chatOverlay">
-        <v-container id="chatContainer">
-          <v-row v-for="(msg, index) in allMsgs" :key="index">
-            <v-col>
-              <div style="display: inline-block" class="messageCard">
+      <v-fade-transition>
+        <div id="chatOverlay" v-show="chatOverlay">
+          <v-container id="chatContainer">
+            <v-row v-for="(msg, index) in allMsgs" :key="index">
+              <v-col>
+                <div style="display: inline-block" class="messageCard">
                   <v-avatar
-                      color="grey darken-1"
-                      size="30"
-                      style="margin-right: 8px;">
+                          color="grey darken-1"
+                          size="30"
+                          style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
                         mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
                       <template v-slot:placeholder>
                         <div style="margin-top: 7px">
                           <v-progress-circular
-                              indeterminate
-                              size="20"
-                              color="grey lighten-5"
+                                  indeterminate
+                                  size="20"
+                                  color="grey lighten-5"
                           ></v-progress-circular>
                         </div>
                       </template>
                     </v-img>
                   </v-avatar>
-                  <div style="display: inline-block; font-size: 18px">
+                  <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
-                          GLOBAL.userInfo.nickname :
-                          mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              GLOBAL.userInfo.nickname :
+                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
-                <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
-                <upload-file
-                    :file="msg.file"
-                    v-else-if="msg.type === 'file'&&msg.fromMyself"
-                    @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
-                <download-file :message="msg" v-else style="margin-top:15px"></download-file>
-              </div>
-              <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
-            </v-col>
-          </v-row>
-        </v-container>
-      </div>
+                  <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
+                  <upload-file
+                          :file="msg.file"
+                          v-else-if="msg.type === 'file'&&msg.fromMyself"
+                          @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
+                  <download-file :message="msg" v-else style="margin-top:15px"></download-file>
+                </div>
+                <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </div>
+      </v-fade-transition>
       <canvas id="invisibleCanvas" v-show="false"></canvas>
       <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
@@ -720,7 +739,7 @@ export default {
         return;
       }
 
-      if (userId === this.GLOBAL.userInfo.id) {
+      if (userId === this.GLOBAL.userInfo.token) {
         this.subFollowUserIds.push(userId)
         return
       }
@@ -741,7 +760,7 @@ export default {
         type : 'text',
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
-        fromPeerId : this.GLOBAL.userInfo.id,
+        fromPeerId : this.GLOBAL.userInfo.token,
         text : this.inputMsg,
         timestamp : timestamp,
         toPeerName : (!this.privateChatPeerId) ? '' :
@@ -767,7 +786,7 @@ export default {
           file : this.file,
           broadcast : true,
           fromMyself : true,
-          fromPeerId : this.GLOBAL.userInfo.id,
+          fromPeerId : this.GLOBAL.userInfo.token,
           timestamp : timestamp,
         })
 
@@ -777,8 +796,8 @@ export default {
       this.inputMsg += emoji.data
     },
     sub2Main (index) {
-      let userId = this.subFollowUserIds[index]
-      this.subFollowUserIds.splice(index, 1)
+      let userId = this.subFollowUsers[index].id
+      this.subFollowUserIds.splice(this.subFollowUserIds.indexOf(userId), 1)
       this.mainFollowUserId = userId
     },
     removeSubFollowUser (index) {
@@ -882,8 +901,8 @@ export default {
                 await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
             }
-            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.token && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.token) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.token)
             }
           }).catch((error) => {
         console.log(error)
@@ -1085,7 +1104,7 @@ export default {
           mediaStream : null
         }
       }
-      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
+      if (this.mainFollowUserId === this.GLOBAL.userInfo.token) {
         return {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
@@ -1107,9 +1126,9 @@ export default {
     },
     subFollowUsers () {
       let subUsers = []
-      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) > -1) {
+      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.token) > -1) {
         subUsers.push({
-          id: this.GLOBAL.userInfo.id,
+          id: this.GLOBAL.userInfo.token,
           displayName: this.GLOBAL.userInfo.nickname,
           mediaStream: this.myMediaStream
         })
@@ -1183,14 +1202,17 @@ export default {
   padding: 5px 0 0 10px;
   border-top: 1px solid #00838f;
   border-right: 1px solid #00838f;
+  border-left: 1px solid #00838f;
+  border-bottom: 1px solid #00838f;
+  border-bottom-right-radius: 10px;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
 }
 
 .messageText {
   margin: 5px 0 0 10px;
   padding: 0 10px 5px 20px;
   display: block;
-  border-bottom: 1px solid #00838f;
-  border-left: 1px solid #00838f;
 }
 
 #chatContainer {

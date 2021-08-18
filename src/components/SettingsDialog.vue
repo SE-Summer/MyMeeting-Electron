@@ -166,11 +166,11 @@
         dialog : false,
         tab : null,
         backgroundImgs : [
-          'http://se-summer.cn:4446/static/images/bg_1.jpg',
-          'http://se-summer.cn:4446/static/images/bg_2.jpg',
-          'http://se-summer.cn:4446/static/images/bg_3.jpg',
-          'http://se-summer.cn:4446/static/images/bg_4.jpg',
-          'http://se-summer.cn:4446/static/images/bg_5.jpg'
+          'http://122.112.175.61:4446/static/images/bg_1.jpg',
+          'http://122.112.175.61:4446/static/images/bg_2.jpg',
+          'http://122.112.175.61:4446/static/images/bg_3.jpg',
+          'http://122.112.175.61:4446/static/images/bg_4.jpg',
+          'http://122.112.175.61:4446/static/images/bg_5.jpg'
         ],
         blurSwitch : false,
         oldBlurSwitch : false,
