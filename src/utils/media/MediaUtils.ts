@@ -1,12 +1,12 @@
 
-export const closeMediaStream = (stream) => {
+export const closeMediaStream: (MediaStream) => void = (stream: MediaStream) => {
     stream.getTracks().forEach((track) => {
         track.stop();
         stream.removeTrack(track);
     })
 }
 
-export const timeoutCallback = (callback, timeout) => {
+export const timeoutCallback = (callback, timeout: number) => {
     let called = false;
 
     const interval = setTimeout(() => {

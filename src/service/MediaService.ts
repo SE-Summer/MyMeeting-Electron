@@ -334,7 +334,7 @@ export class MediaService
         }
 
         try {
-            let tracks: MediaStreamTrack[] = [];
+            const tracks: MediaStreamTrack[] = [];
             this.sendingTracks.forEach((track) => {
                 tracks.push(track);
             });
@@ -360,7 +360,7 @@ export class MediaService
                         track,
                         appData: { source },
                         // encodings: SIMULCASTENCODING,
-                        codecOptions: { videoGoogleStartBitrate : 1000 },
+                        // codecOptions: { videoGoogleStartBitrate : 1000 },
                         // codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
                     }
                 } else {
