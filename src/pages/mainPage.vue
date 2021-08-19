@@ -64,7 +64,7 @@
     <v-navigation-drawer
         v-model="drawer"
         app
-        width="320"
+        width="280"
     >
       <v-navigation-drawer
           v-model="drawer"
@@ -116,6 +116,14 @@
           <v-icon>{{ this.screenIcon.icon }}</v-icon>
         </v-btn>
 
+        <v-btn
+                icon
+                class="d-block text-center mx-auto mb-9"
+                :color="captionIcon.color"
+                @click="captionSwitch">
+          <v-icon>{{ this.captionIcon.icon }}</v-icon>
+        </v-btn>
+
         <setting-dialog @changeSettings="changeSettings"></setting-dialog>
 
         <v-btn
@@ -152,7 +160,7 @@
               prepend-inner-icon="mdi-account-circle-outline"
               outlined
               clearable
-              style="margin-right: 5px"
+              style="margin-left: 2%; width: 95%"
               v-model="filterText"></v-text-field>
         </div>
       </v-sheet>
@@ -284,6 +292,7 @@
             link
         >
           <v-list-item-content>
+            <v-hover v-slot="{hover}">
               <v-card
                   height="150px"
                   outlined>
@@ -293,22 +302,26 @@
                 <div
                     class="d-flex white black--text v-card--reveal"
                     style="height: 15%; margin-bottom: 10px">
-                  <p id="rightSideBarText" style="text-align: center">
+                  <p id="rightSideBarText" style="font-size: 12px; font-weight: bold; margin-left: 40%">
                     {{user.displayName}}
                   </p>
-                  <v-spacer></v-spacer>
-                  <v-btn icon @click="sub2Main(index)">
-                    <v-icon color="teal">
-                      mdi-account-star
-                    </v-icon>
-                  </v-btn>
-                  <v-btn icon @click="removeSubFollowUser(index)">
-                    <v-icon color="teal">
-                      mdi-close
-                    </v-icon>
-                  </v-btn>
+                  <v-fab-transition>
+                    <div style="margin-left: 20%" v-if="hover">
+                      <v-btn icon x-small @click="sub2Main(index)">
+                        <v-icon color="teal">
+                          mdi-account-star
+                        </v-icon>
+                      </v-btn>
+                      <v-btn icon x-small @click="removeSubFollowUser(index)">
+                        <v-icon color="teal">
+                          mdi-close
+                        </v-icon>
+                      </v-btn>
+                    </div>
+                  </v-fab-transition>
                 </div>
               </v-card>
+            </v-hover>
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -336,7 +349,7 @@
       </div>
       <v-fade-transition>
         <div id="chatOverlay" v-show="chatOverlay">
-          <v-container id="chatContainer">
+          <v-container id="chatContainer" :class="['chatContainer-full', {'chatContainer-half' : captionIcon.icon === 'mdi-translate'}]">
             <v-row v-for="(msg, index) in allMsgs" :key="index">
               <v-col>
                 <div style="display: inline-block" class="messageCard">
@@ -376,6 +389,46 @@
               </v-col>
             </v-row>
           </v-container>
+          <v-container id="captionContainer" v-if="captionIcon.icon === 'mdi-translate'">
+              <v-row v-for="(msg, index) in allMsgs" :key="index">
+                <v-col>
+                  <div style="display: inline-block" class="messageCard">
+                    <v-avatar
+                            color="grey darken-1"
+                            size="30"
+                            style="margin-right: 8px;">
+                      <v-img :src="(msg.fromMyself) ?
+                        GLOBAL.baseURL + GLOBAL.userInfo.portrait :
+                        mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                        <template v-slot:placeholder>
+                          <div style="margin-top: 7px">
+                            <v-progress-circular
+                                    indeterminate
+                                    size="20"
+                                    color="grey lighten-5"
+                            ></v-progress-circular>
+                          </div>
+                        </template>
+                      </v-img>
+                    </v-avatar>
+                    <div style="display: inline-block; font-size: 15px">
+                      <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
+                              GLOBAL.userInfo.nickname :
+                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                      <span v-if="!msg.broadcast"> to </span>
+                      <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
+                    </div>
+                    <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
+                    <upload-file
+                            :file="msg.file"
+                            v-else-if="msg.type === 'file'&&msg.fromMyself"
+                            @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
+                    <download-file :message="msg" v-else style="margin-top:15px"></download-file>
+                  </div>
+                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
+                </v-col>
+              </v-row>
+            </v-container>
         </div>
       </v-fade-transition>
       <canvas id="invisibleCanvas" v-show="false"></canvas>
@@ -542,8 +595,12 @@ export default {
         color : 'teal'
       },
       screenIcon : {
-        icon : 'mdi-laptop',
-        color : 'teal'
+        icon : 'mdi-laptop-off',
+        color : 'gray'
+      },
+      captionIcon : {
+        icon : 'mdi-translate-off',
+        color : 'gray'
       },
       chatBadge : '#00000000',
       chatOverlay : false,
@@ -653,9 +710,18 @@ export default {
         this.screenIcon.color = 'gray'
       } else {
         this.display = true
-        this.sendDisplayStream(this.display)
+        await this.sendDisplayStream(this.display)
         this.screenIcon.icon = 'mdi-laptop'
         this.screenIcon.color = 'teal'
+      }
+    },
+    captionSwitch () {
+      if (this.captionIcon.icon === 'mdi-translate') {
+        this.captionIcon.icon = 'mdi-translate-off'
+        this.captionIcon.color = 'gray'
+      } else {
+        this.captionIcon.icon = 'mdi-translate'
+        this.captionIcon.color = 'teal'
       }
     },
     switchChat (boolean) {
@@ -986,7 +1052,10 @@ export default {
   mounted() {
     this.clock = setInterval(()=>{
       let dur = moment.duration(moment().format('x')-moment(this.GLOBAL.roomInfo.start_time).format('x'));
-      this.currTime = dur.hours() + ":" + dur.minutes() + ":" + dur.seconds();
+      let hours = dur.hours()
+      let minutes = dur.minutes()
+      let seconds = dur.seconds()
+      this.currTime = ((hours < 10) ? ('0' + hours) : hours) + ":" + ((minutes < 10) ? ('0' + minutes) : minutes) + ":" + ((seconds < 10) ? ('0' + seconds) : seconds);
     }, 1000)
 
   },
@@ -1075,9 +1144,6 @@ export default {
       this.microIcon.icon = 'mdi-microphone-off'
       this.microIcon.color = 'gray'
     }
-
-    this.screenIcon.icon = 'mdi-laptop-off'
-    this.screenIcon.color = 'gray'
 
     moment.locale('zh-cn')
 
@@ -1181,7 +1247,6 @@ export default {
 .v-card--reveal {
   align-items: center;
   bottom: -10px;
-  justify-content: center;
   background-color: #aaaaaa55;
   position: absolute;
   width: 100%;
@@ -1213,13 +1278,38 @@ export default {
   margin: 5px 0 0 10px;
   padding: 0 10px 5px 20px;
   display: block;
+    max-width: 350px;
+    word-wrap: break-word;
 }
 
-#chatContainer {
-  width: 100%;
+.chatContainer-full {
+    width: 100%;
+    height: 100%;
+    text-align: left;
+    overflow: auto;
+}
+
+.chatContainer-half {
+  width: 50%;
   height: 100%;
   text-align: left;
   overflow: auto;
+}
+
+#captionContainer {
+    width: 50%;
+    height: 100%;
+    text-align: left;
+    overflow: auto;
+    border-left: 1px solid teal;
+}
+
+#chatContainer::-webkit-scrollbar{
+    display: none;
+}
+
+#captionContainer::-webkit-scrollbar{
+    display: none;
 }
 
 #chatOverlay {
@@ -1233,10 +1323,8 @@ export default {
   margin: auto;
   background-color: #ffffff66;
   border: 2px solid #00838f44;
-}
-
-#chatOverlay::-webkit-scrollbar{
-  display: none;
+    display: flex;
+    justify-content: flex-start;
 }
 
 #rightSideBarText {
