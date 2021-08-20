@@ -196,12 +196,12 @@
                 {{GLOBAL.userInfo.nickname}}
               </v-list-item-title>
               <v-list-item-subtitle align="center">
-                <v-btn icon @click="mainVideo(GLOBAL.userInfo.token)">
+                <v-btn icon @click="mainVideo(GLOBAL.userInfo.id)">
                   <v-icon color="teal" size="20">
                     mdi-account-star
                   </v-icon>
                 </v-btn>
-                <v-btn icon @click="subVideo(GLOBAL.userInfo.token)">
+                <v-btn icon @click="subVideo(GLOBAL.userInfo.id)">
                   <v-icon color="teal" size="20">
                     mdi-account-plus
                   </v-icon>
@@ -210,12 +210,12 @@
             </v-list-item-content>
           </v-list-item>
         </v-badge>
-        <v-badge :value="GLOBAL.roomInfo.hostToken === user.getPeerInfo().id" icon="mdi-crown" color="orange--text"
+        <v-badge :value="GLOBAL.roomInfo.hostId === user.getPeerInfo().id" icon="mdi-crown" color="orange--text"
                  overlap offset-x="20px" offset-y="18px"
                  v-for="(user, index) in this.filteredUsers"
                  :key="index">
           <v-list-item style="width: 100%" dense
-               :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostToken === user.getPeerInfo().id}]"
+               :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostId === user.getPeerInfo().id}]"
           >
             <v-fade-transition>
               <v-badge overlap offset-x="-40px" offset-y="0px" icon="mdi-video-outline" color="green--text" transition="fade-transition" v-show="user.hasVideo()">
@@ -390,16 +390,14 @@
             </v-row>
           </v-container>
           <v-container id="captionContainer" v-if="captionIcon.icon === 'mdi-translate'">
-              <v-row v-for="(msg, index) in allMsgs" :key="index">
+              <v-row v-for="(caption, index) in allCaptions" :key="index">
                 <v-col>
                   <div style="display: inline-block" class="messageCard">
                     <v-avatar
                             color="grey darken-1"
                             size="30"
                             style="margin-right: 8px;">
-                      <v-img :src="(msg.fromMyself) ?
-                        GLOBAL.baseURL + GLOBAL.userInfo.portrait :
-                        mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                      <v-img :src="mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().avatar">
                         <template v-slot:placeholder>
                           <div style="margin-top: 7px">
                             <v-progress-circular
@@ -412,20 +410,12 @@
                       </v-img>
                     </v-avatar>
                     <div style="display: inline-block; font-size: 15px">
-                      <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
-                              GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
-                      <span v-if="!msg.broadcast"> to </span>
-                      <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
+                      <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">
+                             {{mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().displayName}}</span>
                     </div>
-                    <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
-                    <upload-file
-                            :file="msg.file"
-                            v-else-if="msg.type === 'file'&&msg.fromMyself"
-                            @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
-                    <download-file :message="msg" v-else style="margin-top:15px"></download-file>
+                    <p class="messageText">{{caption.text}}</p>
                   </div>
-                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(msg.timestamp).format('HH:mm:ss')}}</div>
+                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(caption.timestamp).format('HH:mm:ss')}}</div>
                 </v-col>
               </v-row>
             </v-container>
@@ -654,6 +644,7 @@ export default {
       snackText : "",
       currTime : "",
       clock: null,
+      allCaptions : []
     }
   },
   methods: {
@@ -715,11 +706,15 @@ export default {
         this.screenIcon.color = 'teal'
       }
     },
-    captionSwitch () {
+    async captionSwitch () {
       if (this.captionIcon.icon === 'mdi-translate') {
+        this.mediaService.speechRecognition.deleteSpeechListener('speechListener')
         this.captionIcon.icon = 'mdi-translate-off'
         this.captionIcon.color = 'gray'
       } else {
+        this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
+          this.allCaptions.push(data)
+        })
         this.captionIcon.icon = 'mdi-translate'
         this.captionIcon.color = 'teal'
       }
@@ -805,7 +800,7 @@ export default {
         return;
       }
 
-      if (userId === this.GLOBAL.userInfo.token) {
+      if (userId === this.GLOBAL.userInfo.id) {
         this.subFollowUserIds.push(userId)
         return
       }
@@ -826,7 +821,7 @@ export default {
         type : 'text',
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
-        fromPeerId : this.GLOBAL.userInfo.token,
+        fromPeerId : this.GLOBAL.userInfo.id,
         text : this.inputMsg,
         timestamp : timestamp,
         toPeerName : (!this.privateChatPeerId) ? '' :
@@ -852,7 +847,7 @@ export default {
           file : this.file,
           broadcast : true,
           fromMyself : true,
-          fromPeerId : this.GLOBAL.userInfo.token,
+          fromPeerId : this.GLOBAL.userInfo.id,
           timestamp : timestamp,
         })
 
@@ -967,8 +962,8 @@ export default {
                 await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
             }
-            if (this.mainFollowUserId !== this.GLOBAL.userInfo.token && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.token) === -1) {
-              this.subFollowUserIds.push(this.GLOBAL.userInfo.token)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
             }
           }).catch((error) => {
         console.log(error)
@@ -1063,18 +1058,18 @@ export default {
     clearInterval(this.clock);
   },
   async created() {
-    this.GLOBAL.roomInfo.hostToken = "";
+    this.GLOBAL.roomInfo.hostId = "";
     this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
       this.allUsers = this.mediaService.getPeerDetails()
 
-      if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.hostToken){
-        this.GLOBAL.roomInfo.hostToken = this.mediaService.getHostPeerId();
+      if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.hostId){
+        this.GLOBAL.roomInfo.hostId = this.mediaService.getHostPeerId();
         this.snackText = "房主变更";
         this.snack = true;
       }
-      this.isHost = this.GLOBAL.roomInfo.hostToken === this.GLOBAL.userInfo.token;
+      this.isHost = this.GLOBAL.roomInfo.hostId === this.GLOBAL.userInfo.id;
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -1109,7 +1104,7 @@ export default {
       await this.mediaService.joinMeeting(
           this.GLOBAL.roomInfo.token,
           this.GLOBAL.userInfo.token,
-          this.GLOBAL.userInfo.token,
+          this.GLOBAL.userInfo.id,
           this.GLOBAL.userInfo.nickname,
           this.GLOBAL.userInfo.nickname + '\'s PC',
           this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
@@ -1170,7 +1165,7 @@ export default {
           mediaStream : null
         }
       }
-      if (this.mainFollowUserId === this.GLOBAL.userInfo.token) {
+      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
         return {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
@@ -1192,9 +1187,9 @@ export default {
     },
     subFollowUsers () {
       let subUsers = []
-      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.token) > -1) {
+      if (this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) > -1) {
         subUsers.push({
-          id: this.GLOBAL.userInfo.token,
+          id: this.GLOBAL.userInfo.id,
           displayName: this.GLOBAL.userInfo.nickname,
           mediaStream: this.myMediaStream
         })
