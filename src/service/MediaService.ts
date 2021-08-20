@@ -16,6 +16,7 @@ import {PeerMedia} from "../utils/media/PeerMedia";
 import {timeoutCallback} from "../utils/media/MediaUtils";
 import * as events from "events"
 import {Moment} from "moment";
+import {SpeechRecognition} from "@/utils/SpeechRecognition";
 
 export class MediaService
 {
@@ -51,7 +52,8 @@ export class MediaService
     private newMessageCallbacks: Map<string, (message: types.Message) => void> = null;
     private meetingEndCallbacks: Map<string, (reason: MeetingEndReason) => void> = null;
     private beMutedCallbacks: Map<string, () => void> = null;
-    private newSpeechCallbacks: Map<string, (speech: types.SpeechText) => void> = null;
+
+    public speechRecognition: SpeechRecognition = null;
 
     constructor()
     {
@@ -72,7 +74,8 @@ export class MediaService
             this.newMessageCallbacks = new Map<string, (message: types.Message) => void>();
             this.meetingEndCallbacks = new Map<string, (reason: MeetingEndReason) => void>();
             this.beMutedCallbacks = new Map<string, () => void>();
-            this.newSpeechCallbacks = new Map<string, (speech: types.SpeechText) => void>();
+
+            this.speechRecognition = new SpeechRecognition(this.sendSpeechText.bind(this));
 
         } catch (err) {
             console.error('[Error]  Fail to construct MediaService instance', err);
@@ -117,16 +120,6 @@ export class MediaService
     public deleteBeMutedListener(key: string)
     {
         this.beMutedCallbacks.delete(key);
-    }
-
-    public registerNewSpeechListener(key: string, newSpeechCallback: (speechText: types.SpeechText) => void)
-    {
-        this.newSpeechCallbacks.set(key, newSpeechCallback);
-    }
-
-    public deleteNewSpeechListener(key: string)
-    {
-        this.newSpeechCallbacks.delete(key);
     }
 
     public getPeerDetails()
@@ -360,7 +353,7 @@ export class MediaService
                         track,
                         appData: { source },
                         // encodings: SIMULCASTENCODING,
-                        // codecOptions: { videoGoogleStartBitrate : 1000 },
+                        codecOptions: { videoGoogleStartBitrate : 1000 },
                         // codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
                     }
                 } else {
@@ -770,7 +763,7 @@ export class MediaService
 
         this.signaling.registerListener(SignalType.notify, SignalMethod.newSpeechText, ({ speechText }) => {
             console.log('[Signaling]  Handling newSpeechText notification...');
-            // MeetingVariable.speechRecognition.recvPeerSpeech(speechText);
+            this.speechRecognition.recvPeerSpeech(speechText);
         })
 
         this.signaling.registerListener(SignalType.notify, SignalMethod.newFile, (recvFile: types.RecvFile) => {
