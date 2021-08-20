@@ -54,7 +54,7 @@ class PeerDetail
 
     public getConsumerIds()
     {
-        let consumerIds: string[] = [];
+        const consumerIds: string[] = [];
         this.consumers.forEach((consumer, consumerId) => {
             consumerIds.push(consumerId);
         })
@@ -74,7 +74,7 @@ class PeerDetail
 
     public getTracks()
     {
-        let tracks: MediaStreamTrack[] = [];
+        const tracks: MediaStreamTrack[] = [];
         this.consumers.forEach((consumer) => {
             if (consumer.paused) {
                 consumer.emit('resume');
@@ -87,7 +87,7 @@ class PeerDetail
 
     public getVideoTracks()
     {
-        let tracks: MediaStreamTrack[] = [];
+        const tracks: MediaStreamTrack[] = [];
         this.consumers.forEach((consumer) => {
             if (consumer.kind === 'video') {
                 if (consumer.paused) {
@@ -103,7 +103,7 @@ class PeerDetail
     public getAudioTracks()
     {
 
-        let tracks: MediaStreamTrack[] = [];
+        const tracks: MediaStreamTrack[] = [];
         this.consumers.forEach((consumer) => {
             if (consumer.kind === 'audio') {
                 if (consumer.paused) {
@@ -237,7 +237,7 @@ export class PeerMedia
 
     public getPeerDetails(): PeerDetail[]
     {
-        let peerDetails = [];
+        const peerDetails = [];
         this.peerId2Details.forEach((peerDetail) => {
             peerDetails.push(peerDetail);
         })
