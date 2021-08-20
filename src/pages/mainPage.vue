@@ -359,7 +359,7 @@
                           style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
-                        mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                        mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().avatar">
                       <template v-slot:placeholder>
                         <div style="margin-top: 7px">
                           <v-progress-circular
@@ -374,7 +374,7 @@
                   <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
@@ -399,7 +399,7 @@
                             style="margin-right: 8px;">
                       <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
-                        mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                        mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().avatar">
                         <template v-slot:placeholder>
                           <div style="margin-top: 7px">
                             <v-progress-circular
@@ -414,7 +414,7 @@
                     <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailsByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                       <span v-if="!msg.broadcast"> to </span>
                       <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                     </div>
@@ -778,7 +778,7 @@ export default {
       if (userId == null) {
         this.placeholdOfMsg =  this.placeholdOfMsg = '发送消息 to 所有人'
       } else {
-        this.placeholdOfMsg = '发送消息 to ' + this.mediaService.getPeerDetailsByPeerId(userId).getPeerInfo().displayName
+        this.placeholdOfMsg = '发送消息 to ' + this.mediaService.getPeerDetailByPeerId(userId).getPeerInfo().displayName
       }
 
       this.privateChatPeerId = userId
@@ -810,7 +810,7 @@ export default {
         return
       }
 
-      this.subFollowUserIds.push(this.mediaService.getPeerDetailsByPeerId(userId).getPeerInfo().id)
+      this.subFollowUserIds.push(this.mediaService.getPeerDetailByPeerId(userId).getPeerInfo().id)
 
       console.log('[Add Sub Video]')
     },
@@ -830,7 +830,7 @@ export default {
         text : this.inputMsg,
         timestamp : timestamp,
         toPeerName : (!this.privateChatPeerId) ? '' :
-            this.mediaService.getPeerDetailsByPeerId(this.privateChatPeerId).getPeerInfo().displayName
+            this.mediaService.getPeerDetailByPeerId(this.privateChatPeerId).getPeerInfo().displayName
       })
       this.inputMsg = ''
 
