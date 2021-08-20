@@ -1,12 +1,13 @@
 import * as mediasoupClient from "mediasoup-client";
+import {types as mediasoupTypes} from "mediasoup-client";
 import * as types from "../utils/Types";
-import {FileJobStatus} from "../utils/Types";
 import {
     MeetingEndReason,
     meetingURL,
     serviceConfig,
     SignalMethod,
     SignalType,
+    SIMULCASTENCODING,
     socketConnectionOptions,
     TransportType
 } from "../ServiceConfig";
@@ -14,16 +15,53 @@ import {SignalingService} from "./SignalingService";
 import {PeerMedia} from "../utils/media/PeerMedia";
 import {timeoutCallback} from "../utils/media/MediaUtils";
 import * as events from "events"
+import {Moment} from "moment";
+import {SpeechRecognition} from "@/utils/SpeechRecognition";
 
 export class MediaService
 {
+    private roomToken: string = null;
+    private userToken: string = null;
+    private meetingURL: string = null;
+    private myId: string = null;
+    private displayName: string = null;
+    private deviceName: string = null;
+    private avatar: string = null;
+
+    private signaling: SignalingService = null;
+    private device: mediasoupTypes.Device = null;
+    private eventEmitter: events.EventEmitter = null;
+
+    private sendTransport: mediasoupTypes.Transport = null;
+    private recvTransport: mediasoupTypes.Transport = null;
+
+    // track.id ==> MediaStreamTrack
+    private readonly sendingTracks: Map<string, MediaStreamTrack> = null;
+    // track.id ==> producer
+    private readonly producers: Map<string, mediasoupTypes.Producer> = null;
+    private readonly peerMedia: PeerMedia = null;
+
+    private hostPeerId: string = null;
+
+    private sendTransportOpt: mediasoupTypes.TransportOptions = null;
+    private joined: boolean = null;
+    private permissionUpdated: boolean = null;
+    private allowed: boolean = null;
+
+    private updatePeerCallbacks: Map<string, () => void> = null;
+    private newMessageCallbacks: Map<string, (message: types.Message) => void> = null;
+    private meetingEndCallbacks: Map<string, (reason: MeetingEndReason) => void> = null;
+    private beMutedCallbacks: Map<string, () => void> = null;
+
+    public speechRecognition: SpeechRecognition = null;
+
     constructor()
     {
         try {
             this.device = new mediasoupClient.Device();
 
-            this.sendingTracks = new Map();
-            this.producers = new Map();
+            this.sendingTracks = new Map<string, MediaStreamTrack>();
+            this.producers = new Map<string, mediasoupTypes.Producer>();
             this.peerMedia = new PeerMedia();
 
             this.eventEmitter = new events.EventEmitter();
@@ -32,76 +70,78 @@ export class MediaService
             this.permissionUpdated = false;
             this.allowed = false;
 
-            this.updatePeerCallbacks = new Map();
-            this.newMessageCallbacks = new Map();
-            this.meetingEndCallbacks = new Map();
-            this.beMutedCallbacks = new Map();
+            this.updatePeerCallbacks = new Map<string, () => void>();
+            this.newMessageCallbacks = new Map<string, (message: types.Message) => void>();
+            this.meetingEndCallbacks = new Map<string, (reason: MeetingEndReason) => void>();
+            this.beMutedCallbacks = new Map<string, () => void>();
+
+            this.speechRecognition = new SpeechRecognition(this.sendSpeechText.bind(this));
 
         } catch (err) {
             console.error('[Error]  Fail to construct MediaService instance', err);
         }
     }
 
-    registerPeerUpdateListener(key, updatePeerCallback)
+    public registerPeerUpdateListener(key: string, updatePeerCallback: () => void)
     {
         this.updatePeerCallbacks.set(key, updatePeerCallback);
     }
 
-    deletePeerUpdateListener(key)
+    public deletePeerUpdateListener(key: string)
     {
         this.updatePeerCallbacks.delete(key);
     }
 
-    registerNewMessageListener(key, newMessageCallback)
+    public registerNewMessageListener(key: string, newMessageCallback: (message: types.Message) => void)
     {
         this.newMessageCallbacks.set(key, newMessageCallback);
     }
 
-    deleteNewMessageListener(key)
+    public deleteNewMessageListener(key: string)
     {
         this.newMessageCallbacks.delete(key);
     }
 
-    registerMeetingEndListener(key, meetingEndCallback)
+    public registerMeetingEndListener(key: string, meetingEndCallback: (reason: MeetingEndReason) => void)
     {
         this.meetingEndCallbacks.set(key, meetingEndCallback);
     }
 
-    deleteMeetingEndListener(key)
+    public deleteMeetingEndListener(key: string)
     {
         this.meetingEndCallbacks.delete(key);
     }
 
-    registerBeMutedListener(key, beMutedCallback)
+    public registerBeMutedListener(key: string, beMutedCallback: () => void)
     {
         this.beMutedCallbacks.set(key, beMutedCallback);
     }
 
-    deleteBeMutedListener(key)
+    public deleteBeMutedListener(key: string)
     {
         this.beMutedCallbacks.delete(key);
     }
 
-    getPeerDetails()
+    public getPeerDetails()
     {
         return this.peerMedia.getPeerDetails();
     }
 
-    getPeerDetailsByPeerId(peerId)
+    public getPeerDetailByPeerId(peerId: string)
     {
-        return this.peerMedia.getPeerDetailsByPeerId(peerId);
+        return this.peerMedia.getPeerDetailByPeerId(peerId);
     }
 
-    getHostPeerId()
+    public getHostPeerId()
     {
         return this.hostPeerId;
     }
 
-    waitForAllowed()
+    private waitForAllowed(): Promise<void>
     {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
             console.log('[Log]  Waiting for server to allow the connection...');
-            let returned = false;
+            let returned: boolean = false;
             this.eventEmitter.once('permissionUpdated', timeoutCallback(() => {
                 if (returned)
                     return;
@@ -128,8 +168,8 @@ export class MediaService
     }
 
 
-    joinMeeting(roomToken, userToken, myUserId,
-                       displayName, deviceName, avatar)
+    public joinMeeting(roomToken: string, userToken: string, myUserId: string,
+                       displayName: string, deviceName: string, avatar: string)
     {
         return this._joinMeeting(false, roomToken, userToken, myUserId, displayName, deviceName, avatar);
     }
@@ -140,8 +180,8 @@ export class MediaService
     // send request to get routerRtpCapabilities from server
     // load the routerRtpCapabilities into device
     //
-    async _joinMeeting(reenter, roomToken, userToken, myUserId,
-                               displayName, deviceName, avatar)
+    private async _joinMeeting(reenter: boolean, roomToken?: string, userToken?: string, myUserId?: string,
+                               displayName?: string, deviceName?: string, avatar?: string): Promise<void>
     {
         if (this.joined) {
             console.warn('[Warning]  Already joined a meeting');
@@ -152,6 +192,7 @@ export class MediaService
             this.roomToken = roomToken;
             this.userToken = userToken;
             this.myId = myUserId;
+            console.log(myUserId);
             this.meetingURL = meetingURL(roomToken, userToken, myUserId);
             this.displayName = displayName;
             this.deviceName = deviceName;
@@ -201,7 +242,7 @@ export class MediaService
                 joined: this.joined,
                 device: this.deviceName,
                 rtpCapabilities: this.device.rtpCapabilities,
-            });
+            } as types.JoinRequest) as { host: string, peerInfos: types.PeerInfo[] };
 
             this.hostPeerId = host;
 
@@ -225,7 +266,7 @@ export class MediaService
         }
     }
 
-     async onSignalingDisconnect()
+    public async onSignalingDisconnect()
     {
         console.warn('[Socket]  Disconnected');
         if (this.joined) {
@@ -248,7 +289,7 @@ export class MediaService
         }
     }
 
-     async restartIce()
+    private async restartIce()
     {
         console.log('[Log]  Trying to restartIce...');
         if (this.sendTransport == null || this.recvTransport == null) {
@@ -257,10 +298,10 @@ export class MediaService
         }
 
         try {
-            const sendParam = await this.signaling.sendRequest(SignalMethod.restartIce, { transportId: this.sendTransport.id });
+            const sendParam = await this.signaling.sendRequest(SignalMethod.restartIce, { transportId: this.sendTransport.id }) as { iceParameters: mediasoupTypes.IceParameters };
             await this.sendTransport.restartIce({ iceParameters: sendParam.iceParameters });
 
-            const recvParam = await this.signaling.sendRequest(SignalMethod.restartIce, { transportId: this.recvTransport.id });
+            const recvParam = await this.signaling.sendRequest(SignalMethod.restartIce, { transportId: this.recvTransport.id }) as { iceParameters: mediasoupTypes.IceParameters };
             await this.recvTransport.restartIce({ iceParameters: recvParam.iceParameters });
 
             console.log('[Log]  Ice restarted');
@@ -270,7 +311,7 @@ export class MediaService
         }
     }
 
-     async reenter()
+    private async reenter()
     {
         try {
             console.log('[Log]  Trying to reenter the meeting...');
@@ -286,7 +327,7 @@ export class MediaService
         }
 
         try {
-            let tracks = [];
+            const tracks: MediaStreamTrack[] = [];
             this.sendingTracks.forEach((track) => {
                 tracks.push(track);
             });
@@ -297,20 +338,23 @@ export class MediaService
         }
     }
 
-     async sendMediaStream(stream)
+    public async sendMediaStream(stream: MediaStream): Promise<void>
     {
         try {
             const tracks = stream.getTracks();
             let videoTrackCount = 0;
             let audioTrackCount = 0;
             for (const track of tracks) {
-                let source = null;
-                let params = null;
+                let source: string = null;
+                let params: mediasoupTypes.ProducerOptions = null;
                 if (track.kind === 'video') {
                     source = `Video_from_${this.userToken}_track${++videoTrackCount}`;
                     params = {
                         track,
                         appData: { source },
+                        // encodings: SIMULCASTENCODING,
+                        codecOptions: { videoGoogleStartBitrate : 1000 },
+                        // codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
                     }
                 } else {
                     source = `Audio_from_${this.userToken}_track${++audioTrackCount}`;
@@ -351,10 +395,10 @@ export class MediaService
     }
 
     // if _toPeerId == null, it means broadcast to everyone in the meetings
-     async sendText(_toPeerId, _text, _timestamp)
+    public async sendText(_toPeerId: string, _text: string, _timestamp): Promise<void>
     {
         try {
-            const sendText = {
+            const sendText: types.SendText = {
                 toPeerId: _toPeerId,
                 text: _text,
                 timestamp: _timestamp,
@@ -368,10 +412,10 @@ export class MediaService
         }
     }
 
-     async sendFile(_fileURL, _timestamp, _filename, _fileType)
+    public async sendFile(_fileURL: string, _timestamp: Moment, _filename: string, _fileType: string)
     {
         try {
-            const sendFile = {
+            const sendFile: types.SendFile = {
                 fileURL: _fileURL,
                 timestamp: _timestamp,
                 fileType: _fileType,
@@ -386,8 +430,13 @@ export class MediaService
         }
     }
 
+    public sendSpeechText(speechText: types.SpeechText)
+    {
+        this.signaling.sendNotify(SignalMethod.sendSpeechText, { speechText });
+    }
+
     // tell server and clear all meeting-related variables
-     leaveMeeting()
+    public leaveMeeting()
     {
         this.joined = false;
         this.resetAllowedState();
@@ -399,18 +448,18 @@ export class MediaService
         this.deleteSendingTracks();
     }
 
-     resetAllowedState()
+    private resetAllowedState()
     {
         this.permissionUpdated = false;
         this.allowed = false;
     }
 
-     resetDevice()
+    private resetDevice()
     {
         this.device = new mediasoupClient.Device();
     }
 
-     deleteProducers()
+    private deleteProducers()
     {
         if (this.producers) {
             this.producers.forEach((producer) => {
@@ -421,7 +470,7 @@ export class MediaService
         }
     }
 
-     deleteSignaling()
+    private deleteSignaling()
     {
         if (this.signaling) {
             this.signaling.removeAllListeners();
@@ -432,7 +481,7 @@ export class MediaService
         }
     }
 
-     deletePeers()
+    private deletePeers()
     {
         this.hostPeerId = null;
 
@@ -440,7 +489,7 @@ export class MediaService
             this.peerMedia.clear();
     }
 
-     deleteTransports()
+    private deleteTransports()
     {
         if (this.sendTransport && !this.sendTransport.closed) {
             this.sendTransport.close();
@@ -454,14 +503,14 @@ export class MediaService
         this.recvTransport = null;
     }
 
-     deleteSendingTracks()
+    private deleteSendingTracks()
     {
         if (this.sendingTracks) {
             this.sendingTracks.clear();
         }
     }
 
-     async closeTrack(track)
+    public async closeTrack(track: MediaStreamTrack)
     {
         if (!this.producers.has(track.id)) {
             console.warn('[Producer]  Already closed and deleted')
@@ -489,7 +538,7 @@ export class MediaService
 
     // if peerId is not passed, (or = null), it means mute all peers in the room
     // return Promise.reject('Fail to mute peer') if you are not a host or an error occurs
-     async mutePeer(peerId = null)
+    public async mutePeer(peerId: string = null)
     {
         if (this.hostPeerId && this.hostPeerId !== this.myId) {
             return Promise.reject('Fail to mute peer: Unauthorized');
@@ -502,7 +551,7 @@ export class MediaService
         }
     }
 
-     async transferHost(toPeerId)
+    public async transferHost(toPeerId: string)
     {
         if (this.hostPeerId && this.hostPeerId !== this.myId) {
             return Promise.reject('Fail to transfer host: Unauthorized');
@@ -516,7 +565,7 @@ export class MediaService
         }
     }
 
-     async kickPeer(peerId)
+    public async kickPeer(peerId: string)
     {
         if (this.hostPeerId && this.hostPeerId !== this.myId) {
             return Promise.reject('Fail to kick peer: Unauthorized');
@@ -529,7 +578,7 @@ export class MediaService
         }
     }
 
-     async closeRoom()
+    public async closeRoom()
     {
         if (this.hostPeerId && this.hostPeerId !== this.myId) {
             return Promise.reject('Fail to close meeting: Unauthorized');
@@ -543,13 +592,18 @@ export class MediaService
         this.leaveMeeting();
     }
 
-     async createSendTransport()
+    public getStatus()
+    {
+        return this.signaling.sendRequest(SignalMethod.getStatus);
+    }
+
+    private async createSendTransport()
     {
         try {
             this.sendTransportOpt = await this.signaling.sendRequest(SignalMethod.createTransport, {
                 transportType: TransportType.producer,
                 sctpCapabilities: this.device.sctpCapabilities,
-            } ) ;
+            } as types.CreateTransportRequest) as mediasoupTypes.TransportOptions;
         } catch (err) {
             console.error('[Error]  Fail when sending createTransport (send) request', err);
             return Promise.reject('Fail when sending createTransport (send) request');
@@ -566,14 +620,14 @@ export class MediaService
                     SignalMethod.connectTransport, {
                         transportId: this.sendTransport.id,
                         dtlsParameters,
-                    });
+                    } as types.ConnectTransportRequest);
                 done();
             } catch (err) {
                 errBack(err);
             }
         });
 
-        this.sendTransport.on('produce', async ({ kind, rtpParameters, appData }, done, errBack) => {
+        this.sendTransport.on('produce', async ({ kind, rtpParameters, appData }, callback, errBack) => {
             console.log('[Transport event]  event: produce, handled by sendTransport');
             try {
                 // producerId
@@ -583,23 +637,24 @@ export class MediaService
                         kind,
                         rtpParameters,
                         appData
-                    });
-                done({id: producerId});
+                    }) as {producerId: string};
+                callback({id: producerId});
             } catch (err) {
                 errBack(err);
             }
         });
     }
 
-     async createRecvTransport()
+    private async createRecvTransport()
     {
         try {
-            this.recvTransport = this.device.createRecvTransport(
-                await this.signaling.sendRequest(SignalMethod.createTransport, {
-                    transportType: TransportType.consumer,
-                    sctpCapabilities: this.device.sctpCapabilities,
-                })
-            );
+            const transportOptions = await this.signaling.sendRequest(SignalMethod.createTransport, {
+                transportType: TransportType.consumer,
+                sctpCapabilities: this.device.sctpCapabilities,
+            } as types.CreateTransportRequest) as mediasoupTypes.TransportOptions;
+
+
+            this.recvTransport = this.device.createRecvTransport(transportOptions);
         } catch (err) {
             console.error('[Error]  Fail when sending createTransport (recv) request', err);
             return Promise.reject('Fail when sending createTransport (recv) request');
@@ -612,7 +667,7 @@ export class MediaService
                     SignalMethod.connectTransport, {
                         transportId: this.recvTransport.id,
                         dtlsParameters,
-                    });
+                    } as types.ConnectTransportRequest);
                 done();
             } catch (err) {
                 errBack(err);
@@ -620,7 +675,7 @@ export class MediaService
         });
     }
 
-     registerSignalingListeners()
+    private registerSignalingListeners()
     {
         this.signaling.registerListener(SignalType.notify, SignalMethod.allowed, ({ allowed }) => {
             console.log(`[Signaling]  Handling allowed notification with allowed = ${allowed} ...`);
@@ -629,7 +684,7 @@ export class MediaService
             this.eventEmitter.emit('permissionUpdated');
         });
 
-        this.signaling.registerListener(SignalType.notify, SignalMethod.newPeer, async (data) => {
+        this.signaling.registerListener(SignalType.notify, SignalMethod.newPeer, async (data: types.PeerInfo) => {
             console.log('[Signaling]  Handling newPeer notification...');
             this.peerMedia.addPeerInfo(data);
             console.log(`[Signaling]  Add peerId = ${data.id}`);
@@ -639,29 +694,40 @@ export class MediaService
             });
         });
 
-        this.signaling.registerListener(SignalType.notify, SignalMethod.newConsumer, async (data) => {
+        this.signaling.registerListener(SignalType.notify, SignalMethod.newConsumer, async (data: types.ConsumerInfo) => {
             console.log('[Signaling]  Handling newConsumer notification...');
+            console.log('[Signaling]  Creating consumer kind = ' + data.kind);
             const consumer = await this.recvTransport.consume({
                 id            : data.consumerId,
                 producerId    : data.producerId,
                 kind          : data.kind,
                 rtpParameters : data.rtpParameters
             });
-            console.log('[Signaling]  Creating consumer kind = ' + data.kind);
-            const { track } = consumer;
-            console.log('[Consumer]  Received track', track);
-            console.log(`[Signaling]  Add trackId = ${track.id} sent from peerId = ${data.producerPeerId}`);
-            this.peerMedia.addConsumerAndTrack(data.producerPeerId, consumer, track);
+            consumer.pause();
+            consumer.emit('pause');
+
+            consumer.on('pause', async () => {
+                console.log('[Consumer]  Pause consumer id = ' + consumer.id);
+                await this.signaling.sendRequest(SignalMethod.pauseConsumer, {consumerId: consumer.id});
+            });
+
+            consumer.on('resume', async () => {
+                console.log('[Consumer]  Resume consumer id = ' + consumer.id);
+                await this.signaling.sendRequest(SignalMethod.resumeConsumer, {consumerId: consumer.id});
+            });
+
+            this.peerMedia.addConsumer(data.producerPeerId, consumer);
 
             this.updatePeerCallbacks.forEach((callback) => {
                 callback();
             });
         });
 
+
         this.signaling.registerListener(SignalType.notify, SignalMethod.consumerClosed, ({ consumerId }) => {
             console.log('[Signaling]  Handling consumerClosed notification...');
             console.log(`[Signaling]  Delete consumer id = ${consumerId}`);
-            this.peerMedia.deleteConsumerAndTrack(consumerId);
+            this.peerMedia.deleteConsumer(consumerId);
 
             this.updatePeerCallbacks.forEach((callback) => {
                 callback();
@@ -678,10 +744,10 @@ export class MediaService
             });
         });
 
-        this.signaling.registerListener(SignalType.notify, SignalMethod.newText, (recvText) => {
+        this.signaling.registerListener(SignalType.notify, SignalMethod.newText, (recvText: types.RecvText) => {
             console.log('[Signaling]  Handling newText notification...');
             console.log(`[Signaling]  Text (${recvText.text}) received from peer (peerId: ${recvText.fromPeerId})`);
-            const message= {
+            const message: types.Message = {
                 type: types.MessageType.text,
                 broadcast: recvText.broadcast,
                 fromMyself: false,
@@ -695,10 +761,15 @@ export class MediaService
             });
         });
 
-        this.signaling.registerListener(SignalType.notify, SignalMethod.newFile, (recvFile) => {
+        this.signaling.registerListener(SignalType.notify, SignalMethod.newSpeechText, ({ speechText }) => {
+            console.log('[Signaling]  Handling newSpeechText notification...');
+            this.speechRecognition.recvPeerSpeech(speechText);
+        })
+
+        this.signaling.registerListener(SignalType.notify, SignalMethod.newFile, (recvFile: types.RecvFile) => {
             console.log('[Signaling]  Handling newFile notification...');
             console.log(`[Signaling]  New File notification (URL: ${recvFile.fileURL}) received from peer (peerId: ${recvFile.fromPeerId})`);
-            const message = {
+            const message: types.Message = {
                 type: types.MessageType.file,
                 broadcast: true,
                 fileJobType: types.FileJobType.download,
@@ -708,7 +779,7 @@ export class MediaService
                 timestamp: recvFile.timestamp,
                 filename: recvFile.filename,
                 fileType: recvFile.fileType,
-                fileJobStatus: FileJobStatus.unDownloaded,
+                fileJobStatus: types.FileJobStatus.unDownloaded,
             }
 
             this.newMessageCallbacks.forEach((callback) => {
@@ -747,7 +818,7 @@ export class MediaService
         this.signaling.registerListener(SignalType.notify, SignalMethod.beMuted, ({producerId}) => {
             console.log('[Signaling]  Handling beMuted notification...');
 
-            let trackId = null;
+            let trackId: string = null;
             this.producers.forEach((producer, key) => {
                 if (producer.id === producerId) {
                     if (!producer.closed) {

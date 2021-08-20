@@ -11,7 +11,7 @@
                 overlap
                 :value="downloaded"
             >
-            <v-icon color="teal" size="40px">mdi-{{icon}}</v-icon>
+            <v-icon color="teal" size="25px">mdi-{{icon}}</v-icon>
             </v-badge>
           </v-col>
           <v-col cols="7">
@@ -21,7 +21,11 @@
             <p class="file-card-progress"> {{this.progress}}% </p>
           </v-col>
           <v-col align="center" cols="2">
-            <v-btn text @click="download" color="teal" :loading="downloading"> {{downloaded?'重新下载':'下载'}} </v-btn>
+            <v-btn small icon @click="download" color="teal" :loading="downloading">
+              <v-icon>
+                {{downloaded?'mdi-reload':'mdi-download-outline'}}
+              </v-icon>
+            </v-btn>
           </v-col>
         </v-row>
         <v-row dense>
@@ -150,30 +154,28 @@ export default {
 
 <style scoped>
 .file-card{
-  border-left: 1px solid #00838f;
-  border-bottom: 1px solid #00838f;
   padding: 10px 15px;
 }
 .file-content{
   background : white;
-  width: 600px;
+  width: 350px;
   border-radius: 10px;
   border: 2px solid teal;
 }
 .file-card-text{
   font-family: "Microsoft YaHei UI", serif;
-  font-size: 22px;
+  font-size: 15px;
   color: #00796B;
   padding: 0;
-  width: 300px;
-  margin: 0;
+  width: 195px;
+  margin: 0 5px;
   overflow: hidden;
   text-overflow:ellipsis;
   white-space: nowrap;
 }
 .file-card-progress{
   font-family: "Microsoft YaHei UI", serif;
-  font-size: 14px;
+  font-size: 10px;
   color: #00796B;
   padding: 0;
   margin: 8px 0 0 0;
