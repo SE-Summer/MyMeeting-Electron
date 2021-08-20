@@ -19,7 +19,7 @@ export const fileUploadURL = (userToken: string) => {
     return `${_serverURL}/file?token=${userToken}`;
 }
 
-export const meetingURL = (roomToken: string, userToken: string, myId) => {
+export const meetingURL = (roomToken: string, userToken: string, myId: number) => {
     return `${serviceConfig.serverURL}/room?roomId=${roomToken}&peerId=${myId}&userToken=${userToken}`;
 }
 
