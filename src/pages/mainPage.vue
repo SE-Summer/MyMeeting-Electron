@@ -210,12 +210,12 @@
             </v-list-item-content>
           </v-list-item>
         </v-badge>
-        <v-badge :value="GLOBAL.roomInfo.hostId === user.getPeerInfo().id" icon="mdi-crown" color="orange--text"
+        <v-badge :value="GLOBAL.roomInfo.host === user.getPeerInfo().id" icon="mdi-crown" color="orange--text"
                  overlap offset-x="20px" offset-y="18px"
                  v-for="(user, index) in this.filteredUsers"
                  :key="index">
           <v-list-item style="width: 100%" dense
-               :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.hostId === user.getPeerInfo().id}]"
+               :class="['lighten-4 not-host-item', {'host-item':GLOBAL.roomInfo.host === user.getPeerInfo().id}]"
           >
             <v-fade-transition>
               <v-badge overlap offset-x="-40px" offset-y="0px" icon="mdi-video-outline" color="green--text" transition="fade-transition" v-show="user.hasVideo()">
@@ -1058,18 +1058,17 @@ export default {
     clearInterval(this.clock);
   },
   async created() {
-    this.GLOBAL.roomInfo.hostId = "";
     this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
       this.allUsers = this.mediaService.getPeerDetails()
 
-      if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.hostId){
-        this.GLOBAL.roomInfo.hostId = this.mediaService.getHostPeerId();
+      if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
+        this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
         this.snackText = "房主变更";
         this.snack = true;
       }
-      this.isHost = this.GLOBAL.roomInfo.hostId === this.GLOBAL.userInfo.id;
+      this.isHost = this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id;
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -1099,6 +1098,8 @@ export default {
         this.microIcon.color = 'gray'
       }
     })
+
+    console.log(this.GLOBAL.userInfo, this.GLOBAL.roomInfo)
 
     try {
       await this.mediaService.joinMeeting(

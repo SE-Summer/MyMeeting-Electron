@@ -16,7 +16,7 @@ export default {
         id : "",
         token : "",
         password : "",
-        hostId : "",
+        host : "",
         end_time : "",
         start_time: ""
     },
