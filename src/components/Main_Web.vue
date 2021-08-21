@@ -315,13 +315,13 @@
     <button
         :class="['mymeeting-btn', {'active':click4}]"
         @click="getMeetings">
-      {{'我的会议'+ (click4 ? '>' : '&lt;')}}</button>
+      {{'我的预约'+ (click4 ? '>' : '&lt;')}}</button>
     <div
         :class="['mymeeting-list', {'active':click4}]"
          @mouseleave="click4 = false">
       <v-container>
         <h2 class="title3">
-          我的会议
+          我的预约
         </h2>
         <v-row v-for="room in rooms" :key="room.id">
           <v-card
@@ -376,6 +376,7 @@
         </v-row>
       </v-container>
     </div>
+
   </div>
 </template>
 
@@ -542,10 +543,27 @@ export default {
           response.data.rooms.forEach((room)=>{
             room.show = false;
             room.ended = moment(room.end_time).isBefore(moment());
-            room.start_time = moment(room.start_time).format("YYYY-MM-DD HH:mm");
-            room.end_time = moment(room.end_time).format("YYYY-MM-DD HH:mm");
           });
           this.rooms = response.data.rooms
+          console.log(response);
+        }catch(error){
+          console.log(error);
+        }
+      }
+    },
+    async getHistory(){
+      this.click4 = !this.click4;
+      if (this.click4){
+        try{
+          const response =await axios(
+              {
+                method : 'post',
+                url : this.GLOBAL.baseURL + '/getHistory',
+                data : {
+                  'token' : this.GLOBAL.userInfo.token,
+                }
+              })
+          this.history = response.data.history
           console.log(response);
         }catch(error){
           console.log(error);
