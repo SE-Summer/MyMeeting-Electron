@@ -3,7 +3,7 @@ import * as types from "../Types";
 import {config} from "../../Constants.js"
 
 const defaultPeerInfo: types.PeerInfo = {
-    id: 'defaultUser_defaultUser',
+    id: 0,
     avatar: config.unKnownUri,
     displayName: 'defaultUser',
     device: 'defaultDevice'
@@ -13,11 +13,11 @@ class PeerDetail
 {
     private _hasAudio: boolean = null;
     private _hasVideo: boolean = null;
-    private readonly peerId: string = null;
+    private readonly peerId: number = null;
     private peerInfo: types.PeerInfo = null;
     // consumerId ==> Consumer
     private consumers: Map<string, mediasoupTypes.Consumer> = null;
-    constructor(peerId: string)
+    constructor(peerId: number)
     {
         this.peerId = peerId;
         this._hasAudio = false;
@@ -174,12 +174,12 @@ class PeerDetail
 export class PeerMedia
 {
     // peerId ==> PeerDetail
-    private peerId2Details: Map<string, PeerDetail> = null;
+    private peerId2Details: Map<number, PeerDetail> = null;
     private consumerId2Details: Map<string, PeerDetail> = null;
 
     constructor()
     {
-        this.peerId2Details = new Map<string, PeerDetail>();
+        this.peerId2Details = new Map<number, PeerDetail>();
         this.consumerId2Details = new Map<string, PeerDetail>();
     }
 
@@ -195,7 +195,7 @@ export class PeerMedia
         }
     }
 
-    public addConsumer(peerId: string, consumer: mediasoupTypes.Consumer): void
+    public addConsumer(peerId: number, consumer: mediasoupTypes.Consumer): void
     {
         if (this.consumerId2Details.has(consumer.id))
             return;
@@ -219,7 +219,7 @@ export class PeerMedia
         }
     }
 
-    public deletePeer(peerId: string)
+    public deletePeer(peerId: number)
     {
         if (!this.peerId2Details.has(peerId))
             return;
@@ -253,7 +253,7 @@ export class PeerMedia
         this.consumerId2Details.clear();
     }
 
-    public getPeerDetailByPeerId(peerId: string)
+    public getPeerDetailByPeerId(peerId: number)
     {
         return this.peerId2Details.get(peerId);
     }

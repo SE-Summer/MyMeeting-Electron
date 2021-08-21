@@ -29,7 +29,7 @@ export class SpeechRecognition
         // this.sentenceEnded = true;
     }
 
-    public registerSpeechListener(key: string, recognizedCallback: (text: string) => void)
+    public registerSpeechListener(key: string, recognizedCallback: (speechTexts: SpeechText[]) => void)
     {
         // this.speechCallbacks.set(key, recognizedCallback);
     }
