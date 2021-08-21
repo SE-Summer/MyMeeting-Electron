@@ -1064,9 +1064,7 @@ export default {
     this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
-      console.log('[before]', this.allUsers)
       this.allUsers = this.mediaService.getPeerDetails()
-      console.log('[after]', this.allUsers)
 
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
         this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
@@ -1080,8 +1078,6 @@ export default {
       if (!this.chatOverlay) {
         this.chatBadge = 'green'
       }
-
-      console.log('[NNNew Message]', newMsg)
 
       this.allMsgs.push(newMsg);
       let col = document.getElementById('chatContainer');
@@ -1190,7 +1186,11 @@ export default {
           }
         }
       }
-      return null
+      return {
+        id : "",
+        displayName: "",
+        mediaStream : null
+      }
     },
     subFollowUsers () {
       let subUsers = []
