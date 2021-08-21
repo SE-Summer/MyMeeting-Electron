@@ -301,12 +301,14 @@
                           style="width: 100%; height: 100%"></my-video>
                 <div
                     class="d-flex white black--text v-card--reveal"
-                    style="height: 15%; margin-bottom: 10px">
-                  <p id="rightSideBarText" style="font-size: 12px; font-weight: bold; margin-left: 40%">
-                    {{user.displayName}}
-                  </p>
+                    style="height: 15%; margin-bottom: 10px;">
+                  <div style="width: 100px; margin-left: 25%; margin-right: 10%; text-align: center;">
+                    <p id="rightSideBarText" style="font-size: 12px; font-weight: bold;">
+                      {{user.displayName}}
+                    </p>
+                  </div>
                   <v-fab-transition>
-                    <div style="margin-left: 20%" v-if="hover">
+                    <div v-if="hover">
                       <v-btn icon x-small @click="sub2Main(index)">
                         <v-icon color="teal">
                           mdi-account-star
@@ -372,7 +374,7 @@
                     </v-img>
                   </v-avatar>
                   <div style="display: inline-block; font-size: 15px">
-                      <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
+                      <span style="font-weight: bold; margin-right: 5px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
                               mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
@@ -1062,7 +1064,9 @@ export default {
     this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
+      console.log('[before]', this.allUsers)
       this.allUsers = this.mediaService.getPeerDetails()
+      console.log('[after]', this.allUsers)
 
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
         this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
@@ -1333,6 +1337,7 @@ export default {
 .private-chat {
   color: #FF9800;
   font-weight: bold;
+  margin-right: 10px;
 }
 .not-host-item.host-item{
   border-left: 1px solid #ff9800;
