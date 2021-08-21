@@ -378,10 +378,10 @@
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
-                  <p class="messageText" v-if="msg.type === 'text'">{{msg.text}}</p>
+                  <p class="messageText" v-if="msg.type === MessageType.text">{{msg.text}}</p>
                   <upload-file
                           :file="msg.file"
-                          v-else-if="msg.type === 'file'&&msg.fromMyself"
+                          v-else-if="msg.type === MessageType.file &&msg.fromMyself"
                           @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
                   <download-file :message="msg" v-else style="margin-top:15px"></download-file>
                 </div>
@@ -560,6 +560,7 @@ import UploadFile from "../components/UploadFile";
 import {virtualBackground} from "../service/VirtualBackgroundService";
 import SettingDialog from "../components/SettingsDialog";
 import axios from "axios";
+
 const moment = require("moment");
 
 export default {
@@ -818,7 +819,7 @@ export default {
 
       this.mediaService.sendText(this.privateChatPeerId, this.inputMsg, timestamp)
       this.allMsgs.push({
-        type : 'text',
+        type : this.MessageType.text,
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
         fromPeerId : this.GLOBAL.userInfo.id,
@@ -843,7 +844,7 @@ export default {
         let timestamp = moment()
 
         this.allMsgs.push({
-          type : 'file',
+          type : this.MessageType.file,
           file : this.file,
           broadcast : true,
           fromMyself : true,
@@ -1075,6 +1076,9 @@ export default {
       if (!this.chatOverlay) {
         this.chatBadge = 'green'
       }
+
+      console.log('[NNNew Message]', newMsg)
+
       this.allMsgs.push(newMsg);
       let col = document.getElementById('chatContainer');
       col.scrollTop = col.scrollHeight;
@@ -1098,8 +1102,6 @@ export default {
         this.microIcon.color = 'gray'
       }
     })
-
-    console.log(this.GLOBAL.userInfo, this.GLOBAL.roomInfo)
 
     try {
       await this.mediaService.joinMeeting(
