@@ -5,7 +5,7 @@
 
 import CryptoJS from 'crypto-js';
 import {TranscodeWorker} from './media/TranscodeWorker';
-import {RecognitionStatus} from './Types';
+import {RecognitionResult, RecognitionStatus} from './Types';
 
 const APPID = '2d2edf67'
 const API_SECRET = 'Y2I4ZmM1Njk1NzJmN2FhNTkyYTU0ZjJh'
@@ -47,10 +47,10 @@ export class IatRecognizer
     private mediaSource: MediaStreamAudioSourceNode;
     private handlerInterval;
 
-    public onRecognizerResult: (result) => void;
+    public onRecognizerResult: (result: RecognitionResult) => void;
     public onRecognizerStop: () => void;
     public onRecognizerError: (error) => void;
-    public onWillStatusChange: (oldStatus, status) => void;
+    public onStatusChange: (oldStatus, status) => void;
 
     constructor() {
         this.status = RecognitionStatus.null
@@ -66,12 +66,16 @@ export class IatRecognizer
     }
     // 修改录音听写状态
     setStatus(status: RecognitionStatus) {
-        this.onWillStatusChange && this.status !== status && this.onWillStatusChange(this.status, status)
+        this.onStatusChange && this.status !== status && this.onStatusChange(this.status, status)
         this.status = status
     }
     // @ts-ignore
-    setResultText({ resultText, resultTextTemp } = {}) {
-        this.onRecognizerResult && this.onRecognizerResult(resultTextTemp || resultText || '')
+    setResultText({ resultText, resultTextTemp, isLast } = {}) {
+        const text = resultTextTemp || resultText || ''
+        const previousText = this.resultText || this.resultTextTemp || ''
+        if (this.onRecognizerResult && text.length !== 0 && text !== previousText) {
+            this.onRecognizerResult({text, isLast});
+        }
         resultText !== undefined && (this.resultText = resultText)
         resultTextTemp !== undefined && (this.resultTextTemp = resultTextTemp)
     }
@@ -95,7 +99,7 @@ export class IatRecognizer
                 // 重新开始录音
                 setTimeout(() => {
                     this.webSocketSend()
-                }, 500)
+                }, 40)
             }
             iatWS.onmessage = e => {
                 this.result(e.data)
@@ -208,8 +212,8 @@ export class IatRecognizer
         if (!(/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent))){
             this.audioContext && this.audioContext.suspend()
         }
-        this.onRecognizerStop()
         this.setStatus(RecognitionStatus.ended)
+        this.onRecognizerStop()
     }
     // 处理音频数据
     // transAudioData(audioData) {
@@ -240,7 +244,7 @@ export class IatRecognizer
                 language, //小语种可在控制台--语音听写（流式）--方言/语种处添加试用
                 domain: 'iat',
                 accent, //中文方言可在控制台--语音听写（流式）--方言/语种处添加试用
-                vad_eos: 5000,
+                vad_eos: 4000,
                 dwa: 'wpgs', //为使该功能生效，需到控制台开通动态修正功能（该功能免费）
             },
             data: {
@@ -299,6 +303,7 @@ export class IatRecognizer
             for (let i = 0; i < ws.length; i++) {
                 str = str + ws[i].cw[0].w
             }
+            const isLast: boolean = jsonData.data.status === 2;
             // 开启wpgs会有此字段(前提：在控制台开通动态修正功能)
             // 取值为 "apd"时表示该片结果是追加到前面的最终结果；取值为"rpl" 时表示替换前面的部分结果，替换范围为rg字段
             if (data.pgs) {
@@ -307,17 +312,20 @@ export class IatRecognizer
                     // @ts-ignore
                     this.setResultText({
                         resultText: this.resultTextTemp,
+                        isLast
                     })
                 }
                 // 将结果存储在resultTextTemp中
                 // @ts-ignore
                 this.setResultText({
                     resultTextTemp: this.resultText + str,
+                    isLast
                 })
             } else {
                 // @ts-ignore
                 this.setResultText({
                     resultText: this.resultText + str,
+                    isLast
                 })
             }
         }
@@ -330,8 +338,9 @@ export class IatRecognizer
         }
     }
     start() {
+        this.resultText = ''
+        this.resultTextTemp = ''
         this.recorderStart()
-        this.setResultText({ resultText: '', resultTextTemp: '' })
     }
     stop() {
         this.recorderStop()
