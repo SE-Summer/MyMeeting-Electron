@@ -1,14 +1,15 @@
-import {iflytekAPPID} from "@/ServiceConfig";
+import {IatRecognizer} from "./IatRecognizer"
 import {SpeechText} from "./Types";
 // @ts-ignore
 import moment from "moment";
+import * as events from "events";
 
-// Recognizer.init(iflytekAPPID);
 
 const me = '我';
 
 export class SpeechRecognition
 {
+    private recognizer;
     // private recognizerEventEmitter = new NativeEventEmitter(Recognizer);
     // private working: boolean = null;
     // private sentenceEnded: boolean = null;
@@ -20,6 +21,15 @@ export class SpeechRecognition
 
     constructor(sendSpeechText: (speechText: SpeechText) => void)
     {
+        // @ts-ignore
+        this.recognizer = new IatRecognizer()
+        this.recognizer.onRecognizerResult = (text) => {
+            console.log(text);
+        }
+        this.recognizer.onRecognizerStop = () => {
+            this.recognizer.start();
+        }
+        this.recognizer.start();
         // this.speechCallbacks = new Map<string, (text: string) => void>();
         // this.speechTextStorage = [];
         // this.speakingSpeechTexts = new Map<string, SpeechText>();
@@ -40,6 +50,7 @@ export class SpeechRecognition
     }
 
     private onRecognizerResult = (recognized) => {
+        console.log(recognized);
         // const pendingText = recognized.text.trim();
         // if (pendingText.length === 0)
         //     return;
@@ -152,7 +163,8 @@ export class SpeechRecognition
     public start()
     {
         // this.working = true;
-        // Recognizer.start();
+        console.log('try to start');
+        this.recognizer.start();
         // console.log('[Recognizer]  Started');
     }
 
