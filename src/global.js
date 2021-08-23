@@ -6,7 +6,7 @@ export default {
         password: "",
         portrait: "",
         email: "",
-        id: ""
+        id: 0
     },
     email : "",
     password : "",
