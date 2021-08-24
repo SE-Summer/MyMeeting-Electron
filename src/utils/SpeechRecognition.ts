@@ -72,12 +72,15 @@ export class SpeechRecognition
     {
         if (speechText.fromPeerId !== global.userInfo.id) {
             speechText.fromMyself = false;
+            speechText.startTime = moment(speechText.startTime);
+            speechText.updateTime = moment(speechText.updateTime);
             this.newSpeechText(speechText);
         }
     }
 
     private newSpeechText(speechText: SpeechText)
     {
+        console.log(typeof speechText.startTime, typeof speechText.updateTime);
         if (speechText.newSentence) {
             if (this.speakingSpeechTexts.has(speechText.fromPeerId)) {
                 const previous = this.speakingSpeechTexts.get(speechText.fromPeerId);
