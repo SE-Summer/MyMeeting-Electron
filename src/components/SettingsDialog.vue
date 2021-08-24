@@ -24,7 +24,7 @@
           <v-tab>
             虚拟背景
           </v-tab>
-          <v-tab>
+          <v-tab @click="getSources">
             共享屏幕
           </v-tab>
         </v-tabs>
@@ -153,6 +153,13 @@
       },
       next () {
         this.imgIter = (this.imgIter === this.backgroundImgs.length - 1) ? 0 : this.imgIter + 1
+      },
+      getSources() {
+        desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
+            sources=>{
+              console.log(sources)
+              this.sources = sources
+            })
       }
     },
     mounted() {
