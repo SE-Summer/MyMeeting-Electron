@@ -54,9 +54,25 @@
           </v-icon>
           {{currTime}}
         </v-chip>
-        <v-btn text color="red" @click="leaveMeeting">
+        <v-btn text color="red" @click="exitClicked">
           <v-icon color="red" left size="20">mdi-exit-to-app</v-icon>退出
         </v-btn>
+        <v-dialog
+                v-model="exitDialog"
+                width="500"
+                attach="#mainWindow"
+        >
+          <v-card style="text-align: center">
+            <p style="font-weight: bold; font-size: 20px; color: firebrick">结束会议</p>
+            <p style="font-size: 12px; color: gray; margin: 20px 0 20px 0">如果您不想结束会议，您可以在退出前指定新的主持人。</p>
+            <v-divider></v-divider>
+            <div style="margin: 10px 0 0 0;">
+              <v-btn outlined class="ma-2" @click="exitDialog = false">取消</v-btn>
+              <v-btn outlined color="teal" class="ma-2" @click="leaveMeeting">退出会议</v-btn>
+              <v-btn outlined color="red" class="ma-2" @click="closeMeeting">结束会议</v-btn>
+            </div>
+          </v-card>
+        </v-dialog>
       </div>
 
     </v-app-bar>
@@ -647,7 +663,8 @@ export default {
       snackText : "",
       currTime : "",
       clock: null,
-      allCaptions : []
+      allCaptions : [],
+      exitDialog : false
     }
   },
   methods: {
@@ -872,6 +889,13 @@ export default {
     removeMainFollowUser () {
       this.mainFollowUserId = null
     },
+    exitClicked () {
+      if (this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id) {
+        this.exitDialog = true
+      } else {
+        this.leaveMeeting()
+      }
+    },
     async leaveMeeting () {
       try {
         this.closeRAF()
@@ -892,6 +916,10 @@ export default {
         console.log('[LEAVE]', error)
       }
 
+      this.$emit('back')
+    },
+    async closeMeeting () {
+      await this.mediaService.closeRoom()
       this.$emit('back')
     },
     async sendDisplayStream(){
