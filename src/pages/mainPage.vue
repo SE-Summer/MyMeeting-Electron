@@ -627,7 +627,7 @@ export default {
       subFollowUserIds : [],
       mediaDevice : null,
       originVideoTracks : [],
-      myMediaStream : new MediaStream(),
+      myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
       myDisplayStream : new MediaStream(),
       video : false,
@@ -658,11 +658,11 @@ export default {
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
-        let tracks = this.myMediaStream.getVideoTracks()
+        let tracks = this.myVideoStream.getVideoTracks()
         for (const track of tracks) {
           await this.mediaService.closeTrack(track)
           track.stop()
-          this.myMediaStream.removeTrack(track)
+          this.myVideoStream.removeTrack(track)
         }
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
@@ -694,11 +694,11 @@ export default {
     async screenSwitch () {
       if (this.screenIcon.icon === 'mdi-laptop') {
         this.display = false
-        let tracks = this.myMediaStream.getTracks()
+        let tracks = this.myVideoStream.getTracks()
         for (const track of tracks){
           await this.mediaService.closeTrack(track)
           track.stop()
-          this.myMediaStream.removeTrack(track)
+          this.myVideoStream.removeTrack(track)
         }
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
@@ -718,6 +718,8 @@ export default {
         this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
           this.allCaptions.push(data)
         })
+        this.chatOverlay = true
+        this.chatBadge = '#00000000'
         this.captionIcon.icon = 'mdi-translate'
         this.captionIcon.color = 'teal'
       }
@@ -874,8 +876,8 @@ export default {
       try {
         this.closeRAF()
         clearInterval(this.clockIntervalId)
-        if (this.myMediaStream) {
-          this.myMediaStream.getTracks().forEach((track) => {
+        if (this.myVideoStream) {
+          this.myVideoStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
@@ -892,9 +894,8 @@ export default {
 
       this.$emit('back')
     },
-
     async sendDisplayStream(){
-      for (let track of this.myMediaStream.getTracks()){
+      for (let track of this.myVideoStream.getTracks()){
         await this.mediaService.closeTrack(track)
       }
 
@@ -912,7 +913,11 @@ export default {
       }
       navigator.mediaDevices.getUserMedia(constraints)
           .then(async (mediaStream) => {
-            this.myMediaStream = new MediaStream(mediaStream.getTracks())
+            mediaStream.getAudioTracks().forEach((track) => {
+              this.myAudioStream.addTrack(track)
+            })
+            this.myVideoStream = new MediaStream(mediaStream.getVideoTracks())
+            this.myAudioStream = new MediaStream()
             await this.mediaService.sendMediaStream(mediaStream)
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
@@ -922,7 +927,6 @@ export default {
       })
 
     },
-
     async sendMediaStream (video, audio) {
       if (!video &&  !audio) {
         return
@@ -932,7 +936,7 @@ export default {
         audio : audio
       }
 
-      for (let track of this.myMediaStream.getVideoTracks()){
+      for (let track of this.myVideoStream.getVideoTracks()){
         await this.mediaService.closeTrack(track)
       }
 
@@ -945,7 +949,7 @@ export default {
             this.closeRAF()
 
             if (this.processVideoType === 'normal') {
-              this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
+              this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
               document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
@@ -959,9 +963,9 @@ export default {
                 } else {
                   this.replaceBackground()
                 }
-                this.myMediaStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
+                this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
                 this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
-                let tracks = this.myMediaStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
+                let tracks = this.myVideoStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
                 await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
             }
@@ -1065,6 +1069,14 @@ export default {
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
       this.allUsers = this.mediaService.getPeerDetails()
+
+      // this.subFollowUserIds.forEach((id, index) => {
+      //   if ((id !== this.GLOBAL.userInfo.id) && (!this.allUsers.find((user) => {
+      //     return user.id = id
+      //   }))) {
+      //     this.subFollowUserIds.splice(index, 1)
+      //   }
+      // })
 
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
         this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
@@ -1172,7 +1184,7 @@ export default {
         return {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
-          mediaStream : this.myMediaStream
+          mediaStream : this.myVideoStream
         }
       } else {
         for (let i = 0; i < this.allUsers.length; ++i) {
@@ -1198,7 +1210,7 @@ export default {
         subUsers.push({
           id: this.GLOBAL.userInfo.id,
           displayName: this.GLOBAL.userInfo.nickname,
-          mediaStream: this.myMediaStream
+          mediaStream: this.myVideoStream
         })
       }
 
