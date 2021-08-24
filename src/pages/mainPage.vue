@@ -928,7 +928,7 @@ export default {
 
     },
     async sendMediaStream (video, audio) {
-      if (!video &&  !audio) {
+      if (!video && !audio) {
         return
       }
       let constraint = {

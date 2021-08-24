@@ -7,7 +7,7 @@ import {
     serviceConfig,
     SignalMethod,
     SignalType,
-    SIMULCASTENCODING,
+    SimulcastEncodings,
     socketConnectionOptions,
     TransportType
 } from "../ServiceConfig";
@@ -352,7 +352,8 @@ export class MediaService
                     params = {
                         track,
                         appData: { source },
-                        // encodings: SIMULCASTENCODING,
+                        // @ts-ignore
+                        encodings: SimulcastEncodings,
                         codecOptions: { videoGoogleStartBitrate : 1000 },
                         // codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
                     }
@@ -432,7 +433,9 @@ export class MediaService
 
     public sendSpeechText(speechText: types.SpeechText)
     {
-        this.signaling.sendNotify(SignalMethod.sendSpeechText, { speechText });
+        if (this.signaling && this.signaling.connected()) {
+            this.signaling.sendNotify(SignalMethod.sendSpeechText, { speechText });
+        }
     }
 
     // tell server and clear all meeting-related variables

@@ -137,3 +137,15 @@ export declare type SpeechText = {
     displayName: string,
     text: string,
 }
+
+export declare type RecognitionResult = {
+    text: string;
+    isLast: boolean;
+}
+
+export enum RecognitionStatus {
+    null,
+    initialized,
+    processing,
+    ended
+}
