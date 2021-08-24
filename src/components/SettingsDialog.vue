@@ -157,7 +157,6 @@
       getSources() {
         desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
             sources=>{
-              console.log(sources)
               this.sources = sources
             })
       }

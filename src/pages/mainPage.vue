@@ -411,29 +411,29 @@
               <v-row v-for="(caption, index) in allCaptions" :key="index">
                 <v-col>
                   <div style="display: inline-block" class="messageCard">
-                    <v-avatar
-                            color="grey darken-1"
-                            size="30"
-                            style="margin-right: 8px;">
-                      <v-img :src="mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().avatar">
-                        <template v-slot:placeholder>
-                          <div style="margin-top: 7px">
-                            <v-progress-circular
-                                    indeterminate
-                                    size="20"
-                                    color="grey lighten-5"
-                            ></v-progress-circular>
-                          </div>
-                        </template>
-                      </v-img>
-                    </v-avatar>
+<!--                    <v-avatar-->
+<!--                            color="grey darken-1"-->
+<!--                            size="30"-->
+<!--                            style="margin-right: 8px;">-->
+<!--                      <v-img :src="mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().avatar">-->
+<!--                        <template v-slot:placeholder>-->
+<!--                          <div style="margin-top: 7px">-->
+<!--                            <v-progress-circular-->
+<!--                                    indeterminate-->
+<!--                                    size="20"-->
+<!--                                    color="grey lighten-5"-->
+<!--                            ></v-progress-circular>-->
+<!--                          </div>-->
+<!--                        </template>-->
+<!--                      </v-img>-->
+<!--                    </v-avatar>-->
                     <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">
-                             {{mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().displayName}}</span>
+                             {{caption.displayName}}</span>
                     </div>
                     <p class="messageText">{{caption.text}}</p>
                   </div>
-                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(caption.timestamp).format('HH:mm:ss')}}</div>
+                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(caption.startTime).format('HH:mm:ss')}} - {{moment(caption.updateTime).format('HH:mm:ss')}}</div>
                 </v-col>
               </v-row>
             </v-container>
@@ -675,6 +675,7 @@ export default {
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
+        this.originVideoTracks = []
         let tracks = this.myVideoStream.getVideoTracks()
         for (const track of tracks) {
           await this.mediaService.closeTrack(track)
@@ -685,7 +686,7 @@ export default {
         this.videoIcon.color = 'gray'
       } else{
         this.video = true
-        this.sendMediaStream(this.video, this.audio)
+        this.sendMediaStream(this.video, null)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
       }
@@ -703,7 +704,7 @@ export default {
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        this.sendMediaStream(this.video, this.audio)
+        await this.sendMediaStream(null, this.audio)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'teal'
       }
@@ -728,13 +729,12 @@ export default {
     },
     async captionSwitch () {
       if (this.captionIcon.icon === 'mdi-translate') {
+        this.mediaService.speechRecognition.stop()
         this.mediaService.speechRecognition.deleteSpeechListener('speechListener')
         this.captionIcon.icon = 'mdi-translate-off'
         this.captionIcon.color = 'gray'
       } else {
-        this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
-          this.allCaptions.push(data)
-        })
+        this.mediaService.speechRecognition.start()
         this.chatOverlay = true
         this.chatBadge = '#00000000'
         this.captionIcon.icon = 'mdi-translate'
@@ -964,38 +964,35 @@ export default {
         audio : audio
       }
 
-      for (let track of this.myVideoStream.getVideoTracks()){
-        await this.mediaService.closeTrack(track)
-      }
-
-      for (let track of this.myAudioStream.getAudioTracks()){
-        await this.mediaService.closeTrack(track)
-      }
-
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-            this.closeRAF()
+            if (video !== null){
+              this.closeRAF()
+            }
 
             if (this.processVideoType === 'normal') {
-              this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
-              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+              this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
+              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
               document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
             } else {
-              this.originVideoTracks = mediaStream.getVideoTracks()
-              let inVideo = document.getElementById('invisibleVideo')
-              inVideo.srcObject = new MediaStream(this.originVideoTracks)
-              inVideo.onloadeddata = async () => {
-                if (this.processVideoType === 'blur') {
-                  this.blurBackground()
-                } else {
-                  this.replaceBackground()
+              if (video === true) {
+                this.originVideoTracks = mediaStream.getVideoTracks()
+                let inVideo = document.getElementById('invisibleVideo')
+                inVideo.srcObject = new MediaStream(this.originVideoTracks)
+                inVideo.onloadeddata = async () => {
+                  if (this.processVideoType === 'blur') {
+                    this.blurBackground()
+                  } else {
+                    this.replaceBackground()
+                  }
                 }
-                this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
-                this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
-                let tracks = this.myVideoStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
-                await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
+              this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : this.myVideoStream
+              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
+              let tracks = (video) ? this.myVideoStream.getVideoTracks() : []
+              tracks.concat((audio) ? this.myAudioStream.getAudioTracks() : [])
+              await this.mediaService.sendMediaStream(new MediaStream(tracks))
             }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
@@ -1042,7 +1039,7 @@ export default {
         this.processVideoType = 'normal'
       }
       if (this.video) {
-        this.sendMediaStream(this.video, this.audio)
+        this.sendMediaStream(this.video, null)
       }
       this.displayAudio = display.audio
       this.displayVideo = display.video
@@ -1141,6 +1138,10 @@ export default {
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
       }
+    })
+
+    this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
+      this.allCaptions = data
     })
 
     try {
