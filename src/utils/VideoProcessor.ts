@@ -92,6 +92,6 @@ export class VideoProcessor
         // this.outputCtx.globalCompositeOperation = 'destination-over'
         // this.outputCtx.drawImage(this.video, 0, 0, this.width, this.height)
         // this.outputCtx.globalCompositeOperation = 'source-over'
-        this.intervalHandler = setTimeout(this.replaceBackground, 20);
+        this.intervalHandler = requestAnimationFrame(this.replaceBackground);
     }
 }
