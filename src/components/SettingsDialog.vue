@@ -24,7 +24,7 @@
           <v-tab>
             虚拟背景
           </v-tab>
-          <v-tab @click="getSources">
+          <v-tab>
             共享屏幕
           </v-tab>
         </v-tabs>
@@ -71,8 +71,9 @@
             </div>
           </v-expand-transition>
         </v-tab-item>
-        <v-tab-item style="margin:0 25%">
+        <v-tab-item>
           <v-switch
+              style="margin:5% 35%"
               v-model="displayVideo"
               label="共享画面"
               inset
@@ -80,20 +81,25 @@
               color="teal">
           </v-switch>
           <v-switch
+              style="margin:5% 35%"
               v-model="displayAudio"
               label="共享声音"
               inset
               dense
               color="teal">
           </v-switch>
-          <v-radio-group v-model="displaySourceId">
-            <v-radio
-                v-for="source in sources"
-                :key="source.id"
-                :label="source.name"
-                :value="source.id"
-            ></v-radio>
-          </v-radio-group>
+          <v-select
+              attach
+              @click="getSources"
+              style="padding: 0 15%"
+              v-model="displaySourceId"
+              :items="sources"
+              item-text="name"
+              item-value="id"
+              label="共享源"
+              single-line
+          ></v-select>
+          <video id="screen-preview" autoplay style="border: 1px solid teal; margin-left: 100px; width: 300px; height: 200px"></video>
         </v-tab-item>
       </v-tabs-items>
       <v-divider style="margin-top: 10px"></v-divider>
@@ -157,7 +163,6 @@
       getSources() {
         desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
             sources=>{
-              console.log(sources)
               this.sources = sources
             })
       }
@@ -186,6 +191,30 @@
         displayAudio: true,
         displaySourceId: null,
         sources: [],
+      }
+    },
+    watch : {
+      displaySourceId(newId){
+        console.log('NEW ID', newId);
+        let constraints;
+        if (newId){
+          constraints = {
+            audio: false,
+            video: {mandatory: {chromeMediaSource: 'desktop', chromeMediaSourceId: newId}},
+          }
+        }else{
+          constraints = {
+            audio: false,
+            video: {mandatory: {chromeMediaSource: 'desktop'}},
+          }
+        }
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(async (mediaStream) => {
+              const video = document.getElementById('screen-preview');
+              video.srcObject = mediaStream
+            }).catch((error) => {
+          console.log(error)
+        })
       }
     }
   }

@@ -314,11 +314,11 @@
     </div>
     <button
         :class="['mymeeting-btn', {'active':click4}]"
-        @click="getMeetings">
+        @click="getMeetings" v-show="!click5">
       {{'我的预约'+ (click4 ? '>' : '&lt;')}}</button>
     <div
         :class="['mymeeting-list', {'active':click4}]"
-         @mouseleave="click4 = false">
+        @mouseleave="click4 = false">
       <v-container>
         <h2 class="title3">
           我的预约
@@ -330,9 +330,9 @@
               color="teal lighten-3"
               max-width="350"
           ><v-img
-                :src="GLOBAL.baseURL + '/static/images/'+(1+room.id % 8)+'.jpeg'"
-                height="90px"
-            ></v-img>
+              :src="GLOBAL.baseURL + '/static/images/'+(1+room.id % 8)+'.jpeg'"
+              height="90px"
+          ></v-img>
             <v-card-title class="room-card-title">
               <v-icon color="teal darken-2" v-if="room.host === GLOBAL.userInfo.id"> mdi-crown-outline</v-icon>
               {{room.topic}}
@@ -376,6 +376,70 @@
         </v-row>
       </v-container>
     </div>
+    <button
+        :class="['history-btn', {'active':click5}]"
+        @click="getHistory" v-show="!click4">
+      {{'历史会议'+ (click5 ? '>' : '&lt;')}}</button>
+    <div
+        :class="['history-list', {'active':click5}]"
+        @mouseleave="click5 = false">
+      <v-container>
+        <h2 class="title3">
+          历史会议
+        </h2>
+        <v-row v-for="(room, index) in history" :key="index">
+          <v-card
+              elevation="5"
+              class="mx-auto teal room-card"
+              color="teal lighten-3"
+              max-width="350"
+          >
+            <v-card-title class="room-card-title">
+              <v-icon color="teal darken-2" v-if="room.host === GLOBAL.userInfo.id"> mdi-crown-outline</v-icon>
+              {{room.topic}}
+            </v-card-title>
+            <v-card-subtitle>
+              {{room.start_time + ' ~ ' + room.end_time}}
+            </v-card-subtitle>
+
+            <v-card-actions>
+              <v-btn
+                  color="orange lighten-1"
+                  :disabled="room.ended"
+                  text
+                  @click="quickJoin(room)"
+              >
+                JOIN
+              </v-btn>
+
+              <v-spacer></v-spacer>
+
+              <v-btn
+                  icon
+                  @click="room.show = !room.show"
+              >
+                <v-icon>{{ room.show ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+              </v-btn>
+            </v-card-actions>
+
+            <v-expand-transition>
+              <div v-show="room.show">
+                <v-divider></v-divider>
+                <v-card-text class="meeting-card-text">
+                  {{'会议号：'+room.id}}
+                </v-card-text>
+                <v-card-text class="meeting-card-text">
+                  {{'会议密码：'+room.password}}
+                </v-card-text>
+                <v-card-text class="meeting-card-text">
+                  {{'我入会的时间：'+room.time}}
+                </v-card-text>
+              </div>
+            </v-expand-transition>
+          </v-card>
+        </v-row>
+      </v-container>
+    </div>
 
   </div>
 </template>
@@ -397,6 +461,7 @@ export default {
       hover3 : false,
       click3 : false,
       click4 : false,
+      click5 : false,
       loading : false,
       snack : false,
       valid1 : false,
@@ -408,6 +473,7 @@ export default {
       password : "",
       topic : "",
       rooms : [],
+      history : [],
       start_time :  moment().format("HH:mm"),
       end_time : moment().add(2, 'h').format("HH:mm"),
       start_date : moment().format("YYYY-MM-DD"),
@@ -443,6 +509,7 @@ export default {
                 data : {
                   'id' : this.roomId,
                   'password' : this.password,
+                  'token' : this.GLOBAL.userInfo.token
                 }
               })
           this.GLOBAL.roomInfo = response.data.room;
@@ -552,8 +619,8 @@ export default {
       }
     },
     async getHistory(){
-      this.click4 = !this.click4;
-      if (this.click4){
+      this.click5 = !this.click5;
+      if (this.click5){
         try{
           const response =await axios(
               {
@@ -563,6 +630,10 @@ export default {
                   'token' : this.GLOBAL.userInfo.token,
                 }
               })
+          response.data.history.forEach((room)=>{
+            room.show = false;
+            room.ended = moment(room.end_time).isBefore(moment());
+          });
           this.history = response.data.history
           console.log(response);
         }catch(error){
@@ -580,6 +651,7 @@ export default {
               data : {
                 'id' : room.id,
                 'password' : room.password,
+                'token' : this.GLOBAL.userInfo.token
               }
             })
         this.GLOBAL.roomInfo = response.data.room;
@@ -725,11 +797,11 @@ export default {
 .mymeeting-btn{
   font-family: "Microsoft YaHei UI", serif;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 18px;
   padding: 15px;
   position: absolute;
-  width: 50px;
-  bottom: 30px;
+  width: 45px;
+  bottom: 20px;
   background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
   right: 0;
   outline: none;
@@ -748,6 +820,32 @@ export default {
   transition: 0.2s ease-in-out;
   background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);
 }
+.history-btn{
+  font-family: "Microsoft YaHei UI", serif;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 15px;
+  position: absolute;
+  width: 45px;
+  bottom: 200px;
+  background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
+  right: 0;
+  outline: none;
+  transition: 0.2s ease-in-out;
+  border-bottom-left-radius: 10px;
+  border-top-left-radius: 10px;
+}
+.history-btn:hover {
+  background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);}
+.history-btn.active:hover {
+  background-image: linear-gradient(to bottom, #80CBC4ff, #00695Cdd);
+}
+.history-btn.active{
+  right: 40%;
+  bottom: 70%;
+  transition: 0.2s ease-in-out;
+  background-image: linear-gradient(to bottom, #80CBC4cc, #00695Cdd);
+}
 
 .mymeeting-list{
   position: absolute;
@@ -760,6 +858,21 @@ export default {
   background-image: linear-gradient(to right, #00897B08, #00897Bff);
 }
 .mymeeting-list.active{
+  width: 40%;
+  transition: 0.3s ease-in-out;
+}
+
+.history-list{
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 0;
+  height: 100%;
+  overflow: auto;
+  transition: 0.3s ease-in-out;
+  background-image: linear-gradient(to right, #00897B08, #00897Bff);
+}
+.history-list.active{
   width: 40%;
   transition: 0.3s ease-in-out;
 }

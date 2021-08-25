@@ -665,8 +665,9 @@ export default {
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
+        if (this.display) await this.screenSwitch();
         this.video = true
-        this.sendMediaStream(this.video, this.audio)
+        await this.sendMediaStream(this.video, this.audio)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
       }
@@ -684,7 +685,7 @@ export default {
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        this.sendMediaStream(this.video, this.audio)
+        await this.sendMediaStream(this.video, this.audio)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'teal'
       }
@@ -701,6 +702,7 @@ export default {
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
       } else {
+        if (this.video) await this.videoSwitch();
         this.display = true
         await this.sendDisplayStream(this.display)
         this.screenIcon.icon = 'mdi-laptop'
@@ -912,6 +914,9 @@ export default {
           .then(async (mediaStream) => {
             this.myMediaStream = new MediaStream(mediaStream.getTracks())
             await this.mediaService.sendMediaStream(mediaStream)
+            for (let track of mediaStream.getAudioTracks()){
+              this.myMediaStream.removeTrack(track)
+            }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
             }
@@ -930,8 +935,10 @@ export default {
         audio : audio
       }
 
-      for (let track of this.myMediaStream.getVideoTracks()){
-        await this.mediaService.closeTrack(track)
+      if (!video && !this.display){
+        for (let track of this.myMediaStream.getVideoTracks()){
+          await this.mediaService.closeTrack(track)
+        }
       }
 
       for (let track of this.myAudioStream.getAudioTracks()){
@@ -943,7 +950,7 @@ export default {
             this.closeRAF()
 
             if (this.processVideoType === 'normal') {
-              this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : new MediaStream()
+              this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myMediaStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
               document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
