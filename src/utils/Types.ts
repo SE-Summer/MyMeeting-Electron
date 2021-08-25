@@ -149,3 +149,9 @@ export enum RecognitionStatus {
     processing,
     ended
 }
+
+export enum BackgroundProcessType {
+    disable,
+    virtual,
+    blur,
+}

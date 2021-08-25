@@ -439,8 +439,6 @@
             </v-container>
         </div>
       </v-fade-transition>
-      <canvas id="invisibleCanvas" v-show="false"></canvas>
-      <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
 
     <v-footer
@@ -575,9 +573,9 @@ import {MediaService} from '../service/MediaService'
 import MyVideo from "../components/myVideo"
 import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
-import {virtualBackground} from "../service/VirtualBackgroundService";
 import SettingDialog from "../components/SettingsDialog";
 import axios from "axios";
+import {VideoProcessor} from "@/utils/VideoProcessor";
 
 const moment = require("moment");
 
@@ -656,7 +654,7 @@ export default {
       placeholdOfMsg : '发送消息 to 所有人',
       privateChatPeerId : null,
       file : null,
-      vb : null,
+      videoProcessor: null,
       processVideoType : 'normal',
       stopRAFId : null,
       snack : false,
@@ -682,6 +680,7 @@ export default {
           track.stop()
           this.myVideoStream.removeTrack(track)
         }
+      this.videoProcessor.stop()
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
@@ -973,22 +972,9 @@ export default {
             if (this.processVideoType === 'normal') {
               this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
-              document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
             } else {
-              if (video === true) {
-                this.originVideoTracks = mediaStream.getVideoTracks()
-                let inVideo = document.getElementById('invisibleVideo')
-                inVideo.srcObject = new MediaStream(this.originVideoTracks)
-                inVideo.onloadeddata = async () => {
-                  if (this.processVideoType === 'blur') {
-                    this.blurBackground()
-                  } else {
-                    this.replaceBackground()
-                  }
-                }
-              }
-              this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : this.myVideoStream
+              this.myVideoStream = (video) ? this.videoProcessor.process(new MediaStream(mediaStream.getVideoTracks())) : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
               let tracks = (video) ? this.myVideoStream.getVideoTracks() : []
               tracks.push(...((audio) ? this.myAudioStream.getAudioTracks() : []))
@@ -1017,24 +1003,12 @@ export default {
       this.snack = true;
       this.mediaService.mutePeer();
     },
-    blurBackground () {
-      let frame = document.getElementById('invisibleVideo')
-      this.vb.blurBackground(frame)
-      this.stopRAFId = requestAnimationFrame(this.blurBackground)
-    },
-    replaceBackground () {
-      let frame = document.getElementById('invisibleVideo')
-      this.vb.replaceBackground(frame)
-      this.stopRAFId = requestAnimationFrame(this.replaceBackground)
-    },
     changeSettings(blur, replace, backgroundImg, display) {
       if (blur) {
         this.processVideoType = 'blur'
       } else if (replace) {
         this.processVideoType = 'replace'
-        let img = new Image()
-        img.src = backgroundImg
-        this.vb.setVBConfig(img)
+        this.videoProcessor.setBackground(backgroundImg)
       } else {
         this.processVideoType = 'normal'
       }
@@ -1186,7 +1160,7 @@ export default {
 
     moment.locale('zh-cn')
 
-    this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
+    this.videoProcessor = new VideoProcessor();
 
     this.clockIntervalId = setInterval(this.addSec, 1000)
   },

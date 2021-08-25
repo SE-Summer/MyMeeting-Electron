@@ -1,5 +1,5 @@
 <template>
-  <video :id="myId" :autoplay="srcObject"></video>
+  <video :id="myId" :autoplay="srcObject" style="transform: rotateY(180deg)"></video>
 </template>
 
 <script>
