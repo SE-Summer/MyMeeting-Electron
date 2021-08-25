@@ -991,7 +991,8 @@ export default {
               this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
               let tracks = (video) ? this.myVideoStream.getVideoTracks() : []
-              tracks.concat((audio) ? this.myAudioStream.getAudioTracks() : [])
+              tracks.push(...((audio) ? this.myAudioStream.getAudioTracks() : []))
+              console.log(tracks)
               await this.mediaService.sendMediaStream(new MediaStream(tracks))
             }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
