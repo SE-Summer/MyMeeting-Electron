@@ -3,8 +3,8 @@ import * as bodyPix from '@tensorflow-models/body-pix';
 import MyWorker from 'comlink-loader!./media/BodyPixWorker';
 import {BackgroundProcessType} from "@/utils/Types";
 
-const defaultWidth = 640;
-const defaultHeight = 360;
+const defaultWidth = 1280;
+const defaultHeight = 720;
 const defaultFramerate = 30;
 const bodyPixWorker = new MyWorker();
 
@@ -65,7 +65,7 @@ export class VideoProcessor
     public stop()
     {
         if (this.working) {
-            clearTimeout(this.intervalHandler);
+            cancelAnimationFrame(this.intervalHandler);
             const tracks = this.inputStream.getTracks();
             tracks.forEach((track) => {
                 track.stop();
@@ -92,6 +92,6 @@ export class VideoProcessor
         // this.outputCtx.globalCompositeOperation = 'destination-over'
         // this.outputCtx.drawImage(this.video, 0, 0, this.width, this.height)
         // this.outputCtx.globalCompositeOperation = 'source-over'
-        this.intervalHandler = setTimeout(this.replaceBackground, this.updateInterval);
+        this.intervalHandler = setTimeout(this.replaceBackground, 20);
     }
 }
