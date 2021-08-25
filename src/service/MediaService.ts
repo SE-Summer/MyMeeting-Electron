@@ -193,8 +193,7 @@ export class MediaService
             this.roomToken = roomToken;
             this.userToken = userToken;
             this.myId = myUserId;
-            console.log(myUserId);
-            this.meetingURL = meetingURL(roomToken, userToken, myUserId);
+            this.meetingURL = meetingURL(this.roomToken, this.userToken, this.myId);
             this.displayName = displayName;
             this.deviceName = deviceName;
             this.avatar = avatar;
@@ -343,13 +342,11 @@ export class MediaService
     {
         try {
             const tracks = stream.getTracks();
-            let videoTrackCount = 0;
-            let audioTrackCount = 0;
             for (const track of tracks) {
                 let source: string = null;
                 let params: mediasoupTypes.ProducerOptions = null;
                 if (track.kind === 'video') {
-                    source = `Video_from_${this.userToken}_track${++videoTrackCount}`;
+                    source = `Video_from_peer_${this.myId}_track_${track.id}`;
                     params = {
                         track,
                         appData: { source },
@@ -359,7 +356,7 @@ export class MediaService
                         // codec: this.device.rtpCapabilities.codecs.find(codec => codec.mimeType === 'video/H264')
                     }
                 } else {
-                    source = `Audio_from_${this.userToken}_track${++audioTrackCount}`;
+                    source = `Audio_from_peer_${this.myId}_track_${track.id}`;
                     params = {
                         track,
                         appData: { source },
@@ -707,8 +704,6 @@ export class MediaService
                 kind          : data.kind,
                 rtpParameters : data.rtpParameters
             });
-            consumer.pause();
-            consumer.emit('pause');
 
             consumer.on('pause', async () => {
                 console.log('[Consumer]  Pause consumer id = ' + consumer.id);
@@ -719,6 +714,9 @@ export class MediaService
                 console.log('[Consumer]  Resume consumer id = ' + consumer.id);
                 await this.signaling.sendRequest(SignalMethod.resumeConsumer, {consumerId: consumer.id});
             });
+
+            consumer.pause();
+            consumer.emit('pause');
 
             this.peerMedia.addConsumer(data.producerPeerId, consumer);
 
