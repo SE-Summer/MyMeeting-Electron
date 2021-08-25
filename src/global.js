@@ -6,7 +6,7 @@ export default {
         password: "",
         portrait: "",
         email: "",
-        id: ""
+        id: 0
     },
     email : "",
     password : "",
@@ -16,7 +16,7 @@ export default {
         id : "",
         token : "",
         password : "",
-        host : "",
+        host : 0,
         end_time : "",
         start_time: ""
     },

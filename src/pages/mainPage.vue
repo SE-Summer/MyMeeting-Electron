@@ -54,9 +54,25 @@
           </v-icon>
           {{currTime}}
         </v-chip>
-        <v-btn text color="red" @click="leaveMeeting">
+        <v-btn text color="red" @click="exitClicked">
           <v-icon color="red" left size="20">mdi-exit-to-app</v-icon>退出
         </v-btn>
+        <v-dialog
+                v-model="exitDialog"
+                width="500"
+                attach="#mainWindow"
+        >
+          <v-card style="text-align: center">
+            <p style="font-weight: bold; font-size: 20px; color: firebrick">结束会议</p>
+            <p style="font-size: 12px; color: gray; margin: 20px 0 20px 0">如果您不想结束会议，您可以在退出前指定新的主持人。</p>
+            <v-divider></v-divider>
+            <div style="margin: 10px 0 0 0;">
+              <v-btn outlined class="ma-2" @click="exitDialog = false">取消</v-btn>
+              <v-btn outlined color="teal" class="ma-2" @click="leaveMeeting">退出会议</v-btn>
+              <v-btn outlined color="red" class="ma-2" @click="closeMeeting">结束会议</v-btn>
+            </div>
+          </v-card>
+        </v-dialog>
       </div>
 
     </v-app-bar>
@@ -301,12 +317,14 @@
                           style="width: 100%; height: 100%"></my-video>
                 <div
                     class="d-flex white black--text v-card--reveal"
-                    style="height: 15%; margin-bottom: 10px">
-                  <p id="rightSideBarText" style="font-size: 12px; font-weight: bold; margin-left: 40%">
-                    {{user.displayName}}
-                  </p>
+                    style="height: 15%; margin-bottom: 10px;">
+                  <div style="width: 100px; margin-left: 25%; margin-right: 10%; text-align: center;">
+                    <p id="rightSideBarText" style="font-size: 12px; font-weight: bold;">
+                      {{user.displayName}}
+                    </p>
+                  </div>
                   <v-fab-transition>
-                    <div style="margin-left: 20%" v-if="hover">
+                    <div v-if="hover">
                       <v-btn icon x-small @click="sub2Main(index)">
                         <v-icon color="teal">
                           mdi-account-star
@@ -372,7 +390,7 @@
                     </v-img>
                   </v-avatar>
                   <div style="display: inline-block; font-size: 15px">
-                      <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">{{(msg.fromMyself) ?
+                      <span style="font-weight: bold; margin-right: 5px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
                               mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
@@ -625,7 +643,7 @@ export default {
       subFollowUserIds : [],
       mediaDevice : null,
       originVideoTracks : [],
-      myMediaStream : new MediaStream(),
+      myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
       myDisplayStream : new MediaStream(),
       video : false,
@@ -645,7 +663,8 @@ export default {
       snackText : "",
       currTime : "",
       clock: null,
-      allCaptions : []
+      allCaptions : [],
+      exitDialog : false
     }
   },
   methods: {
@@ -656,11 +675,11 @@ export default {
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
-        let tracks = this.myMediaStream.getVideoTracks()
+        let tracks = this.myVideoStream.getVideoTracks()
         for (const track of tracks) {
           await this.mediaService.closeTrack(track)
           track.stop()
-          this.myMediaStream.removeTrack(track)
+          this.myVideoStream.removeTrack(track)
         }
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
@@ -693,11 +712,11 @@ export default {
     async screenSwitch () {
       if (this.screenIcon.icon === 'mdi-laptop') {
         this.display = false
-        let tracks = this.myMediaStream.getTracks()
+        let tracks = this.myVideoStream.getTracks()
         for (const track of tracks){
           await this.mediaService.closeTrack(track)
           track.stop()
-          this.myMediaStream.removeTrack(track)
+          this.myVideoStream.removeTrack(track)
         }
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
@@ -718,6 +737,8 @@ export default {
         this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
           this.allCaptions.push(data)
         })
+        this.chatOverlay = true
+        this.chatBadge = '#00000000'
         this.captionIcon.icon = 'mdi-translate'
         this.captionIcon.color = 'teal'
       }
@@ -870,12 +891,19 @@ export default {
     removeMainFollowUser () {
       this.mainFollowUserId = null
     },
+    exitClicked () {
+      if (this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id) {
+        this.exitDialog = true
+      } else {
+        this.leaveMeeting()
+      }
+    },
     async leaveMeeting () {
       try {
         this.closeRAF()
         clearInterval(this.clockIntervalId)
-        if (this.myMediaStream) {
-          this.myMediaStream.getTracks().forEach((track) => {
+        if (this.myVideoStream) {
+          this.myVideoStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
@@ -892,9 +920,12 @@ export default {
 
       this.$emit('back')
     },
-
+    async closeMeeting () {
+      await this.mediaService.closeRoom()
+      this.$emit('back')
+    },
     async sendDisplayStream(){
-      for (let track of this.myMediaStream.getTracks()){
+      for (let track of this.myVideoStream.getTracks()){
         await this.mediaService.closeTrack(track)
       }
 
@@ -912,7 +943,11 @@ export default {
       }
       navigator.mediaDevices.getUserMedia(constraints)
           .then(async (mediaStream) => {
-            this.myMediaStream = new MediaStream(mediaStream.getTracks())
+            mediaStream.getAudioTracks().forEach((track) => {
+              this.myAudioStream.addTrack(track)
+            })
+            this.myVideoStream = new MediaStream(mediaStream.getVideoTracks())
+            this.myAudioStream = new MediaStream()
             await this.mediaService.sendMediaStream(mediaStream)
             for (let track of mediaStream.getAudioTracks()){
               this.myMediaStream.removeTrack(track)
@@ -925,16 +960,14 @@ export default {
       })
 
     },
-
     async sendMediaStream (video, audio) {
-      if (!video &&  !audio) {
+      if (!video && !audio) {
         return
       }
       let constraint = {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
       }
-
       if (!video && !this.display){
         for (let track of this.myMediaStream.getVideoTracks()){
           await this.mediaService.closeTrack(track)
@@ -964,9 +997,9 @@ export default {
                 } else {
                   this.replaceBackground()
                 }
-                this.myMediaStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
+                this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
                 this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
-                let tracks = this.myMediaStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
+                let tracks = this.myVideoStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
                 await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
             }
@@ -1071,6 +1104,14 @@ export default {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
       this.allUsers = this.mediaService.getPeerDetails()
 
+      // this.subFollowUserIds.forEach((id, index) => {
+      //   if ((id !== this.GLOBAL.userInfo.id) && (!this.allUsers.find((user) => {
+      //     return user.id = id
+      //   }))) {
+      //     this.subFollowUserIds.splice(index, 1)
+      //   }
+      // })
+
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
         this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
         this.snackText = "房主变更";
@@ -1083,8 +1124,6 @@ export default {
       if (!this.chatOverlay) {
         this.chatBadge = 'green'
       }
-
-      console.log('[NNNew Message]', newMsg)
 
       this.allMsgs.push(newMsg);
       let col = document.getElementById('chatContainer');
@@ -1179,7 +1218,7 @@ export default {
         return {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
-          mediaStream : this.myMediaStream
+          mediaStream : this.myVideoStream
         }
       } else {
         for (let i = 0; i < this.allUsers.length; ++i) {
@@ -1193,7 +1232,11 @@ export default {
           }
         }
       }
-      return null
+      return {
+        id : "",
+        displayName: "",
+        mediaStream : null
+      }
     },
     subFollowUsers () {
       let subUsers = []
@@ -1201,7 +1244,7 @@ export default {
         subUsers.push({
           id: this.GLOBAL.userInfo.id,
           displayName: this.GLOBAL.userInfo.nickname,
-          mediaStream: this.myMediaStream
+          mediaStream: this.myVideoStream
         })
       }
 
@@ -1340,6 +1383,7 @@ export default {
 .private-chat {
   color: #FF9800;
   font-weight: bold;
+  margin-right: 10px;
 }
 .not-host-item.host-item{
   border-left: 1px solid #ff9800;

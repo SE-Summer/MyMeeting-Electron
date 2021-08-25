@@ -387,7 +387,7 @@
         <h2 class="title3">
           历史会议
         </h2>
-        <v-row v-for="(room, index) in history" :key="index">
+        <v-row v-for="(room, index) in history" v-bind:key="index">
           <v-card
               elevation="5"
               class="mx-auto teal room-card"
