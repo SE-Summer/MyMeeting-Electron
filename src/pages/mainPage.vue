@@ -54,7 +54,7 @@
           </v-icon>
           {{currTime}}
         </v-chip>
-        <v-btn text color="red" @click="exitClicked">
+        <v-btn text color="red" @click="exitDialog = true">
           <v-icon color="red" left size="20">mdi-exit-to-app</v-icon>退出
         </v-btn>
         <v-dialog
@@ -62,14 +62,18 @@
                 width="500"
                 attach="#mainWindow"
         >
-          <v-card style="text-align: center">
+          <v-card style="text-align: center; ">
             <p style="font-weight: bold; font-size: 20px; color: firebrick">结束会议</p>
-            <p style="font-size: 12px; color: gray; margin: 20px 0 20px 0">如果您不想结束会议，您可以在退出前指定新的主持人。</p>
+            <p style="font-size: 12px; color: gray; margin: 20px 0 20px 0">
+              {{(GLOBAL.roomInfo.host === GLOBAL.userInfo.id) ?
+              "如果您不想结束会议，您可以在退出前指定新的主持人。" : "您要退出会议吗？"}}
+            </p>
+            <v-checkbox color="teal" v-model="exportMemeCheckBox" label="导出会议纪要" style="margin-left: 36%"></v-checkbox>
             <v-divider></v-divider>
             <div style="margin: 10px 0 0 0;">
               <v-btn outlined class="ma-2" @click="exitDialog = false">取消</v-btn>
               <v-btn outlined color="teal" class="ma-2" @click="leaveMeeting">退出会议</v-btn>
-              <v-btn outlined color="red" class="ma-2" @click="closeMeeting">结束会议</v-btn>
+              <v-btn outlined color="red" class="ma-2" @click="closeMeeting" v-if="GLOBAL.roomInfo.host === GLOBAL.userInfo.id">结束会议</v-btn>
             </div>
           </v-card>
         </v-dialog>
@@ -661,7 +665,8 @@ export default {
       currTime : "",
       clock: null,
       allCaptions : [],
-      exitDialog : false
+      exitDialog : false,
+      exportMemeCheckBox : true
     }
   },
   methods: {
@@ -886,14 +891,10 @@ export default {
     removeMainFollowUser () {
       this.mainFollowUserId = null
     },
-    exitClicked () {
-      if (this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id) {
-        this.exitDialog = true
-      } else {
-        this.leaveMeeting()
-      }
-    },
     async leaveMeeting () {
+      if (this.exportMemeCheckBox) {
+        this.exportMeme()
+      }
       try {
         clearInterval(this.clockIntervalId)
         if (this.myVideoStream) {
@@ -925,6 +926,9 @@ export default {
       this.$emit('back')
     },
     async closeMeeting () {
+      if (this.exportMemeCheckBox) {
+        this.exportMeme()
+      }
       try {
         clearInterval(this.clockIntervalId)
         if (this.myVideoStream) {
@@ -1074,6 +1078,31 @@ export default {
         setTimeout(()=>{this.$emit('back')},1600)
       }
     },
+    exportMeme () {
+      let fs = require('fs')
+      let dialog = require('electron').remote.dialog
+      let defaultFilePath = 'C:/' + moment().format('YYYY.MM.DD HH-mm-ss')
+      dialog.showSaveDialog({
+        title : '导出会议纪要',
+        message : '选择导出路径',
+        properties : 'openDirector',
+        defaultPath : defaultFilePath,
+        filters : [
+        {name : 'txt', extensions : ['txt']}
+      ]
+      }).then((res) => {
+        if (res.canceled) return
+        let path = res.filePath
+        let meme = this.mediaService.speechRecognition.exportMeme()
+        fs.writeFile(path, meme,"utf-8",(err) => {
+          if (err) {
+            console.log(err)
+          } else {
+            console.log('store meme successfully!')
+          }
+        })
+      })
+    }
   },
   mounted() {
     this.clock = setInterval(()=>{
