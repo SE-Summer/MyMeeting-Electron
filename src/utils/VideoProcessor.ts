@@ -3,8 +3,8 @@ import * as bodyPix from '@tensorflow-models/body-pix';
 import MyWorker from 'comlink-loader!./media/BodyPixWorker';
 import {BackgroundProcessType} from "@/utils/Types";
 
-const defaultWidth = 1280;
-const defaultHeight = 720;
+const defaultWidth = 640;
+const defaultHeight = 360;
 const defaultFramerate = 30;
 const bodyPixWorker = new MyWorker();
 

@@ -656,7 +656,6 @@ export default {
       file : null,
       videoProcessor: null,
       processVideoType : 'normal',
-      stopRAFId : null,
       snack : false,
       snackText : "",
       currTime : "",
@@ -669,7 +668,6 @@ export default {
     async videoSwitch () {
       if (this.video) {
         this.video = false
-        this.closeRAF()
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
@@ -680,12 +678,12 @@ export default {
           track.stop()
           this.myVideoStream.removeTrack(track)
         }
-      this.videoProcessor.stop()
+        this.videoProcessor.stop()
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
         this.video = true
-        this.sendMediaStream(this.video, null)
+        this.sendMediaStream(this.video, false)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
       }
@@ -703,7 +701,7 @@ export default {
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        await this.sendMediaStream(null, this.audio)
+        await this.sendMediaStream(false, this.audio)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'teal'
       }
@@ -897,19 +895,28 @@ export default {
     },
     async leaveMeeting () {
       try {
-        this.closeRAF()
         clearInterval(this.clockIntervalId)
         if (this.myVideoStream) {
           this.myVideoStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
+        if (this.myAudioStream) {
+          this.myAudioStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myDisplayStream) {
+          this.myDisplayStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
-        this.myDisplayStream.getTracks().forEach((track) => {
-          track.stop()
-        })
+        this.videoProcessor.stop()
+        this.mediaService.speechRecognition.stop()
+
         await this.mediaService.leaveMeeting()
       } catch (error) {
         console.log('[LEAVE]', error)
@@ -918,7 +925,34 @@ export default {
       this.$emit('back')
     },
     async closeMeeting () {
-      await this.mediaService.closeRoom()
+      try {
+        clearInterval(this.clockIntervalId)
+        if (this.myVideoStream) {
+          this.myVideoStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myAudioStream) {
+          this.myAudioStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myDisplayStream) {
+          this.myDisplayStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
+        this.videoProcessor.stop()
+        this.mediaService.speechRecognition.stop()
+
+        await this.mediaService.closeRoom()
+      } catch (error) {
+        console.log('[LEAVE]', error)
+      }
+
       this.$emit('back')
     },
     async sendDisplayStream(){
@@ -965,9 +999,6 @@ export default {
 
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-            if (video !== null){
-              this.closeRAF()
-            }
 
             if (this.processVideoType === 'normal') {
               this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
@@ -1013,19 +1044,13 @@ export default {
         this.processVideoType = 'normal'
       }
       if (this.video) {
-        this.sendMediaStream(this.video, null)
+        this.sendMediaStream(this.video, false)
       }
       this.displayAudio = display.audio
       this.displayVideo = display.video
       this.displaySourceId = display.id
       if (this.display){
         this.sendDisplayStream()
-      }
-    },
-    closeRAF () {
-      if (this.stopRAFId) {
-        cancelAnimationFrame(this.stopRAFId)
-        this.stopRAFId = null
       }
     },
     async getRoomInfo(){
