@@ -12,7 +12,7 @@ const loadModel = async () => {
     net = await bodyPix.load({
         architecture: 'MobileNetV1',
         outputStride: 16,
-        multiplier: 1,
+        multiplier: 0.75,
         quantBytes: 2
     });
     console.log('loaded')
@@ -20,7 +20,7 @@ const loadModel = async () => {
 
 export const getMask = async (frame) => {
     const segmentation =  await net.segmentMultiPerson(frame, {
-        internalResolution: 'medium',
+        internalResolution: 'high',
         segmentationThreshold: 0.7,
         maxDetections: 5,
         scoreThreshold: 0.3,
