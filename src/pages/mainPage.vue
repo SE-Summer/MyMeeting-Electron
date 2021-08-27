@@ -690,6 +690,7 @@ export default {
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
+        if (this.display) await this.screenSwitch();
         this.video = true
         this.sendMediaStream(this.video, null)
         this.videoIcon.icon = 'mdi-video-outline'
@@ -726,6 +727,7 @@ export default {
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
       } else {
+        if (this.video) await this.videoSwitch();
         this.display = true
         await this.sendDisplayStream(this.display)
         this.screenIcon.icon = 'mdi-laptop'
@@ -951,6 +953,9 @@ export default {
             this.myVideoStream = new MediaStream(mediaStream.getVideoTracks())
             this.myAudioStream = new MediaStream()
             await this.mediaService.sendMediaStream(mediaStream)
+            for (let track of mediaStream.getAudioTracks()){
+              this.myMediaStream.removeTrack(track)
+            }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
             }
@@ -966,6 +971,15 @@ export default {
       let constraint = {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
+      }
+      if (!video && !this.display){
+        for (let track of this.myMediaStream.getVideoTracks()){
+          await this.mediaService.closeTrack(track)
+        }
+      }
+
+      for (let track of this.myAudioStream.getAudioTracks()){
+        await this.mediaService.closeTrack(track)
       }
 
       navigator.mediaDevices.getUserMedia(constraint)
