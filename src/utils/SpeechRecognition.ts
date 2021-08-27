@@ -80,28 +80,20 @@ export class SpeechRecognition
 
     private newSpeechText(speechText: SpeechText)
     {
-        console.log(typeof speechText.startTime, typeof speechText.updateTime);
-        if (speechText.newSentence) {
-            if (this.speakingSpeechTexts.has(speechText.fromPeerId)) {
-                const previous = this.speakingSpeechTexts.get(speechText.fromPeerId);
-                this.speechTextStorage.push(previous);
+        if (speechText.newSentence || !this.speakingSpeechTexts.has(speechText.fromPeerId)) {
+            this.speechTextStorage.push(speechText);
+            if (!speechText.sentenceEnded) {
+                this.speakingSpeechTexts.set(speechText.fromPeerId, speechText);
             }
-        }
-        this.speakingSpeechTexts.set(speechText.fromPeerId, speechText);
-        if (speechText.sentenceEnded) {
-            setTimeout(() => {
-                if (this.speakingSpeechTexts.has(speechText.fromPeerId)
-                    && this.speakingSpeechTexts.get(speechText.fromPeerId).startTime === speechText.startTime) {
-                    const previous = this.speakingSpeechTexts.get(speechText.fromPeerId);
-                    this.speechTextStorage.push(previous);
-                    this.speakingSpeechTexts.delete(speechText.fromPeerId);
-
-                    const displayText = this.generateDisplayText();
-                    this.speechCallbacks.forEach((callback) => {
-                        callback(displayText);
-                    });
-                }
-            }, 2000);
+        } else {
+            const existed = this.speakingSpeechTexts.get(speechText.fromPeerId);
+            existed.text = speechText.text;
+            existed.updateTime = speechText.updateTime;
+            existed.newSentence = false;
+            existed.sentenceEnded = speechText.sentenceEnded;
+            if (speechText.sentenceEnded) {
+                this.speakingSpeechTexts.delete(speechText.fromPeerId);
+            }
         }
 
         const displayText = this.generateDisplayText();
@@ -112,31 +104,13 @@ export class SpeechRecognition
 
     private generateDisplayText()
     {
-        const displayText: SpeechText[] = [];
-        const currentTime = moment();
-        this.speakingSpeechTexts.forEach((speechText) => {
-            if (currentTime.diff(speechText.updateTime) <= 6000) {
-                displayText.push(speechText)
-            }
-        });
-        console.log('[Recognizer]  Subtitles updated');
-        return displayText;
+        return this.speechTextStorage;
     }
 
     public exportMeme()
     {
-        const speechTexts: SpeechText[] = [];
         let meme = '';
         this.speechTextStorage.forEach((speechText) => {
-            speechTexts.push(speechText);
-        });
-        this.speakingSpeechTexts.forEach((speechText) => {
-            speechTexts.push(speechText);
-        });
-        speechTexts.sort((a, b) => {
-            return a.startTime.diff(b.startTime);
-        });
-        speechTexts.forEach((speechText) => {
             meme += `${speechText.startTime.format('hh:mm:ss a')}  ${speechText.displayName}: ${speechText.text}\n`;
         });
         return meme;
@@ -154,5 +128,14 @@ export class SpeechRecognition
         this.working = false;
         this.recognizer.stop();
         console.log('[Recognizer]  Stopped');
+    }
+
+    public clear()
+    {
+        if (this.working) {
+            this.recognizer.stop();
+        }
+        this.speakingSpeechTexts.clear();
+        this.speechTextStorage = [];
     }
 }

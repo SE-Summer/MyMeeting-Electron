@@ -54,7 +54,7 @@
           </v-icon>
           {{currTime}}
         </v-chip>
-        <v-btn text color="red" @click="exitClicked">
+        <v-btn text color="red" @click="exitDialog = true">
           <v-icon color="red" left size="20">mdi-exit-to-app</v-icon>退出
         </v-btn>
         <v-dialog
@@ -62,14 +62,18 @@
                 width="500"
                 attach="#mainWindow"
         >
-          <v-card style="text-align: center">
+          <v-card style="text-align: center; ">
             <p style="font-weight: bold; font-size: 20px; color: firebrick">结束会议</p>
-            <p style="font-size: 12px; color: gray; margin: 20px 0 20px 0">如果您不想结束会议，您可以在退出前指定新的主持人。</p>
+            <p style="font-size: 12px; color: gray; margin: 20px 0 20px 0">
+              {{(GLOBAL.roomInfo.host === GLOBAL.userInfo.id) ?
+              "如果您不想结束会议，您可以在退出前指定新的主持人。" : "您要退出会议吗？"}}
+            </p>
+            <v-checkbox color="teal" v-model="exportMemeCheckBox" label="导出会议纪要" style="margin-left: 36%"></v-checkbox>
             <v-divider></v-divider>
             <div style="margin: 10px 0 0 0;">
               <v-btn outlined class="ma-2" @click="exitDialog = false">取消</v-btn>
               <v-btn outlined color="teal" class="ma-2" @click="leaveMeeting">退出会议</v-btn>
-              <v-btn outlined color="red" class="ma-2" @click="closeMeeting">结束会议</v-btn>
+              <v-btn outlined color="red" class="ma-2" @click="closeMeeting" v-if="GLOBAL.roomInfo.host === GLOBAL.userInfo.id">结束会议</v-btn>
             </div>
           </v-card>
         </v-dialog>
@@ -411,29 +415,29 @@
               <v-row v-for="(caption, index) in allCaptions" :key="index">
                 <v-col>
                   <div style="display: inline-block" class="messageCard">
-                    <v-avatar
-                            color="grey darken-1"
-                            size="30"
-                            style="margin-right: 8px;">
-                      <v-img :src="mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().avatar">
-                        <template v-slot:placeholder>
-                          <div style="margin-top: 7px">
-                            <v-progress-circular
-                                    indeterminate
-                                    size="20"
-                                    color="grey lighten-5"
-                            ></v-progress-circular>
-                          </div>
-                        </template>
-                      </v-img>
-                    </v-avatar>
+<!--                    <v-avatar-->
+<!--                            color="grey darken-1"-->
+<!--                            size="30"-->
+<!--                            style="margin-right: 8px;">-->
+<!--                      <v-img :src="mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().avatar">-->
+<!--                        <template v-slot:placeholder>-->
+<!--                          <div style="margin-top: 7px">-->
+<!--                            <v-progress-circular-->
+<!--                                    indeterminate-->
+<!--                                    size="20"-->
+<!--                                    color="grey lighten-5"-->
+<!--                            ></v-progress-circular>-->
+<!--                          </div>-->
+<!--                        </template>-->
+<!--                      </v-img>-->
+<!--                    </v-avatar>-->
                     <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 10px; margin-left: 5px;">
-                             {{mediaService.getPeerDetailByPeerId(caption.fromPeerId).getPeerInfo().displayName}}</span>
+                             {{caption.displayName}}</span>
                     </div>
                     <p class="messageText">{{caption.text}}</p>
                   </div>
-                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(caption.timestamp).format('HH:mm:ss')}}</div>
+                  <div style="display: inline-block; margin:10px; font-size: small; color: gray">{{moment(caption.startTime).format('HH:mm:ss')}} - {{moment(caption.updateTime).format('HH:mm:ss')}}</div>
                 </v-col>
               </v-row>
             </v-container>
@@ -664,7 +668,8 @@ export default {
       currTime : "",
       clock: null,
       allCaptions : [],
-      exitDialog : false
+      exitDialog : false,
+      exportMemeCheckBox : true
     }
   },
   methods: {
@@ -675,6 +680,7 @@ export default {
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
+        this.originVideoTracks = []
         let tracks = this.myVideoStream.getVideoTracks()
         for (const track of tracks) {
           await this.mediaService.closeTrack(track)
@@ -686,7 +692,7 @@ export default {
       } else{
         if (this.display) await this.screenSwitch();
         this.video = true
-        await this.sendMediaStream(this.video, this.audio)
+        this.sendMediaStream(this.video, null)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
       }
@@ -704,7 +710,7 @@ export default {
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        await this.sendMediaStream(this.video, this.audio)
+        await this.sendMediaStream(null, this.audio)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'teal'
       }
@@ -730,13 +736,12 @@ export default {
     },
     async captionSwitch () {
       if (this.captionIcon.icon === 'mdi-translate') {
+        this.mediaService.speechRecognition.stop()
         this.mediaService.speechRecognition.deleteSpeechListener('speechListener')
         this.captionIcon.icon = 'mdi-translate-off'
         this.captionIcon.color = 'gray'
       } else {
-        this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
-          this.allCaptions.push(data)
-        })
+        this.mediaService.speechRecognition.start()
         this.chatOverlay = true
         this.chatBadge = '#00000000'
         this.captionIcon.icon = 'mdi-translate'
@@ -891,14 +896,10 @@ export default {
     removeMainFollowUser () {
       this.mainFollowUserId = null
     },
-    exitClicked () {
-      if (this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id) {
-        this.exitDialog = true
-      } else {
-        this.leaveMeeting()
-      }
-    },
     async leaveMeeting () {
+      if (this.exportMemeCheckBox) {
+        this.exportMeme()
+      }
       try {
         this.closeRAF()
         clearInterval(this.clockIntervalId)
@@ -921,6 +922,9 @@ export default {
       this.$emit('back')
     },
     async closeMeeting () {
+      if (this.exportMemeCheckBox) {
+        this.exportMeme()
+      }
       await this.mediaService.closeRoom()
       this.$emit('back')
     },
@@ -980,28 +984,33 @@ export default {
 
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-            this.closeRAF()
+            if (video !== null){
+              this.closeRAF()
+            }
 
             if (this.processVideoType === 'normal') {
-              this.myMediaStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myMediaStream
-              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
+              this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
+              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
               document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
             } else {
-              this.originVideoTracks = mediaStream.getVideoTracks()
-              let inVideo = document.getElementById('invisibleVideo')
-              inVideo.srcObject = new MediaStream(this.originVideoTracks)
-              inVideo.onloadeddata = async () => {
-                if (this.processVideoType === 'blur') {
-                  this.blurBackground()
-                } else {
-                  this.replaceBackground()
+              if (video === true) {
+                this.originVideoTracks = mediaStream.getVideoTracks()
+                let inVideo = document.getElementById('invisibleVideo')
+                inVideo.srcObject = new MediaStream(this.originVideoTracks)
+                inVideo.onloadeddata = async () => {
+                  if (this.processVideoType === 'blur') {
+                    this.blurBackground()
+                  } else {
+                    this.replaceBackground()
+                  }
                 }
-                this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : new MediaStream()
-                this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : new MediaStream()
-                let tracks = this.myVideoStream.getVideoTracks().concat(this.myAudioStream.getAudioTracks())
-                await this.mediaService.sendMediaStream(new MediaStream(tracks))
               }
+              this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : this.myVideoStream
+              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
+              let tracks = (video) ? this.myVideoStream.getVideoTracks() : []
+              tracks.push(...((audio) ? this.myAudioStream.getAudioTracks() : []))
+              await this.mediaService.sendMediaStream(new MediaStream(tracks))
             }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
@@ -1048,7 +1057,7 @@ export default {
         this.processVideoType = 'normal'
       }
       if (this.video) {
-        this.sendMediaStream(this.video, this.audio)
+        this.sendMediaStream(this.video, null)
       }
       this.displayAudio = display.audio
       this.displayVideo = display.video
@@ -1084,6 +1093,31 @@ export default {
         setTimeout(()=>{this.$emit('back')},1600)
       }
     },
+    exportMeme () {
+      let fs = require('fs')
+      let dialog = require('electron').remote.dialog
+      let defaultFilePath = 'C:/' + moment().format('YYYY.MM.DD HH-mm-ss')
+      dialog.showSaveDialog({
+        title : '导出会议纪要',
+        message : '选择导出路径',
+        properties : 'openDirector',
+        defaultPath : defaultFilePath,
+        filters : [
+        {name : 'txt', extensions : ['txt']}
+      ]
+      }).then((res) => {
+        if (res.canceled) return
+        let path = res.filePath
+        let meme = this.mediaService.speechRecognition.exportMeme()
+        fs.writeFile(path, meme,"utf-8",(err) => {
+          if (err) {
+            console.log(err)
+          } else {
+            console.log('store meme successfully!')
+          }
+        })
+      })
+    }
   },
   mounted() {
     this.clock = setInterval(()=>{
@@ -1147,6 +1181,10 @@ export default {
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
       }
+    })
+
+    this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
+      this.allCaptions = data
     })
 
     try {
