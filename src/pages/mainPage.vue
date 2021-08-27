@@ -649,7 +649,7 @@ export default {
       originVideoTracks : [],
       myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
-      myDisplayStream : new MediaStream(),
+      myDisplayAudioStream : new MediaStream(),
       video : false,
       audio : false,
       display : false,
@@ -723,6 +723,12 @@ export default {
           await this.mediaService.closeTrack(track)
           track.stop()
           this.myVideoStream.removeTrack(track)
+        }
+        tracks = this.myDisplayAudioStream.getTracks()
+        for (const track of tracks){
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myAudioStream.removeTrack(track)
         }
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
@@ -911,7 +917,7 @@ export default {
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
-        this.myDisplayStream.getTracks().forEach((track) => {
+        this.myAudioStream.getTracks().forEach((track) => {
           track.stop()
         })
         await this.mediaService.leaveMeeting()
@@ -949,20 +955,16 @@ export default {
           .then(async (mediaStream) => {
             mediaStream.getAudioTracks().forEach((track) => {
               this.myAudioStream.addTrack(track)
+              this.myDisplayAudioStream.addTrack(track)
             })
             this.myVideoStream = new MediaStream(mediaStream.getVideoTracks())
-            this.myAudioStream = new MediaStream()
             await this.mediaService.sendMediaStream(mediaStream)
-            for (let track of mediaStream.getAudioTracks()){
-              this.myMediaStream.removeTrack(track)
-            }
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
             }
           }).catch((error) => {
         console.log(error)
       })
-
     },
     async sendMediaStream (video, audio) {
       if (!video && !audio) {
@@ -972,22 +974,11 @@ export default {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
       }
-      if (!video && !this.display){
-        for (let track of this.myMediaStream.getVideoTracks()){
-          await this.mediaService.closeTrack(track)
-        }
-      }
-
-      for (let track of this.myAudioStream.getAudioTracks()){
-        await this.mediaService.closeTrack(track)
-      }
-
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
             if (video !== null){
               this.closeRAF()
             }
-
             if (this.processVideoType === 'normal') {
               this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
