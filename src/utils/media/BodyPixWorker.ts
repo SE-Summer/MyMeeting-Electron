@@ -19,15 +19,23 @@ const loadModel = async () => {
 }
 
 export const getMask = async (frame) => {
-    const segmentation =  await net.segmentMultiPerson(frame, {
+    // const segmentation =  await net.segmentMultiPerson(frame, {
+    //     internalResolution: 'high',
+    //     segmentationThreshold: 0.7,
+    //     maxDetections: 5,
+    //     scoreThreshold: 0.3,
+    //     nmsRadius: 20,
+    //     numKeypointForMatching: 17,
+    //     refineSteps: 10
+    // });
+
+    const segmentation =  await net.segmentPerson(frame, {
         internalResolution: 'high',
         segmentationThreshold: 0.7,
-        maxDetections: 5,
         scoreThreshold: 0.3,
         nmsRadius: 20,
-        numKeypointForMatching: 17,
-        refineSteps: 10
     });
+
     return bodyPix.toMask(segmentation, foreColor, backColor);
 }
 
