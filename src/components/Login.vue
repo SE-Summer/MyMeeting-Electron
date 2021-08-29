@@ -20,7 +20,6 @@
           <v-col class="title1 teal--text">
               登 录
           </v-col>
-
         </v-row>
         <v-row>
           <v-text-field
@@ -80,8 +79,8 @@ export default {
   },
   data(){
     return{
-      email : "jz2000@sjtu.edu.cn",
-      password : "655566",
+      email : "847361724@qq.com",
+      password : "12345678",
       loading : false,
       snackText: "",
       snack : false,
@@ -106,7 +105,7 @@ export default {
         const response =await axios(
         {
           method : 'post',
-          url : 'http://se-summer.cn:4446/login',
+          url : this.GLOBAL.baseURL + '/login',
           data : {
             'email' : this.email,
             'password' : this.password,
@@ -144,7 +143,7 @@ export default {
 .login-card{
   //margin-top: 20%;
   padding: 5% 8%;
-  margin: calc(20vh - 110px) 10%;
+  margin: calc(20vh - 115px) 10%;
   //margin: auto;
 }
 </style>

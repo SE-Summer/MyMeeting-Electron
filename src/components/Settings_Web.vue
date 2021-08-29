@@ -8,21 +8,20 @@
         v-model="snack">
       {{snackText}}
     </v-snackbar>
-    <v-card
-        class="teal lighten-5 settings-card"
-        elevation="10"
-      >
+    <div
+        class="settings-card"
+    >
       <v-container>
         <v-row>
-          <v-col class="title1 teal--text">
-              用 户
+          <v-col class="title1 white--text">
+            用 户
           </v-col>
         </v-row>
         <v-row no-gutters dense>
           <v-col align="center">
             <v-avatar
                 size="80px"
-                class="teal lighten-4"
+                class="transparent"
             >
               <img
                   alt="Avatar"
@@ -42,7 +41,7 @@
             <v-switch
                 v-model="microphone"
                 label="麦克风默认开启"
-                color="teal"
+                color="white"
                 hide-details
             ></v-switch>
           </v-col>
@@ -52,7 +51,7 @@
             <v-switch
                 v-model="camera"
                 label="摄像头默认开启"
-                color="teal"
+                color="white"
                 hide-details
             ></v-switch>
           </v-col>
@@ -71,7 +70,7 @@
           </v-col>
           <v-col align="center">
             <v-btn
-                class="mr-4 teal white--text"
+                class="mr-4 white"
                 @click="back"
                 :loading="loading"
                 :disabled="loading"
@@ -81,7 +80,7 @@
           </v-col>
         </v-row>
       </v-container>
-    </v-card>
+    </div>
   </div>
 </template>
 
@@ -161,23 +160,31 @@ export default {
 }
 .title2{
   padding: 1% 10%;
+  color: white;
 }
 .settings-card{
-  //margin-top: 20%;
-  padding: 3% 3%;
-  //width: 60%;
-  margin: calc(20vh - 130px) 10%;
+  padding: 0 8%;
+  width: calc(300px + 10vw);
+  position: absolute;
+  z-index: 2;
+  bottom: calc(60vh - 220px);
+  left: calc(45vw - 150px);
+  background-position-y: 20px;
+  background-image: linear-gradient(to bottom, #26A69A00, #26A69Add);
+  border-bottom: 5px solid #A7FFEB;
 }
 .userid{
   font-family: "Microsoft YaHei UI", serif;
   font-size: 14px;
   text-align: left;
+  color: white;
 }
 .nickname{
   font-family: "Microsoft YaHei UI", serif;
   font-size: 28px;
   text-align: left;
   margin-bottom: 10px;
+  color: white;
 }
 .file-input{
   cursor: default;

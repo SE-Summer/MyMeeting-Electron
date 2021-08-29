@@ -682,7 +682,7 @@ export default {
   height: 100%;
   background-size: cover;
   background: #000000;
-//background-image: url("http://se-summer.cn:4446/static/images/bg2.gif");
+  //background-image: url("http://se-summer.cn:4446/static/images/bg2.gif");
 }
 .teal-cover{
   overflow: hidden;

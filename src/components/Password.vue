@@ -109,7 +109,7 @@ export default {
         const response = await axios(
             {
               method : 'post',
-              url : 'http://se-summer.cn:4446/register',
+              url : this.GLOBAL.baseURL + '/register',
               data : {
                 'token' : this.GLOBAL.token,
                 'nickname' : this.nickname,

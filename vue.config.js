@@ -6,5 +6,6 @@ module.exports = {
     electronBuilder:{
       nodeIntegration : true
     }
-  }
+  },
+  publicPath:'./'
 }
