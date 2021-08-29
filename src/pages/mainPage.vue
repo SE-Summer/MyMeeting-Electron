@@ -647,7 +647,7 @@ export default {
       originVideoTracks : [],
       myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
-      myDisplayStream : new MediaStream(),
+      myDisplayAudioStream : new MediaStream(),
       video : false,
       audio : false,
       display : false,
@@ -687,6 +687,7 @@ export default {
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
+        if (this.display) await this.screenSwitch();
         this.video = true
         this.sendMediaStream(this.video, false)
         this.videoIcon.icon = 'mdi-video-outline'
@@ -720,9 +721,16 @@ export default {
           track.stop()
           this.myVideoStream.removeTrack(track)
         }
+        tracks = this.myDisplayAudioStream.getTracks()
+        for (const track of tracks){
+          await this.mediaService.closeTrack(track)
+          track.stop()
+          this.myAudioStream.removeTrack(track)
+        }
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
       } else {
+        if (this.video) await this.videoSwitch();
         this.display = true
         await this.sendDisplayStream(this.display)
         this.screenIcon.icon = 'mdi-laptop'
@@ -907,12 +915,15 @@ export default {
             track.stop()
           })
         }
-        if (this.myDisplayStream) {
-          this.myDisplayStream.getTracks().forEach((track) => {
+        if (this.myDisplayAudioStream) {
+          this.myDisplayAudioStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
         this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
+        this.myAudioStream.getTracks().forEach((track) => {
           track.stop()
         })
         this.videoProcessor.stop()
@@ -941,8 +952,8 @@ export default {
             track.stop()
           })
         }
-        if (this.myDisplayStream) {
-          this.myDisplayStream.getTracks().forEach((track) => {
+        if (this.myDisplayAudioStream) {
+          this.myDisplayAudioStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
@@ -980,9 +991,9 @@ export default {
           .then(async (mediaStream) => {
             mediaStream.getAudioTracks().forEach((track) => {
               this.myAudioStream.addTrack(track)
+              this.myDisplayAudioStream.addTrack(track)
             })
             this.myVideoStream = new MediaStream(mediaStream.getVideoTracks())
-            this.myAudioStream = new MediaStream()
             await this.mediaService.sendMediaStream(mediaStream)
             if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
               this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
@@ -990,7 +1001,6 @@ export default {
           }).catch((error) => {
         console.log(error)
       })
-
     },
     async sendMediaStream (video, audio) {
       if (!video && !audio) {
@@ -1000,10 +1010,11 @@ export default {
         video : (video) ? this.GLOBAL.videoConstraint : false,
         audio : audio
       }
-
       navigator.mediaDevices.getUserMedia(constraint)
           .then(async (mediaStream) => {
-
+            if (video !== null){
+              this.closeRAF()
+            }
             if (this.processVideoType === 'normal') {
               this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
@@ -1197,8 +1208,8 @@ export default {
       console.log('Browser DOES NOT support!')
     }
 
-    this.video = this.GLOBAL.openMicrophoneWhenEnter
-    this.audio = this.GLOBAL.openCameraWhenEnter
+    this.audio = this.GLOBAL.openMicrophoneWhenEnter
+    this.video = this.GLOBAL.openCameraWhenEnter
 
     this.sendMediaStream(this.video, this.audio)
 
