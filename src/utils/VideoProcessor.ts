@@ -7,6 +7,9 @@ import {BackgroundProcessType} from "@/utils/Types";
 const defaultWidth = 640;
 const defaultHeight = 360;
 const maskBlurAmount = 3;
+const backgroundBlurAmount = 3;
+const edgeBlurAmount = 3;
+const flipHorizontal = false;
 const defaultImageSrc = 'http://122.112.175.61:4446/static/images/bg_1.jpg';
 const bodyPixWorker = new MyWorker();
 
@@ -15,7 +18,6 @@ export class VideoProcessor
     private readonly width: number = null;
     private readonly height: number = null;
     private working: boolean = null;
-    private updateHandler = null;
     private readonly backgroundImage: HTMLImageElement = null;
     private readonly transparentBackground: HTMLCanvasElement = null;
     private readonly video: HTMLVideoElement = null;
@@ -58,7 +60,9 @@ export class VideoProcessor
     {
         this.inputStream = mediaStream;
         this.video.srcObject = mediaStream;
-        this.video.onloadeddata = this.start.bind(this);
+        this.video.onloadeddata = () => {
+            this.start(backgroundOption, enableBeautify);
+        };
         // @ts-ignore
         return this.outputCanvas.captureStream();
     }
@@ -67,12 +71,14 @@ export class VideoProcessor
     {
         this.working = true;
         this.replaceBackground()
+            .catch((err) => {
+                console.error(err);
+            });
     }
 
     public stop()
     {
         if (this.working) {
-            cancelAnimationFrame(this.updateHandler);
             const tracks = this.inputStream.getTracks();
             tracks.forEach((track) => {
                 track.stop();
@@ -98,13 +104,25 @@ export class VideoProcessor
         //
         // const mask = bodyPix.toMask(segmentation, foreColor, backColor);
 
-        bodyPix.drawMask(this.outputCanvas, this.transparentBackground, mask, 1, maskBlurAmount);
+        bodyPix.drawMask(this.outputCanvas, this.transparentBackground, mask, 1, maskBlurAmount, flipHorizontal);
         // this.outputCtx.putImageData(mask, 0, 0)
         this.outputCtx.globalCompositeOperation = 'source-in';
         this.outputCtx.drawImage(this.backgroundImage, 0, 0, this.width, this.height);
         this.outputCtx.globalCompositeOperation = 'destination-over';
         this.outputCtx.drawImage(this.inputCanvas, 0, 0, this.width, this.height);
         this.outputCtx.globalCompositeOperation = 'source-over';
-        this.updateHandler = requestAnimationFrame(this.replaceBackground);
+        if (this.working) {
+            requestAnimationFrame(this.replaceBackground);
+        }
+    }
+
+    private blurBackground = async () => {
+        this.inputCtx.drawImage(this.video, 0, 0, this.width, this.height);
+        const frame = this.inputCtx.getImageData(0, 0, this.width, this.height);
+        const segmentation = await bodyPixWorker.segment(frame);
+        bodyPix.drawBokehEffect(this.outputCanvas, this.inputCanvas, segmentation, backgroundBlurAmount, edgeBlurAmount, flipHorizontal);
+        if (this.working) {
+            requestAnimationFrame(this.blurBackground);
+        }
     }
 }

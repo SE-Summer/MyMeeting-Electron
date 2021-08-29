@@ -30,13 +30,22 @@ export const getMask = async (frame) => {
     // });
 
     const segmentation =  await net.segmentPerson(frame, {
-        internalResolution: 'high',
+        internalResolution: 'full',
         segmentationThreshold: 0.7,
         scoreThreshold: 0.3,
         nmsRadius: 20,
     });
 
     return bodyPix.toMask(segmentation, foreColor, backColor);
+}
+
+export const segment = async (frame) => {
+    return await net.segmentPerson(frame, {
+        internalResolution: 'full',
+        segmentationThreshold: 0.7,
+        scoreThreshold: 0.3,
+        nmsRadius: 20,
+    });
 }
 
 loadModel();
