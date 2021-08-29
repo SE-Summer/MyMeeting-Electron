@@ -187,6 +187,7 @@
 
       <v-list
           class="pl-14"
+          id="userList"
       >
         <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="20px" offset-y="18px">
           <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>

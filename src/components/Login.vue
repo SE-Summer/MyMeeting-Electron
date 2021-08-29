@@ -3,6 +3,7 @@
     <v-snackbar
     top
     color="teal lighten-1 white--text"
+    id="loginSnack"
     timeout="1600"
     light
     v-model="snack">
@@ -48,6 +49,7 @@
           <v-col align="center">
             <v-btn
                 color="teal accent-4 white--text"
+                id="loginBtn"
                 @click="login"
                 :loading="loading"
                 :disabled="loading || !valid"
@@ -59,6 +61,7 @@
             <v-btn
                 class="mr-4"
                 @click="register"
+                id="regBtn"
             >
               注册
             </v-btn>
@@ -79,8 +82,8 @@ export default {
   },
   data(){
     return{
-      email : "847361724@qq.com",
-      password : "12345678",
+      email : "",
+      password : "",
       loading : false,
       snackText: "",
       snack : false,

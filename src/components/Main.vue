@@ -16,7 +16,7 @@
         MyMeeting — 见我想见的人
       </h1>
       <v-container :class="['cards-container', {'active':click1||click2||click3}]">
-        <v-row dense>
+        <v-row dense id="btnsRow">
           <v-col align="center" v-show="click1||(!click1&&!click2&&!click3)" @click="click1=true">
             <v-card
                 class="teal lighten-4 function-card"

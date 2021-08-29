@@ -25,7 +25,7 @@
       <li  :class="[{'main':!account}, 'left']"></li>
       <li  :class="[{'main':!account}, 'right']">
         <transition name="cols-transition">
-          <Settings @logout="currentPage='Login'" @back="backToMain" v-if="currentPage==='Settings' && !rot"></Settings></transition>
+          <Settings id="setting-page" @logout="currentPage='Login'" @back="backToMain" v-if="currentPage==='Settings' && !rot"></Settings></transition>
       </li>
     </ul>
     <div v-if="rot">
