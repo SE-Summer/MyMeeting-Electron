@@ -88,7 +88,7 @@ export class IatRecognizer
                 // @ts-ignore
                 iatWS = new MozWebSocket(url)
             } else {
-                this.onRecognizerError(new Error('WebSocket not supported'))
+                this.onRecognizerError && this.onRecognizerError(new Error('WebSocket not supported'))
                 return
             }
             this.webSocket = iatWS
@@ -105,7 +105,7 @@ export class IatRecognizer
             }
             iatWS.onerror = e => {
                 this.recorderStop()
-                this.onRecognizerError(e)
+                this.onRecognizerError && this.onRecognizerError(e)
             }
             iatWS.onclose = () => {
                 this.recorderStop()
@@ -123,12 +123,12 @@ export class IatRecognizer
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
             this.audioContext.resume()
             if (!this.audioContext) {
-                this.onRecognizerError(new Error('WebAudioApi not supported'))
+                this.onRecognizerError && this.onRecognizerError(new Error('WebAudioApi not supported'))
                 return
             }
         } catch (e) {
             if (!this.audioContext) {
-                this.onRecognizerError(new Error('WebAudioApi not supported'))
+                this.onRecognizerError && this.onRecognizerError(new Error('WebAudioApi not supported'))
                 return
             }
         }
@@ -161,9 +161,9 @@ export class IatRecognizer
             )
         } else {
             if (navigator.userAgent.toLowerCase().match(/chrome/) && location.origin.indexOf('https://') < 0) {
-                this.onRecognizerError(new Error('Cannot get audio due to security issues'))
+                this.onRecognizerError && this.onRecognizerError(new Error('Cannot get audio due to security issues'))
             } else {
-                this.onRecognizerError(new Error('Cannot get audio'))
+                this.onRecognizerError && this.onRecognizerError(new Error('Cannot get audio'))
             }
             this.audioContext && this.audioContext.close()
             return
@@ -193,7 +193,7 @@ export class IatRecognizer
             if (this.webSocket && this.webSocket.readyState === 1) {
                 this.webSocket.close()
             }
-            this.onRecognizerError(e);
+            this.onRecognizerError && this.onRecognizerError(e);
         }
     }
     private recorderStart() {
@@ -332,7 +332,7 @@ export class IatRecognizer
         }
         if (jsonData.code !== 0) {
             this.webSocket.close()
-            this.onRecognizerError(new Error('Engine failure, code: ' + jsonData.code))
+            this.onRecognizerError && this.onRecognizerError(new Error('Engine failure, code: ' + jsonData.code))
         }
     }
     public start() {

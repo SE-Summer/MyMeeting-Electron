@@ -443,8 +443,6 @@
             </v-container>
         </div>
       </v-fade-transition>
-      <canvas id="invisibleCanvas" v-show="false"></canvas>
-      <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
 
     <v-footer
@@ -579,9 +577,9 @@ import {MediaService} from '../service/MediaService'
 import MyVideo from "../components/myVideo"
 import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
-import {virtualBackground} from "../service/VirtualBackgroundService";
 import SettingDialog from "../components/SettingsDialog";
 import axios from "axios";
+import {VideoProcessor} from "@/utils/VideoProcessor";
 
 const moment = require("moment");
 
@@ -660,9 +658,8 @@ export default {
       placeholdOfMsg : '发送消息 to 所有人',
       privateChatPeerId : null,
       file : null,
-      vb : null,
+      videoProcessor: null,
       processVideoType : 'normal',
-      stopRAFId : null,
       snack : false,
       snackText : "",
       currTime : "",
@@ -676,7 +673,6 @@ export default {
     async videoSwitch () {
       if (this.video) {
         this.video = false
-        this.closeRAF()
         this.originVideoTracks.forEach((track) => {
           track.stop()
         })
@@ -687,12 +683,13 @@ export default {
           track.stop()
           this.myVideoStream.removeTrack(track)
         }
+        this.videoProcessor.stop()
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
       } else{
         if (this.display) await this.screenSwitch();
         this.video = true
-        this.sendMediaStream(this.video, null)
+        this.sendMediaStream(this.video, false)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
       }
@@ -710,7 +707,7 @@ export default {
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        await this.sendMediaStream(null, this.audio)
+        await this.sendMediaStream(false, this.audio)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'teal'
       }
@@ -907,10 +904,19 @@ export default {
         this.exportMeme()
       }
       try {
-        this.closeRAF()
         clearInterval(this.clockIntervalId)
         if (this.myVideoStream) {
           this.myVideoStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myAudioStream) {
+          this.myAudioStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myDisplayAudioStream) {
+          this.myDisplayAudioStream.getTracks().forEach((track) => {
             track.stop()
           })
         }
@@ -920,6 +926,9 @@ export default {
         this.myAudioStream.getTracks().forEach((track) => {
           track.stop()
         })
+        this.videoProcessor.stop()
+        this.mediaService.speechRecognition.stop()
+
         await this.mediaService.leaveMeeting()
       } catch (error) {
         console.log('[LEAVE]', error)
@@ -931,7 +940,34 @@ export default {
       if (this.exportMemeCheckBox) {
         this.exportMeme()
       }
-      await this.mediaService.closeRoom()
+      try {
+        clearInterval(this.clockIntervalId)
+        if (this.myVideoStream) {
+          this.myVideoStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myAudioStream) {
+          this.myAudioStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        if (this.myDisplayAudioStream) {
+          this.myDisplayAudioStream.getTracks().forEach((track) => {
+            track.stop()
+          })
+        }
+        this.originVideoTracks.forEach((track) => {
+          track.stop()
+        })
+        this.videoProcessor.stop()
+        this.mediaService.speechRecognition.stop()
+
+        await this.mediaService.closeRoom()
+      } catch (error) {
+        console.log('[LEAVE]', error)
+      }
+
       this.$emit('back')
     },
     async sendDisplayStream(){
@@ -982,22 +1018,9 @@ export default {
             if (this.processVideoType === 'normal') {
               this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
-              document.getElementById('invisibleVideo').srcObject = null
               await this.mediaService.sendMediaStream(mediaStream)
             } else {
-              if (video === true) {
-                this.originVideoTracks = mediaStream.getVideoTracks()
-                let inVideo = document.getElementById('invisibleVideo')
-                inVideo.srcObject = new MediaStream(this.originVideoTracks)
-                inVideo.onloadeddata = async () => {
-                  if (this.processVideoType === 'blur') {
-                    this.blurBackground()
-                  } else {
-                    this.replaceBackground()
-                  }
-                }
-              }
-              this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : this.myVideoStream
+              this.myVideoStream = (video) ? this.videoProcessor.process(new MediaStream(mediaStream.getVideoTracks())) : this.myVideoStream
               this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
               let tracks = (video) ? this.myVideoStream.getVideoTracks() : []
               tracks.push(...((audio) ? this.myAudioStream.getAudioTracks() : []))
@@ -1026,41 +1049,23 @@ export default {
       this.snack = true;
       this.mediaService.mutePeer();
     },
-    blurBackground () {
-      let frame = document.getElementById('invisibleVideo')
-      this.vb.blurBackground(frame)
-      this.stopRAFId = requestAnimationFrame(this.blurBackground)
-    },
-    replaceBackground () {
-      let frame = document.getElementById('invisibleVideo')
-      this.vb.replaceBackground(frame)
-      this.stopRAFId = requestAnimationFrame(this.replaceBackground)
-    },
     changeSettings(blur, replace, backgroundImg, display) {
       if (blur) {
         this.processVideoType = 'blur'
       } else if (replace) {
         this.processVideoType = 'replace'
-        let img = new Image()
-        img.src = backgroundImg
-        this.vb.setVBConfig(img)
+        this.videoProcessor.setBackground(backgroundImg)
       } else {
         this.processVideoType = 'normal'
       }
       if (this.video) {
-        this.sendMediaStream(this.video, null)
+        this.sendMediaStream(this.video, false)
       }
       this.displayAudio = display.audio
       this.displayVideo = display.video
       this.displaySourceId = display.id
       if (this.display){
         this.sendDisplayStream()
-      }
-    },
-    closeRAF () {
-      if (this.stopRAFId) {
-        cancelAnimationFrame(this.stopRAFId)
-        this.stopRAFId = null
       }
     },
     async getRoomInfo(){
@@ -1220,7 +1225,7 @@ export default {
 
     moment.locale('zh-cn')
 
-    this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
+    this.videoProcessor = new VideoProcessor();
 
     this.clockIntervalId = setInterval(this.addSec, 1000)
   },
