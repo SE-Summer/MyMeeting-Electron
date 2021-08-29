@@ -87,7 +87,7 @@ export default {
       valid : true,
       emailRules: [
         v => !!v || '请输入邮箱地址',
-        v => /.+@.+\..+/.test(v) || '邮箱地址格式错误',
+        v => /.+@[a-zA-Z0-9]+\..+/.test(v) || '邮箱地址格式错误',
       ],
       passwordRules: [
         v => !!v || '请输入密码',

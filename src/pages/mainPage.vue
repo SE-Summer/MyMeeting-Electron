@@ -1203,8 +1203,8 @@ export default {
       console.log('Browser DOES NOT support!')
     }
 
-    this.video = this.GLOBAL.openMicrophoneWhenEnter
-    this.audio = this.GLOBAL.openCameraWhenEnter
+    this.audio = this.GLOBAL.openMicrophoneWhenEnter
+    this.video = this.GLOBAL.openCameraWhenEnter
 
     this.sendMediaStream(this.video, this.audio)
 
