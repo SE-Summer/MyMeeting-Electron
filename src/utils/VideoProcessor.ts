@@ -87,6 +87,11 @@ export class VideoProcessor
         }
     }
 
+    public getWorkingState()
+    {
+        return this.working;
+    }
+
     private replaceBackground = async () => {
         this.inputCtx.drawImage(this.video, 0, 0, this.width, this.height);
         const frame = this.inputCtx.getImageData(0, 0, this.width, this.height);

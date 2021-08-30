@@ -44,6 +44,7 @@ export class IatRecognizer
     private audioContext: AudioContext;
     private scriptProcessor: ScriptProcessorNode;
     private mediaSource: MediaStreamAudioSourceNode;
+    private audioStream: MediaStream;
     private handlerInterval;
 
     public onRecognizerResult: (result: RecognitionResult) => void;
@@ -171,6 +172,7 @@ export class IatRecognizer
         // 获取浏览器录音权限成功的回调
         const getMediaSuccess = stream => {
             // 创建一个用于通过JavaScript直接处理音频
+            this.audioStream = stream
             this.scriptProcessor = this.audioContext.createScriptProcessor(0, 1, 1)
             this.scriptProcessor.onaudioprocess = e => {
                 // 去处理音频数据
@@ -207,7 +209,7 @@ export class IatRecognizer
     // 暂停录音
     private recorderStop() {
         // safari下suspend后再次resume录音内容将是空白，设置safari下不做suspend
-        if (!(/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent))){
+        if (!(/Safari/.test(navigator.userAgent))) {// && !/Chrome/.test(navigator.userAgent))){
             this.audioContext && this.audioContext.suspend()
         }
         this.setStatus(RecognitionStatus.ended)
