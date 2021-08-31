@@ -70,10 +70,14 @@ export class VideoProcessor
     private start(backgroundOption: BackgroundProcessType, enableBeautify: boolean)
     {
         this.working = true;
-        this.replaceBackground()
-            .catch((err) => {
-                console.error(err);
-            });
+        switch (backgroundOption) {
+            case BackgroundProcessType.blur:
+                this.blurBackground().catch((err) => {console.error(err);});
+                break;
+            case BackgroundProcessType.virtual:
+                this.replaceBackground().catch((err) => {console.error(err);});
+                break;
+        }
     }
 
     public stop()
@@ -85,6 +89,11 @@ export class VideoProcessor
             });
             this.working = false;
         }
+    }
+
+    public getWorkingState()
+    {
+        return this.working;
     }
 
     private replaceBackground = async () => {

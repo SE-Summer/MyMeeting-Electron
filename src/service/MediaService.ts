@@ -440,6 +440,7 @@ export class MediaService
     public leaveMeeting()
     {
         this.joined = false;
+        this.speechRecognition.stop();
         this.resetAllowedState();
         this.deleteSignaling();
         this.deleteProducers();

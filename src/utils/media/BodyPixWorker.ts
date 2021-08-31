@@ -15,7 +15,7 @@ const loadModel = async () => {
         multiplier: 0.75,
         quantBytes: 2
     });
-    console.log('loaded')
+    console.log('[Video Processor] Model loaded')
 }
 
 export const getMask = async (frame) => {
