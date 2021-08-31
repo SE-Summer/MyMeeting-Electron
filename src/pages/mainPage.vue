@@ -115,6 +115,7 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableVideoButton"
             :color="videoIcon.color"
             @click="videoSwitch">
           <v-icon>{{ this.videoIcon.icon }}</v-icon>
@@ -123,6 +124,7 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableMicroButton"
             :color="microIcon.color"
             @click="microSwitch">
           <v-icon>{{ this.microIcon.icon }}</v-icon>
@@ -131,16 +133,18 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableScreenButton"
             :color="screenIcon.color"
             @click="screenSwitch">
           <v-icon>{{ this.screenIcon.icon }}</v-icon>
         </v-btn>
 
         <v-btn
-                icon
-                class="d-block text-center mx-auto mb-9"
-                :color="captionIcon.color"
-                @click="captionSwitch">
+            icon
+            class="d-block text-center mx-auto mb-9"
+            :disabled="disableCaptionButton"
+            :color="captionIcon.color"
+            @click="captionSwitch">
           <v-icon>{{ this.captionIcon.icon }}</v-icon>
         </v-btn>
 
@@ -667,11 +671,19 @@ export default {
       clock: null,
       allCaptions : [],
       exitDialog : false,
-      exportMemeCheckBox : true
+      exportMemeCheckBox : true,
+      disableVideoButton: false,
+      disableMicroButton: false,
+      disableScreenButton: false,
+      disableCaptionButton: false,
     }
   },
   methods: {
     async videoSwitch () {
+      this.disableVideoButton = true
+      setTimeout(() => {
+        this.disableVideoButton = false
+      }, 1000)
       if (this.video) {
         this.video = false
         this.myVideoStream.getTracks().forEach((track) => {
@@ -695,6 +707,10 @@ export default {
       }
     },
     async microSwitch () {
+      this.disableMicroButton = true
+      setTimeout(() => {
+        this.disableMicroButton = false
+      }, 1000)
       if (this.microIcon.icon === 'mdi-microphone-outline') {
         this.audio = false
         this.mediaService.speechRecognition.stop()
@@ -715,6 +731,10 @@ export default {
       }
     },
     async screenSwitch () {
+      this.disableScreenButton = true
+      setTimeout(() => {
+        this.disableScreenButton = false
+      }, 1000)
       if (this.screenIcon.icon === 'mdi-laptop') {
         this.display = false
         this.myVideoStream.getTracks().forEach((track) => {
@@ -748,6 +768,9 @@ export default {
       }
     },
     async captionSwitch () {
+      setTimeout(() => {
+        this.disableCaptionButton = false
+      }, 500)
       if (this.captionIcon.icon === 'mdi-translate') {
         this.mediaService.speechRecognition.deleteSpeechListener('speechListener')
         this.captionIcon.icon = 'mdi-translate-off'
@@ -761,6 +784,7 @@ export default {
         this.captionIcon.icon = 'mdi-translate'
         this.captionIcon.color = 'teal'
       }
+      this.disableCaptionButton = true
     },
     switchChat (boolean) {
       let toStat;
