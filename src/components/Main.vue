@@ -17,7 +17,7 @@
       </h1>
       <v-container :class="['cards-container', {'active':click1||click2||click3}]">
         <v-row dense>
-          <v-col align="center" v-show="click1||(!click1&&!click2&&!click3)" @click="click1=true">
+          <v-col align="center" v-show="click1||(!click1&&!click2&&!click3)" @click="click1=true; click4 = click5 = false">
             <v-card
                 class="teal lighten-4 function-card"
                 :class="[{'active':click1||click2||click3}]"
@@ -76,7 +76,7 @@
               </v-form>
             </v-card>
           </v-col>
-          <v-col align="center" v-show="click2||(!click1&&!click2&&!click3)" @click="click2=true">
+          <v-col align="center" v-show="click2||(!click1&&!click2&&!click3)" @click="click2=true; click4 = click5 = false">
             <v-card
                 class="teal lighten-4 function-card"
                 :class="[{'active':click1||click2||click3}]"
@@ -145,7 +145,7 @@
               </v-form>
             </v-card>
           </v-col>
-          <v-col align="center" v-show="click3||(!click1&&!click2&&!click3)" @click="click3=true">
+          <v-col align="center" v-show="click3||(!click1&&!click2&&!click3)" @click="click3=true; click4 = click5 = false">
             <v-card
                 class="teal lighten-4 function-card"
                 :class="[{'active':click1||click2||click3}]"
@@ -317,8 +317,7 @@
         @click="getMeetings" v-show="!click5">
       {{'我的预约'+ (click4 ? '>' : '&lt;')}}</button>
     <div
-        :class="['mymeeting-list', {'active':click4}]"
-        @mouseleave="click4 = false">
+        :class="['mymeeting-list', {'active':click4}]">
       <v-container>
         <h2 class="title3">
           我的预约
@@ -381,8 +380,7 @@
         @click="getHistory" v-show="!click4">
       {{'历史会议'+ (click5 ? '>' : '&lt;')}}</button>
     <div
-        :class="['history-list', {'active':click5}]"
-        @mouseleave="click5 = false">
+        :class="['history-list', {'active':click5}]">
       <v-container>
         <h2 class="title3">
           历史会议
@@ -432,7 +430,10 @@
                   {{'会议密码：'+room.password}}
                 </v-card-text>
                 <v-card-text class="meeting-card-text">
-                  {{'我入会的时间：'+room.time}}
+                  {{'我入会的时间：'}}
+                </v-card-text>
+                <v-card-text class="meeting-card-text-time" v-for="(time, index) in room.time" :key="index">
+                  {{'· ' + time}}
                 </v-card-text>
               </div>
             </v-expand-transition>
@@ -630,11 +631,18 @@ export default {
                   'token' : this.GLOBAL.userInfo.token,
                 }
               })
-          response.data.history.forEach((room)=>{
-            room.show = false;
-            room.ended = moment(room.end_time).isBefore(moment());
-          });
-          this.history = response.data.history
+          let roomList = [];
+          response.data.history.forEach((rec)=>{
+            if(roomList.indexOf(rec.id) === -1){
+              roomList.push(rec.id);
+              rec.show = false;
+              rec.time = [rec.time]
+              rec.ended = moment(rec.end_time).isBefore(moment());
+              this.history.push(rec)
+            }else{
+              this.history[roomList.indexOf(rec.id)].time.push(rec.time)
+            }
+          })
           console.log(response);
         }catch(error){
           console.log(error);
@@ -886,6 +894,12 @@ export default {
   margin-left: 20px;
   margin-top: 10px;
   margin-bottom: 5px;
+  padding: 0;
+}
+.meeting-card-text-time{
+  margin-left: 60px;
+  margin-top: 5px;
+  margin-bottom: 3px;
   padding: 0;
 }
 @keyframes effect {

@@ -430,7 +430,10 @@
                   {{'会议密码：'+room.password}}
                 </v-card-text>
                 <v-card-text class="meeting-card-text">
-                  {{'我入会的时间：'+room.time}}
+                  {{'我入会的时间：'}}
+                </v-card-text>
+                <v-card-text class="meeting-card-text-time" v-for="(time, index) in room.time" :key="index">
+                  {{'· ' + time}}
                 </v-card-text>
               </div>
             </v-expand-transition>
@@ -628,11 +631,18 @@ export default {
                   'token' : this.GLOBAL.userInfo.token,
                 }
               })
-          response.data.history.forEach((room)=>{
-            room.show = false;
-            room.ended = moment(room.end_time).isBefore(moment());
-          });
-          this.history = response.data.history
+          let roomList = [];
+          response.data.history.forEach((rec)=>{
+            if(roomList.indexOf(rec.id) === -1){
+              roomList.push(rec.id);
+              rec.show = false;
+              rec.time = [rec.time]
+              rec.ended = moment(rec.end_time).isBefore(moment());
+              this.history.push(rec)
+            }else{
+              this.history[roomList.indexOf(rec.id)].time.push(rec.time)
+            }
+          })
           console.log(response);
         }catch(error){
           console.log(error);
@@ -884,6 +894,12 @@ export default {
   margin-left: 20px;
   margin-top: 10px;
   margin-bottom: 5px;
+  padding: 0;
+}
+.meeting-card-text-time{
+  margin-left: 60px;
+  margin-top: 5px;
+  margin-bottom: 3px;
   padding: 0;
 }
 @keyframes effect {
