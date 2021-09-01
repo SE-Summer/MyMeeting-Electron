@@ -385,7 +385,7 @@
                           style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
-                        mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                        msg.avatar">
                       <template v-slot:placeholder>
                         <div style="margin-top: 7px">
                           <v-progress-circular
@@ -400,14 +400,14 @@
                   <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 5px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              msg.displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
-                  <p class="messageText" v-if="msg.type === MessageType.text">{{msg.text}}</p>
+                  <p class="messageText" v-if="msg.type === messageType.text">{{msg.text}}</p>
                   <upload-file
                           :file="msg.file"
-                          v-else-if="msg.type === MessageType.file &&msg.fromMyself"
+                          v-else-if="msg.type === messageType.file &&msg.fromMyself"
                           @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
                   <download-file :message="msg" v-else style="margin-top:15px"></download-file>
                 </div>
@@ -584,7 +584,7 @@ import UploadFile from "../components/UploadFile";
 import SettingDialog from "../components/SettingsDialog";
 import axios from "axios";
 import {MediaStreamFactory} from "@/utils/media/MediaStreamFactory";
-import {BackgroundProcessType} from "@/utils/Types";
+import {BackgroundProcessType, MessageType} from "@/utils/Types";
 import {MeetingEndReason} from "@/ServiceConfig";
 
 const moment = require("moment");
@@ -600,6 +600,7 @@ export default {
   },
   data () {
     return {
+      messageType: MessageType,
       mediaService : new MediaService(),
       drawer: null,
       isHost : false,
@@ -885,7 +886,7 @@ export default {
 
       this.mediaService.sendText(this.privateChatPeerId, this.inputMsg, timestamp)
       this.allMsgs.push({
-        type : this.MessageType.text,
+        type : MessageType.text,
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
         fromPeerId : this.GLOBAL.userInfo.id,
@@ -1112,6 +1113,14 @@ export default {
         this.chatBadge = 'green'
       }
 
+      if (newMsg.fromPeerId && this.mediaService.hasPeer(newMsg.fromPeerId)) {
+        const peerInfo = this.mediaService.getPeerDetailByPeerId(newMsg.fromPeerId).getPeerInfo();
+        newMsg.displayName = peerInfo.displayName;
+        newMsg.avatar = peerInfo.avatar;
+      } else {
+        newMsg.displayName = '此人已离开会议';
+        newMsg.avatar = this.GLOBAL.defaultPortrait;
+      }
       this.allMsgs.push(newMsg);
       let col = document.getElementById('chatContainer');
       col.scrollTop = col.scrollHeight;
