@@ -79,7 +79,7 @@ export default {
   },
   data(){
     return{
-      email : "jz2000@sjtu.edu.cn",
+      email : "13122616405@163.com",
       password : "123456",
       loading : false,
       snackText: "",
