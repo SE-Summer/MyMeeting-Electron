@@ -588,6 +588,7 @@ import {BackgroundProcessType, MessageType} from "@/utils/Types";
 import {MeetingEndReason} from "@/ServiceConfig";
 
 const moment = require("moment");
+moment.locale('zh-cn')
 
 export default {
   name: "mainPage.vue",
@@ -1186,11 +1187,15 @@ export default {
       setTimeout(() => {
         this.disableVideoButton = false
       }, 1000)
-      this.myVideoStream.addTrack(await this.mediaStreamFactory.getProcessedCameraTrack(BackgroundProcessType.disable, false))
-      this.mediaService.sendMediaStream(this.myVideoStream)
-      if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-        this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
-      }
+      this.mediaStreamFactory.getProcessedCameraTrack(BackgroundProcessType.disable, false)
+          .then((track) => {
+            this.myVideoStream.addTrack(track)
+            this.mediaService.sendMediaStream(this.myVideoStream)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+            }
+          })
+
     } else {
       this.videoIcon.icon = 'mdi-video-off'
       this.videoIcon.color = 'gray'
@@ -1202,14 +1207,16 @@ export default {
         this.disableMicroButton = false
       }, 1000)
       this.mediaService.speechRecognition.start()
-      this.myAudioStream.addTrack(await this.mediaStreamFactory.getMicrophoneTrack())
-      this.mediaService.sendMediaStream(this.myAudioStream)
+      this.mediaStreamFactory.getMicrophoneTrack()
+          .then((track) => {
+            this.myAudioStream.addTrack(track)
+            this.mediaService.sendMediaStream(this.myAudioStream)
+          })
+
     } else {
       this.microIcon.icon = 'mdi-microphone-off'
       this.microIcon.color = 'gray'
     }
-
-    moment.locale('zh-cn')
   },
   computed : {
     filteredUsers () {
