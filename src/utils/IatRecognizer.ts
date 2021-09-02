@@ -344,5 +344,15 @@ export class IatRecognizer
     }
     public stop() {
         this.recorderStop()
+        this.mediaSource && this.mediaSource.disconnect()
+        this.scriptProcessor && this.scriptProcessor.disconnect()
+        this.audioContext && this.audioContext.close()
+        this.audioStream && this.audioStream.getTracks().forEach((track) => {
+            track.stop()
+        })
+        this.mediaSource = null
+        this.scriptProcessor = null
+        this.audioContext = null
+        this.audioStream = null
     }
 }
