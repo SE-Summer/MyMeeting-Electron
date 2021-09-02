@@ -253,6 +253,11 @@ export class PeerMedia
         this.consumerId2Details.clear();
     }
 
+    public hasPeer(peerId: number)
+    {
+        return this.peerId2Details.has(peerId);
+    }
+
     public getPeerDetailByPeerId(peerId: number)
     {
         return this.peerId2Details.get(peerId);

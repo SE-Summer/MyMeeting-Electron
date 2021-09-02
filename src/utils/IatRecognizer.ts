@@ -303,17 +303,17 @@ export class IatRecognizer
             for (let i = 0; i < ws.length; i++) {
                 str = str + ws[i].cw[0].w
             }
-            const isLast: boolean = jsonData.data.status === 2;
+            const isLast: boolean = data.ls;
             // 开启wpgs会有此字段(前提：在控制台开通动态修正功能)
             // 取值为 "apd"时表示该片结果是追加到前面的最终结果；取值为"rpl" 时表示替换前面的部分结果，替换范围为rg字段
             if (data.pgs) {
                 if (data.pgs === 'apd') {
                     // 将resultTextTemp同步给resultText
-                    // @ts-ignore
-                    this.setResultText({
-                        resultText: this.resultTextTemp,
-                        isLast
-                    })
+                    // this.setResultText({
+                    //     resultText: this.resultTextTemp,
+                    //     isLast
+                    // })
+                    this.resultText = this.resultTextTemp
                 }
                 // 将结果存储在resultTextTemp中
                 // @ts-ignore
@@ -344,5 +344,15 @@ export class IatRecognizer
     }
     public stop() {
         this.recorderStop()
+        this.mediaSource && this.mediaSource.disconnect()
+        this.scriptProcessor && this.scriptProcessor.disconnect()
+        this.audioContext && this.audioContext.close()
+        this.audioStream && this.audioStream.getTracks().forEach((track) => {
+            track.stop()
+        })
+        this.mediaSource = null
+        this.scriptProcessor = null
+        this.audioContext = null
+        this.audioStream = null
     }
 }

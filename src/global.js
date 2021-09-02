@@ -21,6 +21,7 @@ export default {
         start_time: ""
     },
     baseURL : "http://122.112.175.61:4446",
+    defaultPortrait: "http://122.112.175.61:4446/static/portraits/default.png",
     openCameraWhenEnter : false,
     openMicrophoneWhenEnter : false,
     videoConstraint : {

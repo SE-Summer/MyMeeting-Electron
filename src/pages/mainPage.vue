@@ -115,6 +115,7 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableVideoButton"
             :color="videoIcon.color"
             @click="videoSwitch">
           <v-icon>{{ this.videoIcon.icon }}</v-icon>
@@ -123,6 +124,7 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableMicroButton"
             :color="microIcon.color"
             @click="microSwitch">
           <v-icon>{{ this.microIcon.icon }}</v-icon>
@@ -131,16 +133,18 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableScreenButton"
             :color="screenIcon.color"
             @click="screenSwitch">
           <v-icon>{{ this.screenIcon.icon }}</v-icon>
         </v-btn>
 
         <v-btn
-                icon
-                class="d-block text-center mx-auto mb-9"
-                :color="captionIcon.color"
-                @click="captionSwitch">
+            icon
+            class="d-block text-center mx-auto mb-9"
+            :disabled="disableCaptionButton"
+            :color="captionIcon.color"
+            @click="captionSwitch">
           <v-icon>{{ this.captionIcon.icon }}</v-icon>
         </v-btn>
 
@@ -381,7 +385,7 @@
                           style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
-                        mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                        msg.avatar">
                       <template v-slot:placeholder>
                         <div style="margin-top: 7px">
                           <v-progress-circular
@@ -396,14 +400,14 @@
                   <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 5px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              msg.displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
-                  <p class="messageText" v-if="msg.type === MessageType.text">{{msg.text}}</p>
+                  <p class="messageText" v-if="msg.type === messageType.text">{{msg.text}}</p>
                   <upload-file
                           :file="msg.file"
-                          v-else-if="msg.type === MessageType.file &&msg.fromMyself"
+                          v-else-if="msg.type === messageType.file &&msg.fromMyself"
                           @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
                   <download-file :message="msg" v-else style="margin-top:15px"></download-file>
                 </div>
@@ -580,7 +584,7 @@ import UploadFile from "../components/UploadFile";
 import SettingDialog from "../components/SettingsDialog";
 import axios from "axios";
 import {MediaStreamFactory} from "@/utils/media/MediaStreamFactory";
-import {BackgroundProcessType} from "@/utils/Types";
+import {BackgroundProcessType, MessageType} from "@/utils/Types";
 import {MeetingEndReason} from "@/ServiceConfig";
 
 const moment = require("moment");
@@ -596,6 +600,7 @@ export default {
   },
   data () {
     return {
+      messageType: MessageType,
       mediaService : new MediaService(),
       drawer: null,
       isHost : false,
@@ -667,11 +672,19 @@ export default {
       clock: null,
       allCaptions : [],
       exitDialog : false,
-      exportMemeCheckBox : true
+      exportMemeCheckBox : true,
+      disableVideoButton: false,
+      disableMicroButton: false,
+      disableScreenButton: false,
+      disableCaptionButton: false,
     }
   },
   methods: {
     async videoSwitch () {
+      this.disableVideoButton = true
+      setTimeout(() => {
+        this.disableVideoButton = false
+      }, 1000)
       if (this.video) {
         this.video = false
         this.myVideoStream.getTracks().forEach((track) => {
@@ -695,6 +708,10 @@ export default {
       }
     },
     async microSwitch () {
+      this.disableMicroButton = true
+      setTimeout(() => {
+        this.disableMicroButton = false
+      }, 1000)
       if (this.microIcon.icon === 'mdi-microphone-outline') {
         this.audio = false
         this.mediaService.speechRecognition.stop()
@@ -715,6 +732,10 @@ export default {
       }
     },
     async screenSwitch () {
+      this.disableScreenButton = true
+      setTimeout(() => {
+        this.disableScreenButton = false
+      }, 1000)
       if (this.screenIcon.icon === 'mdi-laptop') {
         this.display = false
         this.myVideoStream.getTracks().forEach((track) => {
@@ -747,7 +768,10 @@ export default {
         }
       }
     },
-    async captionSwitch () {
+    captionSwitch () {
+      setTimeout(() => {
+        this.disableCaptionButton = false
+      }, 500)
       if (this.captionIcon.icon === 'mdi-translate') {
         this.mediaService.speechRecognition.deleteSpeechListener('speechListener')
         this.captionIcon.icon = 'mdi-translate-off'
@@ -761,6 +785,7 @@ export default {
         this.captionIcon.icon = 'mdi-translate'
         this.captionIcon.color = 'teal'
       }
+      this.disableCaptionButton = true
     },
     switchChat (boolean) {
       let toStat;
@@ -861,7 +886,7 @@ export default {
 
       this.mediaService.sendText(this.privateChatPeerId, this.inputMsg, timestamp)
       this.allMsgs.push({
-        type : this.MessageType.text,
+        type : MessageType.text,
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
         fromPeerId : this.GLOBAL.userInfo.id,
@@ -905,9 +930,16 @@ export default {
       this.mainFollowUserId = userId
     },
     removeSubFollowUser (index) {
+      const id = this.subFollowUserIds[index]
+      if (this.mediaService.hasPeer(id)) {
+        this.mediaService.getPeerDetailByPeerId(id).unsubscribeVideo()
+      }
       this.subFollowUserIds.splice(index, 1)
     },
     removeMainFollowUser () {
+      if (this.mediaService.hasPeer(this.mainFollowUserId)) {
+        this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId).unsubscribeVideo()
+      }
       this.mainFollowUserId = null
     },
     async leaveMeeting () {
@@ -1088,6 +1120,14 @@ export default {
         this.chatBadge = 'green'
       }
 
+      if (newMsg.fromPeerId && this.mediaService.hasPeer(newMsg.fromPeerId)) {
+        const peerInfo = this.mediaService.getPeerDetailByPeerId(newMsg.fromPeerId).getPeerInfo();
+        newMsg.displayName = peerInfo.displayName;
+        newMsg.avatar = peerInfo.avatar;
+      } else {
+        newMsg.displayName = '此人已离开会议';
+        newMsg.avatar = this.GLOBAL.defaultPortrait;
+      }
       this.allMsgs.push(newMsg);
       let col = document.getElementById('chatContainer');
       col.scrollTop = col.scrollHeight;
@@ -1142,14 +1182,26 @@ export default {
     this.audio = this.GLOBAL.openMicrophoneWhenEnter
 
     if (this.video) {
-      this.myVideoStream.addTrack(await this.mediaStreamFactory.getCameraTrack())
+      this.disableVideoButton = true
+      setTimeout(() => {
+        this.disableVideoButton = false
+      }, 1000)
+      this.myVideoStream.addTrack(await this.mediaStreamFactory.getProcessedCameraTrack(BackgroundProcessType.disable, false))
       this.mediaService.sendMediaStream(this.myVideoStream)
+      if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+        this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+      }
     } else {
       this.videoIcon.icon = 'mdi-video-off'
       this.videoIcon.color = 'gray'
     }
 
     if (this.audio) {
+      this.disableMicroButton = true
+      setTimeout(() => {
+        this.disableMicroButton = false
+      }, 1000)
+      this.mediaService.speechRecognition.start()
       this.myAudioStream.addTrack(await this.mediaStreamFactory.getMicrophoneTrack())
       this.mediaService.sendMediaStream(this.myAudioStream)
     } else {

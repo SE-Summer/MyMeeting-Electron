@@ -127,6 +127,11 @@ export class MediaService
         return this.peerMedia.getPeerDetails();
     }
 
+    public hasPeer(peerId: number)
+    {
+        return this.peerMedia.hasPeer(peerId);
+    }
+
     public getPeerDetailByPeerId(peerId: number)
     {
         return this.peerMedia.getPeerDetailByPeerId(peerId);
@@ -717,7 +722,6 @@ export class MediaService
             });
 
             consumer.pause();
-            consumer.emit('pause');
 
             this.peerMedia.addConsumer(data.producerPeerId, consumer);
 
