@@ -768,7 +768,7 @@ export default {
         }
       }
     },
-    async captionSwitch () {
+    captionSwitch () {
       setTimeout(() => {
         this.disableCaptionButton = false
       }, 500)
@@ -930,9 +930,16 @@ export default {
       this.mainFollowUserId = userId
     },
     removeSubFollowUser (index) {
+      const id = this.subFollowUserIds[index]
+      if (this.mediaService.hasPeer(id)) {
+        this.mediaService.getPeerDetailByPeerId(id).unsubscribeVideo()
+      }
       this.subFollowUserIds.splice(index, 1)
     },
     removeMainFollowUser () {
+      if (this.mediaService.hasPeer(this.mainFollowUserId)) {
+        this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId).unsubscribeVideo()
+      }
       this.mainFollowUserId = null
     },
     async leaveMeeting () {
