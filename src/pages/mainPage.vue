@@ -314,6 +314,7 @@
             v-for="(user, index) in subFollowUsers"
             :key="index"
             link
+            v-show="user.show"
         >
           <v-list-item-content>
             <v-hover v-slot="{hover}">
@@ -351,6 +352,13 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <v-pagination
+              id="sub-pagination"
+              v-model="subFollowUserPage"
+              :length="Math.ceil(subFollowUserIds.length / 4)"
+              total-visible="0"
+              @next="nextPage"
+              @previous="previousPage"></v-pagination>
     </v-navigation-drawer>
 
     <v-main style="text-align: center" id="main-video-window">
@@ -651,6 +659,7 @@ export default {
       allUsers : [],
       mainFollowUserId : null,
       subFollowUserIds : [],
+      subFollowUserPage : 1,
       mediaDevice : null,
       myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
@@ -1080,6 +1089,12 @@ export default {
           }
         })
       })
+    },
+    nextPage () {
+      //here to stop previous video track ( range : [ (this.subFollowUserPage - 2) * 4, (this.subFollowUserPage - 1) * 4 )  )
+    },
+    previousPage () {
+      //here to stop next video track  ( range : [ this.subFollowUserPage * 4, (this.subFollowUserPage + 1) * 4 )  )
     }
   },
   mounted() {
@@ -1275,7 +1290,8 @@ export default {
               id: this.GLOBAL.userInfo.id,
               displayName: this.GLOBAL.userInfo.nickname,
               mediaStream: this.myVideoStream,
-              mirror: this.video
+              mirror: this.video,
+              show: false
             })
           }
         } else {
@@ -1283,10 +1299,19 @@ export default {
             id: user.getPeerInfo().id,
             displayName: user.getPeerInfo().displayName,
             mediaStream: new MediaStream(user.getTracks()),
-            mirror: false
+            mirror: false,
+            show: false
           })
         }
       })
+
+      for (let i = (this.subFollowUserPage - 1) * 4; i < this.subFollowUserPage * 4; ++i) {
+        if (i >= subUsers.length) {
+          break;
+        }
+        //here to continue user video track
+        subUsers[i].show = true
+      }
 
       return subUsers
     }
@@ -1437,5 +1462,12 @@ export default {
 }
 .item-avatar.has-audio{
   border: 1px solid green;
+}
+
+#sub-pagination {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 </style>
