@@ -356,9 +356,7 @@
               id="sub-pagination"
               v-model="subFollowUserPage"
               :length="Math.ceil(subFollowUserIds.length / 4)"
-              total-visible="0"
-              @next="nextPage"
-              @previous="previousPage"></v-pagination>
+              total-visible="0"></v-pagination>
     </v-navigation-drawer>
 
     <v-main style="text-align: center" id="main-video-window">
@@ -1090,12 +1088,6 @@ export default {
         })
       })
     },
-    nextPage () {
-      //here to stop previous video track ( range : [ (this.subFollowUserPage - 2) * 4, (this.subFollowUserPage - 1) * 4 )  )
-    },
-    previousPage () {
-      //here to stop next video track  ( range : [ this.subFollowUserPage * 4, (this.subFollowUserPage + 1) * 4 )  )
-    }
   },
   mounted() {
     this.clock = setInterval(()=>{
@@ -1302,16 +1294,20 @@ export default {
             mirror: false,
             show: false
           })
+          user.unsubscribeVideo();
         }
       })
 
-      for (let i = (this.subFollowUserPage - 1) * 4; i < this.subFollowUserPage * 4; ++i) {
-        if (i >= subUsers.length) {
-          break;
+      // prevent user exit when click next/previous page button.
+      subUsers.forEach((user, index) => {
+        if (index >= (this.subFollowUserPage - 1) * 4 && index < this.subFollowUserPage * 4) {
+          this.mediaService.getPeerDetailByPeerId(subUsers[index].id).getTracks()
+          subUsers[index].show = true
+        } else {
+          this.mediaService.getPeerDetailByPeerId(subUsers[index].id).unsubscribeVideo()
+          subUsers[index].show = false
         }
-        //here to continue user video track
-        subUsers[i].show = true
-      }
+      })
 
       return subUsers
     }
