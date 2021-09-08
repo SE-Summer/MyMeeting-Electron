@@ -1301,10 +1301,14 @@ export default {
       // prevent user exit when click next/previous page button.
       subUsers.forEach((user, index) => {
         if (index >= (this.subFollowUserPage - 1) * 4 && index < this.subFollowUserPage * 4) {
-          this.mediaService.getPeerDetailByPeerId(subUsers[index].id).getTracks()
+          if (user.id !== this.GLOBAL.userInfo.id) {
+            this.mediaService.getPeerDetailByPeerId(subUsers[index].id).getTracks()
+          }
           subUsers[index].show = true
         } else {
-          this.mediaService.getPeerDetailByPeerId(subUsers[index].id).unsubscribeVideo()
+          if (user.id !== this.GLOBAL.userInfo.id) {
+            this.mediaService.getPeerDetailByPeerId(subUsers[index].id).unsubscribeVideo()
+          }
           subUsers[index].show = false
         }
       })
