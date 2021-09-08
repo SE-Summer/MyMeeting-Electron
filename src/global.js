@@ -21,10 +21,11 @@ export default {
         start_time: ""
     },
     baseURL : "http://122.112.175.61:4446",
+    defaultPortrait: "http://122.112.175.61:4446/static/portraits/default.png",
     openCameraWhenEnter : false,
     openMicrophoneWhenEnter : false,
     videoConstraint : {
-        width : {min : 800, ideal : 1000, max:1200},
-        height : {min : 480, ideal : 560, max: 700}
+        width : {min : 640, ideal : 800, max: 960},
+        height : {min : 360, ideal : 450, max: 540}
     }
 }

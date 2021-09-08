@@ -3,7 +3,6 @@
     <v-snackbar
     top
     color="teal lighten-1 white--text"
-    id="loginSnack"
     timeout="1600"
     light
     v-model="snack">
@@ -49,7 +48,6 @@
           <v-col align="center">
             <v-btn
                 color="teal accent-4 white--text"
-                id="loginBtn"
                 @click="login"
                 :loading="loading"
                 :disabled="loading || !valid"
@@ -61,7 +59,6 @@
             <v-btn
                 class="mr-4"
                 @click="register"
-                id="regBtn"
             >
               注册
             </v-btn>
@@ -82,15 +79,15 @@ export default {
   },
   data(){
     return{
-      email : "",
-      password : "",
+      email : "13122616405@163.com",
+      password : "123456",
       loading : false,
       snackText: "",
       snack : false,
       valid : true,
       emailRules: [
         v => !!v || '请输入邮箱地址',
-        v => /.+@.+\..+/.test(v) || '邮箱地址格式错误',
+        v => /.+@[a-zA-Z0-9]+\..+/.test(v) || '邮箱地址格式错误',
       ],
       passwordRules: [
         v => !!v || '请输入密码',

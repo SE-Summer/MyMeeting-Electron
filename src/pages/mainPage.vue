@@ -115,6 +115,7 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableVideoButton"
             :color="videoIcon.color"
             @click="videoSwitch">
           <v-icon>{{ this.videoIcon.icon }}</v-icon>
@@ -123,6 +124,7 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableMicroButton"
             :color="microIcon.color"
             @click="microSwitch">
           <v-icon>{{ this.microIcon.icon }}</v-icon>
@@ -131,16 +133,18 @@
         <v-btn
             icon
             class="d-block text-center mx-auto mb-9"
+            :disabled="disableScreenButton"
             :color="screenIcon.color"
             @click="screenSwitch">
           <v-icon>{{ this.screenIcon.icon }}</v-icon>
         </v-btn>
 
         <v-btn
-                icon
-                class="d-block text-center mx-auto mb-9"
-                :color="captionIcon.color"
-                @click="captionSwitch">
+            icon
+            class="d-block text-center mx-auto mb-9"
+            :disabled="disableCaptionButton"
+            :color="captionIcon.color"
+            @click="captionSwitch">
           <v-icon>{{ this.captionIcon.icon }}</v-icon>
         </v-btn>
 
@@ -187,7 +191,6 @@
 
       <v-list
           class="pl-14"
-          id="userList"
       >
         <v-badge :value="isHost" icon="mdi-crown" color="orange--text" overlap offset-x="20px" offset-y="18px">
           <v-list-item :class="['lighten-4 not-host-item', {'host-item':isHost}]" dense>
@@ -311,7 +314,6 @@
             v-for="(user, index) in subFollowUsers"
             :key="index"
             link
-            v-show="user.show"
         >
           <v-list-item-content>
             <v-hover v-slot="{hover}">
@@ -319,12 +321,12 @@
                   height="150px"
                   outlined>
 
-                <my-video :src-object="user.mediaStream" :my-id="'sub-video' + index" process-video-type="blur"
+                <my-video :src-object="user.mediaStream" :mirror="user.mirror" :my-id="'sub-video' + index" process-video-type="blur"
                           style="width: 100%; height: 100%"></my-video>
                 <div
                     class="d-flex white black--text v-card--reveal"
                     style="height: 15%; margin-bottom: 10px;">
-                  <div style="width: 80px; margin-left: 25%; margin-right: 10%; text-align: center;">
+                  <div style="width: 100px; margin-left: 25%; margin-right: 10%; text-align: center;">
                     <p id="rightSideBarText" style="font-size: 12px; font-weight: bold;">
                       {{user.displayName}}
                     </p>
@@ -349,20 +351,13 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
-      <v-pagination
-              id="sub-pagination"
-              v-model="subFollowUserPage"
-              :length="Math.ceil(subFollowUserIds.length / 4)"
-              total-visible="0"
-              @next="nextPage"
-              @previous="previousPage"></v-pagination>
     </v-navigation-drawer>
 
     <v-main style="text-align: center" id="main-video-window">
       <div id="mainVideo">
         <v-hover v-slot="{hover}">
           <v-card color="grey lighten-4" height="100%" width="100%">
-            <my-video style="height: 100%; width: 100%" my-id="main-video" :src-object="mainFollowUser.mediaStream" process-video-type="blur"></my-video>
+            <my-video style="height: 100%; width: 100%" my-id="main-video" :mirror="mainFollowUser.mirror" :src-object="mainFollowUser.mediaStream"></my-video>
             <v-expand-transition>
               <div v-if="hover"
                    class="transition-fast-in-fast-out v-card--reveal-1"
@@ -390,7 +385,7 @@
                           style="margin-right: 8px;">
                     <v-img :src="(msg.fromMyself) ?
                         GLOBAL.baseURL + GLOBAL.userInfo.portrait :
-                        mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().avatar">
+                        msg.avatar">
                       <template v-slot:placeholder>
                         <div style="margin-top: 7px">
                           <v-progress-circular
@@ -405,14 +400,14 @@
                   <div style="display: inline-block; font-size: 15px">
                       <span style="font-weight: bold; margin-right: 5px; margin-left: 5px;">{{(msg.fromMyself) ?
                               GLOBAL.userInfo.nickname :
-                              mediaService.getPeerDetailByPeerId(msg.fromPeerId).getPeerInfo().displayName}}</span>
+                              msg.displayName}}</span>
                     <span v-if="!msg.broadcast"> to </span>
                     <span  v-if="!msg.broadcast" class="private-chat">{{formatToPeerName(msg)}} </span>
                   </div>
-                  <p class="messageText" v-if="msg.type === MessageType.text">{{msg.text}}</p>
+                  <p class="messageText" v-if="msg.type === messageType.text">{{msg.text}}</p>
                   <upload-file
                           :file="msg.file"
-                          v-else-if="msg.type === MessageType.file &&msg.fromMyself"
+                          v-else-if="msg.type === messageType.file &&msg.fromMyself"
                           @file-sended="sendFile" style="margin-top:20px; margin-left: 15px"></upload-file>
                   <download-file :message="msg" v-else style="margin-top:15px"></download-file>
                 </div>
@@ -452,8 +447,6 @@
             </v-container>
         </div>
       </v-fade-transition>
-      <canvas id="invisibleCanvas" v-show="false"></canvas>
-      <video id="invisibleVideo" v-show="false" autoplay></video>
     </v-main>
 
     <v-footer
@@ -588,11 +581,14 @@ import {MediaService} from '../service/MediaService'
 import MyVideo from "../components/myVideo"
 import DownloadFile from "../components/DownloadFile"
 import UploadFile from "../components/UploadFile";
-import {virtualBackground} from "../service/VirtualBackgroundService";
 import SettingDialog from "../components/SettingsDialog";
 import axios from "axios";
+import {MediaStreamFactory} from "@/utils/media/MediaStreamFactory";
+import {BackgroundProcessType, MessageType} from "@/utils/Types";
+import {MeetingEndReason} from "@/ServiceConfig";
 
 const moment = require("moment");
+moment.locale('zh-cn')
 
 export default {
   name: "mainPage.vue",
@@ -605,7 +601,8 @@ export default {
   },
   data () {
     return {
-      mediaService : null,
+      messageType: MessageType,
+      mediaService : new MediaService(),
       drawer: null,
       isHost : false,
       videoIcon : {
@@ -654,12 +651,11 @@ export default {
       allUsers : [],
       mainFollowUserId : null,
       subFollowUserIds : [],
-      subFollowUserPage : 1,
       mediaDevice : null,
-      originVideoTracks : [],
       myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
-      myDisplayStream : new MediaStream(),
+      myDisplayAudioStream : new MediaStream(),
+      mediaStreamFactory: new MediaStreamFactory(),
       video : false,
       audio : false,
       display : false,
@@ -670,93 +666,127 @@ export default {
       placeholdOfMsg : '发送消息 to 所有人',
       privateChatPeerId : null,
       file : null,
-      vb : null,
-      processVideoType : 'normal',
-      stopRAFId : null,
+      processVideoType : BackgroundProcessType.disable,
       snack : false,
       snackText : "",
       currTime : "",
       clock: null,
       allCaptions : [],
       exitDialog : false,
-      exportMemeCheckBox : true
+      exportMemeCheckBox : true,
+      disableVideoButton: false,
+      disableMicroButton: false,
+      disableScreenButton: false,
+      disableCaptionButton: false,
     }
   },
   methods: {
     async videoSwitch () {
+      this.disableVideoButton = true
+      setTimeout(() => {
+        this.disableVideoButton = false
+      }, 1000)
       if (this.video) {
         this.video = false
-        this.closeRAF()
-        this.originVideoTracks.forEach((track) => {
-          track.stop()
-        })
-        this.originVideoTracks = []
-        let tracks = this.myVideoStream.getVideoTracks()
-        for (const track of tracks) {
-          await this.mediaService.closeTrack(track)
-          track.stop()
+        this.myVideoStream.getTracks().forEach((track) => {
+          this.mediaService.closeTrack(track)
           this.myVideoStream.removeTrack(track)
-        }
+        })
+        this.mediaStreamFactory.stopCamera()
         this.videoIcon.icon = 'mdi-video-off'
         this.videoIcon.color = 'gray'
-      } else{
-        if (this.display) await this.screenSwitch();
+
+      } else {
+        if (this.display) await this.screenSwitch()
         this.video = true
-        this.sendMediaStream(this.video, null)
+        this.myVideoStream.addTrack(await this.mediaStreamFactory.getProcessedCameraTrack(this.processVideoType, false))
+        this.mediaService.sendMediaStream(this.myVideoStream)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
+        if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+          this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+        }
       }
     },
     async microSwitch () {
+      this.disableMicroButton = true
+      setTimeout(() => {
+        this.disableMicroButton = false
+      }, 1000)
       if (this.microIcon.icon === 'mdi-microphone-outline') {
         this.audio = false
-        let tracks = this.myAudioStream.getAudioTracks()
-        for (const track of tracks){
-          await this.mediaService.closeTrack(track)
-          track.stop()
+        this.mediaService.speechRecognition.stop()
+        this.myAudioStream.getTracks().forEach((track) => {
+          this.mediaService.closeTrack(track)
           this.myAudioStream.removeTrack(track)
-        }
+        })
+        this.mediaStreamFactory.stopMicrophone();
         this.microIcon.icon = 'mdi-microphone-off'
         this.microIcon.color = 'gray'
       } else {
         this.audio = true
-        await this.sendMediaStream(null, this.audio)
+        this.mediaService.speechRecognition.start()
+        this.myAudioStream.addTrack(await this.mediaStreamFactory.getMicrophoneTrack())
+        this.mediaService.sendMediaStream(this.myAudioStream)
         this.microIcon.icon = 'mdi-microphone-outline'
         this.microIcon.color = 'teal'
       }
     },
     async screenSwitch () {
+      this.disableScreenButton = true
+      setTimeout(() => {
+        this.disableScreenButton = false
+      }, 1000)
       if (this.screenIcon.icon === 'mdi-laptop') {
         this.display = false
-        let tracks = this.myVideoStream.getTracks()
-        for (const track of tracks){
-          await this.mediaService.closeTrack(track)
-          track.stop()
+        this.myVideoStream.getTracks().forEach((track) => {
+          this.mediaService.closeTrack(track)
           this.myVideoStream.removeTrack(track)
-        }
+        })
+        this.myDisplayAudioStream.getTracks().forEach((track) => {
+          this.mediaService.closeTrack(track)
+          this.myDisplayAudioStream.removeTrack(track)
+        })
+        this.mediaStreamFactory.stopScreen();
         this.screenIcon.icon = 'mdi-laptop-off'
         this.screenIcon.color = 'gray'
       } else {
         if (this.video) await this.videoSwitch();
         this.display = true
-        await this.sendDisplayStream(this.display)
+        const {screenVideoTrack, screenAudioTrack} = await this.mediaStreamFactory.getScreenTracks(this.displayVideo, this.displayAudio, this.displaySourceId)
+        if (this.displayVideo) {
+          this.myVideoStream.addTrack(screenVideoTrack)
+          this.mediaService.sendMediaStream(this.myVideoStream)
+        }
+        if (this.displayAudio) {
+          this.myDisplayAudioStream.addTrack(screenAudioTrack)
+          this.mediaService.sendMediaStream(this.myDisplayAudioStream)
+        }
         this.screenIcon.icon = 'mdi-laptop'
         this.screenIcon.color = 'teal'
+        if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+          this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+        }
       }
     },
-    async captionSwitch () {
+    captionSwitch () {
+      setTimeout(() => {
+        this.disableCaptionButton = false
+      }, 500)
       if (this.captionIcon.icon === 'mdi-translate') {
-        this.mediaService.speechRecognition.stop()
         this.mediaService.speechRecognition.deleteSpeechListener('speechListener')
         this.captionIcon.icon = 'mdi-translate-off'
         this.captionIcon.color = 'gray'
       } else {
-        this.mediaService.speechRecognition.start()
+        this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
+          this.allCaptions = data
+        })
         this.chatOverlay = true
         this.chatBadge = '#00000000'
         this.captionIcon.icon = 'mdi-translate'
         this.captionIcon.color = 'teal'
       }
+      this.disableCaptionButton = true
     },
     switchChat (boolean) {
       let toStat;
@@ -857,7 +887,7 @@ export default {
 
       this.mediaService.sendText(this.privateChatPeerId, this.inputMsg, timestamp)
       this.allMsgs.push({
-        type : this.MessageType.text,
+        type : MessageType.text,
         broadcast : (!this.privateChatPeerId),
         fromMyself : true,
         fromPeerId : this.GLOBAL.userInfo.id,
@@ -901,9 +931,16 @@ export default {
       this.mainFollowUserId = userId
     },
     removeSubFollowUser (index) {
+      const id = this.subFollowUserIds[index]
+      if (this.mediaService.hasPeer(id)) {
+        this.mediaService.getPeerDetailByPeerId(id).unsubscribeVideo()
+      }
       this.subFollowUserIds.splice(index, 1)
     },
     removeMainFollowUser () {
+      if (this.mediaService.hasPeer(this.mainFollowUserId)) {
+        this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId).unsubscribeVideo()
+      }
       this.mainFollowUserId = null
     },
     async leaveMeeting () {
@@ -911,19 +948,7 @@ export default {
         this.exportMeme()
       }
       try {
-        this.closeRAF()
-        clearInterval(this.clockIntervalId)
-        if (this.myVideoStream) {
-          this.myVideoStream.getTracks().forEach((track) => {
-            track.stop()
-          })
-        }
-        this.originVideoTracks.forEach((track) => {
-          track.stop()
-        })
-        this.myDisplayStream.getTracks().forEach((track) => {
-          track.stop()
-        })
+        this.mediaStreamFactory.stopAll()
         await this.mediaService.leaveMeeting()
       } catch (error) {
         console.log('[LEAVE]', error)
@@ -935,99 +960,14 @@ export default {
       if (this.exportMemeCheckBox) {
         this.exportMeme()
       }
-      await this.mediaService.closeRoom()
+      try {
+        this.mediaStreamFactory.stopAll()
+        await this.mediaService.closeRoom()
+      } catch (error) {
+        console.log('[LEAVE]', error)
+      }
+
       this.$emit('back')
-    },
-    async sendDisplayStream(){
-      for (let track of this.myVideoStream.getTracks()){
-        await this.mediaService.closeTrack(track)
-      }
-
-      let constraints;
-      if (this.displaySourceId){
-        constraints = {
-          audio: this.displayAudio ? {mandatory: {chromeMediaSource: 'desktop', chromeMediaSourceId: this.displaySourceId}} : false,
-          video: this.displayVideo ? {mandatory: {chromeMediaSource: 'desktop', chromeMediaSourceId: this.displaySourceId}} : false,
-        }
-      }else{
-        constraints = {
-          audio: this.displayAudio ? {mandatory: {chromeMediaSource: 'desktop'}} : false,
-          video: this.displayVideo ? {mandatory: {chromeMediaSource: 'desktop'}} : false,
-        }
-      }
-      navigator.mediaDevices.getUserMedia(constraints)
-          .then(async (mediaStream) => {
-            mediaStream.getAudioTracks().forEach((track) => {
-              this.myAudioStream.addTrack(track)
-            })
-            this.myVideoStream = new MediaStream(mediaStream.getVideoTracks())
-            this.myAudioStream = new MediaStream()
-            await this.mediaService.sendMediaStream(mediaStream)
-            for (let track of mediaStream.getAudioTracks()){
-              this.myMediaStream.removeTrack(track)
-            }
-            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
-            }
-          }).catch((error) => {
-        console.log(error)
-      })
-
-    },
-    async sendMediaStream (video, audio) {
-      if (!video && !audio) {
-        return
-      }
-      let constraint = {
-        video : (video) ? this.GLOBAL.videoConstraint : false,
-        audio : audio
-      }
-      if (!video && !this.display){
-        for (let track of this.myMediaStream.getVideoTracks()){
-          await this.mediaService.closeTrack(track)
-        }
-      }
-
-      for (let track of this.myAudioStream.getAudioTracks()){
-        await this.mediaService.closeTrack(track)
-      }
-
-      navigator.mediaDevices.getUserMedia(constraint)
-          .then(async (mediaStream) => {
-            if (video !== null){
-              this.closeRAF()
-            }
-
-            if (this.processVideoType === 'normal') {
-              this.myVideoStream = (video) ? new MediaStream(mediaStream.getVideoTracks()) : this.myVideoStream
-              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
-              document.getElementById('invisibleVideo').srcObject = null
-              await this.mediaService.sendMediaStream(mediaStream)
-            } else {
-              if (video === true) {
-                this.originVideoTracks = mediaStream.getVideoTracks()
-                let inVideo = document.getElementById('invisibleVideo')
-                inVideo.srcObject = new MediaStream(this.originVideoTracks)
-                inVideo.onloadeddata = async () => {
-                  if (this.processVideoType === 'blur') {
-                    this.blurBackground()
-                  } else {
-                    this.replaceBackground()
-                  }
-                }
-              }
-              this.myVideoStream = (video) ? document.getElementById('invisibleCanvas').captureStream() : this.myVideoStream
-              this.myAudioStream = (audio) ? new MediaStream(mediaStream.getAudioTracks()) : this.myAudioStream
-              let tracks = (video) ? this.myVideoStream.getVideoTracks() : []
-              tracks.push(...((audio) ? this.myAudioStream.getAudioTracks() : []))
-              await this.mediaService.sendMediaStream(new MediaStream(tracks))
-            }
-            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
-            }
-          }).catch((error) => {
-        console.log(error)
-      })
     },
     formatToPeerName (msg) {
       if (msg.broadcast) {
@@ -1040,46 +980,59 @@ export default {
         }
       }
     },
-    muteAll(){
+    muteAll() {
       this.snackText = "已静音所有人";
       this.snack = true;
       this.mediaService.mutePeer();
     },
-    blurBackground () {
-      let frame = document.getElementById('invisibleVideo')
-      this.vb.blurBackground(frame)
-      this.stopRAFId = requestAnimationFrame(this.blurBackground)
-    },
-    replaceBackground () {
-      let frame = document.getElementById('invisibleVideo')
-      this.vb.replaceBackground(frame)
-      this.stopRAFId = requestAnimationFrame(this.replaceBackground)
-    },
-    changeSettings(blur, replace, backgroundImg, display) {
+    async changeSettings(blur, replace, backgroundImg, display) {
+      const currentBackgroundOption = this.processVideoType
       if (blur) {
-        this.processVideoType = 'blur'
+        this.processVideoType = BackgroundProcessType.blur
       } else if (replace) {
-        this.processVideoType = 'replace'
-        let img = new Image()
-        img.src = backgroundImg
-        this.vb.setVBConfig(img)
+        this.processVideoType = BackgroundProcessType.virtual
+        this.mediaStreamFactory.setBackground(backgroundImg)
       } else {
-        this.processVideoType = 'normal'
+        this.processVideoType = BackgroundProcessType.disable
       }
-      if (this.video) {
-        this.sendMediaStream(this.video, null)
+      if (this.video && currentBackgroundOption !== this.processVideoType) {
+        this.myVideoStream.getTracks().forEach((track) => {
+          this.mediaService.closeTrack(track)
+          this.myVideoStream.removeTrack(track)
+        })
+        this.myVideoStream.addTrack(await this.mediaStreamFactory.getProcessedCameraTrack(this.processVideoType, false))
+        this.mediaService.sendMediaStream(this.myVideoStream)
       }
+      const currentDisplayAudio = this.displayAudio
+      const currentDisplayVideo = this.displayVideo
+      const currentDisplaySourceId = this.displaySourceId
       this.displayAudio = display.audio
       this.displayVideo = display.video
       this.displaySourceId = display.id
-      if (this.display){
-        this.sendDisplayStream()
-      }
-    },
-    closeRAF () {
-      if (this.stopRAFId) {
-        cancelAnimationFrame(this.stopRAFId)
-        this.stopRAFId = null
+
+      if (this.display) {
+        const {screenVideoTrack, screenAudioTrack} = await this.mediaStreamFactory.getScreenTracks(this.displayVideo, this.displayAudio, this.displaySourceId);
+        // 视频源变更或不需要视频，删除之前的视频流
+        if (currentDisplayVideo && (!this.displayVideo || this.displaySourceId !== currentDisplaySourceId)) {
+          this.myVideoStream.getTracks().forEach((track) => {
+            this.mediaService.closeTrack(track)
+            this.myVideoStream.removeTrack(track)
+          })
+        }
+        if (currentDisplayAudio && (!this.displayAudio || this.displaySourceId !== currentDisplaySourceId)) {
+          this.myDisplayAudioStream.getTracks().forEach((track) => {
+            this.mediaService.closeTrack(track)
+            this.myDisplayAudioStream.removeTrack(track)
+          })
+        }
+        if (this.displayVideo) {
+          this.myVideoStream.addTrack(screenVideoTrack)
+          this.mediaService.sendMediaStream(this.myVideoStream)
+        }
+        if (this.displayAudio) {
+          this.myDisplayAudioStream.addTrack(screenAudioTrack)
+          this.mediaService.sendMediaStream(this.myDisplayAudioStream)
+        }
       }
     },
     async getRoomInfo(){
@@ -1095,9 +1048,9 @@ export default {
               }
             })
         this.GLOBAL.roomInfo = response.data.room;
-        this.snackText = '房主变更';
+        this.snackText = '主持人变更';
         this.snack = true;
-      }catch(error){
+      } catch(error) {
         this.snackText = "与服务器失去连接"
         this.snack = true;
         setTimeout(()=>{this.$emit('back')},1600)
@@ -1127,12 +1080,6 @@ export default {
           }
         })
       })
-    },
-    nextPage () {
-      //here to stop previous video track ( range : [ (this.subFollowUserPage - 2) * 4, (this.subFollowUserPage - 1) * 4 )  )
-    },
-    previousPage () {
-      //here to stop next video track  ( range : [ this.subFollowUserPage * 4, (this.subFollowUserPage + 1) * 4 )  )
     }
   },
   mounted() {
@@ -1149,22 +1096,21 @@ export default {
     clearInterval(this.clock);
   },
   async created() {
-    this.mediaService = new MediaService()
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
       this.allUsers = this.mediaService.getPeerDetails()
 
-      this.subFollowUserIds.forEach((id, index) => {
-        if ((id !== this.GLOBAL.userInfo.id) && (!this.allUsers.find((user) => {
-          return user.id = id
-        }))) {
-          this.subFollowUserIds.splice(index, 1)
-        }
-      })
+      // this.subFollowUserIds.forEach((id, index) => {
+      //   if ((id !== this.GLOBAL.userInfo.id) && (!this.allUsers.find((user) => {
+      //     return user.id = id
+      //   }))) {
+      //     this.subFollowUserIds.splice(index, 1)
+      //   }
+      // })
 
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
         this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
-        this.snackText = "房主变更";
+        this.snackText = "主持人变更";
         this.snack = true;
       }
       this.isHost = this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id;
@@ -1175,32 +1121,46 @@ export default {
         this.chatBadge = 'green'
       }
 
+      if (newMsg.fromPeerId && this.mediaService.hasPeer(newMsg.fromPeerId)) {
+        const peerInfo = this.mediaService.getPeerDetailByPeerId(newMsg.fromPeerId).getPeerInfo();
+        newMsg.displayName = peerInfo.displayName;
+        newMsg.avatar = peerInfo.avatar;
+      } else {
+        newMsg.displayName = '此人已离开会议';
+        newMsg.avatar = this.GLOBAL.defaultPortrait;
+      }
       this.allMsgs.push(newMsg);
       let col = document.getElementById('chatContainer');
       col.scrollTop = col.scrollHeight;
     })
 
-    this.mediaService.registerMeetingEndListener('updateListener',() => {
-
+    this.mediaService.registerMeetingEndListener('meetingEndListener',(reason) => {
+      switch (reason) {
+        case MeetingEndReason.kicked:
+          this.snackText = "已被主持人强制离开会议"
+          this.snack = true
+          break
+        case MeetingEndReason.roomClosed:
+          this.snackText = "会议结束"
+          this.snack = true
+          break
+        case MeetingEndReason.lostConnection:
+          this.snackText = "已断开连接"
+          this.snack = true
+          break
+      }
+      setTimeout(()=>{
+        this.$emit('back');
+      }, 1600);
     })
 
     this.mediaService.registerBeMutedListener('mutedListener', async () => {
       console.log('Be Muted')
-      if (this.audio){
-        this.audio = false
-        let tracks = this.myAudioStream.getAudioTracks()
-        for (const track of tracks){
-          await this.mediaService.closeTrack(track)
-          track.stop()
-          this.myAudioStream.removeTrack(track)
-        }
-        this.microIcon.icon = 'mdi-microphone-off'
-        this.microIcon.color = 'gray'
+      this.snackText = "已被主持人静音";
+      this.snack = true;
+      if (this.audio) {
+        await this.microSwitch()
       }
-    })
-
-    this.mediaService.speechRecognition.registerSpeechListener('speechListener', (data) => {
-      this.allCaptions = data
     })
 
     try {
@@ -1211,43 +1171,52 @@ export default {
           this.GLOBAL.userInfo.nickname,
           this.GLOBAL.userInfo.nickname + '\'s PC',
           this.GLOBAL.baseURL + this.GLOBAL.userInfo.portrait)
-    }catch (e){
-      this.snackText = '房主尚未入会';
+    } catch (e) {
+      this.snackText = '主持人尚未入会';
       this.snack = true;
       setTimeout(()=>{
         this.$emit('back');
       }, 1600);
     }
 
-    navigator.getUserMedia  = navigator.getUserMedia ||
-        navigator.webkitGetUserMedia ||
-        navigator.mozGetUserMedia ||
-        navigator.msGetUserMedia;
+    this.video = this.GLOBAL.openCameraWhenEnter
+    this.audio = this.GLOBAL.openMicrophoneWhenEnter
 
-    if (!navigator.getUserMedia) {
-      console.log('Browser DOES NOT support!')
-    }
+    if (this.video) {
+      this.disableVideoButton = true
+      setTimeout(() => {
+        this.disableVideoButton = false
+      }, 1000)
+      this.mediaStreamFactory.getProcessedCameraTrack(BackgroundProcessType.disable, false)
+          .then((track) => {
+            this.myVideoStream.addTrack(track)
+            this.mediaService.sendMediaStream(this.myVideoStream)
+            if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
+              this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
+            }
+          })
 
-    this.video = this.GLOBAL.openMicrophoneWhenEnter
-    this.audio = this.GLOBAL.openCameraWhenEnter
-
-    await this.sendMediaStream(this.video, this.audio)
-
-    if (!this.video) {
+    } else {
       this.videoIcon.icon = 'mdi-video-off'
       this.videoIcon.color = 'gray'
     }
 
-    if (!this.audio) {
+    if (this.audio) {
+      this.disableMicroButton = true
+      setTimeout(() => {
+        this.disableMicroButton = false
+      }, 1000)
+      this.mediaService.speechRecognition.start()
+      this.mediaStreamFactory.getMicrophoneTrack()
+          .then((track) => {
+            this.myAudioStream.addTrack(track)
+            this.mediaService.sendMediaStream(this.myAudioStream)
+          })
+
+    } else {
       this.microIcon.icon = 'mdi-microphone-off'
       this.microIcon.color = 'gray'
     }
-
-    moment.locale('zh-cn')
-
-    this.vb = new virtualBackground(document.getElementById('invisibleCanvas'))
-
-    this.clockIntervalId = setInterval(this.addSec, 1000)
   },
   computed : {
     filteredUsers () {
@@ -1265,61 +1234,59 @@ export default {
         return {
           id : "",
           displayName: "",
-          mediaStream : null
+          mediaStream : null,
+          mirror: false
         }
       }
       if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
         return {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
-          mediaStream : this.myVideoStream
+          mediaStream : this.myVideoStream,
+          mirror: this.video
         }
       } else {
-        for (let i = 0; i < this.allUsers.length; ++i) {
-          if(this.allUsers[i].getPeerInfo().id === this.mainFollowUserId) {
-            let user = this.allUsers[i]
-            return {
-              id : this.mainFollowUserId,
-              displayName : user.getPeerInfo().displayName,
-              mediaStream : new MediaStream(user.getTracks())
-            }
+        const user = this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId)
+        if (user != null) {
+          return {
+            id : this.mainFollowUserId,
+            displayName : user.getPeerInfo().displayName,
+            mediaStream : new MediaStream(user.getTracks()),
+            mirror: false
+          }
+        } else {
+          return {
+            id : "",
+            displayName: "",
+            mediaStream : null,
+            mirror: false
           }
         }
       }
-      return {
-        id : "",
-        displayName: "",
-        mediaStream : null
-      }
+
     },
     subFollowUsers () {
-      let subUsers = []
-      this.subFollowUserIds.forEach((userId) => {
-        if (userId === this.GLOBAL.userInfo.id) {
-          subUsers.push({
-            id: this.GLOBAL.userInfo.id,
-            displayName: this.GLOBAL.userInfo.nickname,
-            mediaStream: this.myVideoStream,
-            show: false
-          })
+      const subUsers = []
+      this.subFollowUserIds.forEach((id) => {
+        const user = this.mediaService.getPeerDetailByPeerId(id);
+        if (user == null) {
+          if (id === this.GLOBAL.userInfo.id) {
+            subUsers.push({
+              id: this.GLOBAL.userInfo.id,
+              displayName: this.GLOBAL.userInfo.nickname,
+              mediaStream: this.myVideoStream,
+              mirror: this.video
+            })
+          }
         } else {
-          let user = this.mediaService.getPeerDetailByPeerId(userId);
           subUsers.push({
             id: user.getPeerInfo().id,
             displayName: user.getPeerInfo().displayName,
             mediaStream: new MediaStream(user.getTracks()),
-            show: false
+            mirror: false
           })
         }
       })
-
-      for (let i = (this.subFollowUserPage - 1) * 4; i < this.subFollowUserPage * 4; ++i) {
-        if (i >= subUsers.length) {
-          break;
-        }
-        //here to continue user video track
-        subUsers[i].show = true
-      }
 
       return subUsers
     }
@@ -1470,12 +1437,5 @@ export default {
 }
 .item-avatar.has-audio{
   border: 1px solid green;
-}
-
-#sub-pagination {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
 }
 </style>

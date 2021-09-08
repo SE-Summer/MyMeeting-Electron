@@ -6,12 +6,18 @@
   export default {
     name: "myVideo",
     mounted() {
-        document.getElementById(this.myId).srcObject = this.srcObject
+      this.videoElement = document.getElementById(this.myId)
+      this.videoElement.style.transform = this.mirror ? "rotateY(180deg)" : ""
+      this.videoElement.srcObject = this.srcObject;
     },
-    props: ["srcObject", "myId"],
+    props: ["srcObject", "mirror", "myId"],
     watch: {
       srcObject(newValue) {
-          document.getElementById(this.myId).srcObject = newValue
+          this.videoElement.srcObject = newValue
+      },
+      mirror(newValue) {
+        this.videoElement.style.transform = newValue ? "rotateY(180deg)" : ""
+        this.videoElement.srcObject = this.srcObject
       }
     }
   }

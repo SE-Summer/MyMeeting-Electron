@@ -40,7 +40,7 @@
         <v-row dense class="settings-row">
           <v-col align="center" class="title2">
             <v-switch
-                v-model="microphone"
+                v-model="GLOBAL.openMicrophoneWhenEnter"
                 label="麦克风默认开启"
                 color="teal"
                 hide-details
@@ -50,7 +50,7 @@
         <v-row dense class="settings-row">
           <v-col align="center" class="title2">
             <v-switch
-                v-model="camera"
+                v-model="GLOBAL.openCameraWhenEnter"
                 label="摄像头默认开启"
                 color="teal"
                 hide-details
@@ -101,8 +101,6 @@ export default {
       password : "",
       loading: false,
       file: null,
-      microphone : false,
-      camera : false,
       snack : false,
       snackText : "",
     }
@@ -112,8 +110,6 @@ export default {
       this.$emit('logout');
     },
     back(){
-      this.GLOBAL.openMicrophoneWhenEnter = this.microphone;
-      this.GLOBAL.openCameraWhenEnter = this.camera;
       this.$emit('back');
     },
     getPortrait(){

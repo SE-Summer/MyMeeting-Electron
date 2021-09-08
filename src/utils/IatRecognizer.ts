@@ -44,6 +44,7 @@ export class IatRecognizer
     private audioContext: AudioContext;
     private scriptProcessor: ScriptProcessorNode;
     private mediaSource: MediaStreamAudioSourceNode;
+    private audioStream: MediaStream;
     private handlerInterval;
 
     public onRecognizerResult: (result: RecognitionResult) => void;
@@ -88,7 +89,7 @@ export class IatRecognizer
                 // @ts-ignore
                 iatWS = new MozWebSocket(url)
             } else {
-                this.onRecognizerError(new Error('WebSocket not supported'))
+                this.onRecognizerError && this.onRecognizerError(new Error('WebSocket not supported'))
                 return
             }
             this.webSocket = iatWS
@@ -105,7 +106,7 @@ export class IatRecognizer
             }
             iatWS.onerror = e => {
                 this.recorderStop()
-                this.onRecognizerError(e)
+                this.onRecognizerError && this.onRecognizerError(e)
             }
             iatWS.onclose = () => {
                 this.recorderStop()
@@ -123,12 +124,12 @@ export class IatRecognizer
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)()
             this.audioContext.resume()
             if (!this.audioContext) {
-                this.onRecognizerError(new Error('WebAudioApi not supported'))
+                this.onRecognizerError && this.onRecognizerError(new Error('WebAudioApi not supported'))
                 return
             }
         } catch (e) {
             if (!this.audioContext) {
-                this.onRecognizerError(new Error('WebAudioApi not supported'))
+                this.onRecognizerError && this.onRecognizerError(new Error('WebAudioApi not supported'))
                 return
             }
         }
@@ -161,9 +162,9 @@ export class IatRecognizer
             )
         } else {
             if (navigator.userAgent.toLowerCase().match(/chrome/) && location.origin.indexOf('https://') < 0) {
-                this.onRecognizerError(new Error('Cannot get audio due to security issues'))
+                this.onRecognizerError && this.onRecognizerError(new Error('Cannot get audio due to security issues'))
             } else {
-                this.onRecognizerError(new Error('Cannot get audio'))
+                this.onRecognizerError && this.onRecognizerError(new Error('Cannot get audio'))
             }
             this.audioContext && this.audioContext.close()
             return
@@ -171,6 +172,7 @@ export class IatRecognizer
         // 获取浏览器录音权限成功的回调
         const getMediaSuccess = stream => {
             // 创建一个用于通过JavaScript直接处理音频
+            this.audioStream = stream
             this.scriptProcessor = this.audioContext.createScriptProcessor(0, 1, 1)
             this.scriptProcessor.onaudioprocess = e => {
                 // 去处理音频数据
@@ -193,7 +195,7 @@ export class IatRecognizer
             if (this.webSocket && this.webSocket.readyState === 1) {
                 this.webSocket.close()
             }
-            this.onRecognizerError(e);
+            this.onRecognizerError && this.onRecognizerError(e);
         }
     }
     private recorderStart() {
@@ -207,7 +209,7 @@ export class IatRecognizer
     // 暂停录音
     private recorderStop() {
         // safari下suspend后再次resume录音内容将是空白，设置safari下不做suspend
-        if (!(/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent))){
+        if (!(/Safari/.test(navigator.userAgent))) {// && !/Chrome/.test(navigator.userAgent))){
             this.audioContext && this.audioContext.suspend()
         }
         this.setStatus(RecognitionStatus.ended)
@@ -301,17 +303,17 @@ export class IatRecognizer
             for (let i = 0; i < ws.length; i++) {
                 str = str + ws[i].cw[0].w
             }
-            const isLast: boolean = jsonData.data.status === 2;
+            const isLast: boolean = data.ls;
             // 开启wpgs会有此字段(前提：在控制台开通动态修正功能)
             // 取值为 "apd"时表示该片结果是追加到前面的最终结果；取值为"rpl" 时表示替换前面的部分结果，替换范围为rg字段
             if (data.pgs) {
                 if (data.pgs === 'apd') {
                     // 将resultTextTemp同步给resultText
-                    // @ts-ignore
-                    this.setResultText({
-                        resultText: this.resultTextTemp,
-                        isLast
-                    })
+                    // this.setResultText({
+                    //     resultText: this.resultTextTemp,
+                    //     isLast
+                    // })
+                    this.resultText = this.resultTextTemp
                 }
                 // 将结果存储在resultTextTemp中
                 // @ts-ignore
@@ -332,7 +334,7 @@ export class IatRecognizer
         }
         if (jsonData.code !== 0) {
             this.webSocket.close()
-            this.onRecognizerError(new Error('Engine failure, code: ' + jsonData.code))
+            this.onRecognizerError && this.onRecognizerError(new Error('Engine failure, code: ' + jsonData.code))
         }
     }
     public start() {
@@ -342,5 +344,15 @@ export class IatRecognizer
     }
     public stop() {
         this.recorderStop()
+        this.mediaSource && this.mediaSource.disconnect()
+        this.scriptProcessor && this.scriptProcessor.disconnect()
+        this.audioContext && this.audioContext.close()
+        this.audioStream && this.audioStream.getTracks().forEach((track) => {
+            track.stop()
+        })
+        this.mediaSource = null
+        this.scriptProcessor = null
+        this.audioContext = null
+        this.audioStream = null
     }
 }
