@@ -1274,38 +1274,34 @@ export default {
     },
     subFollowUsers () {
       const subUsers = []
+      let index = 0
+      const pageMax = this.subFollowUserPage * this.GLOBAL.subPageSize
+      const pageMin = pageMax - this.GLOBAL.subPageSize
+
       this.subFollowUserIds.forEach((id) => {
         const user = this.mediaService.getPeerDetailByPeerId(id);
         if (user == null) {
           if (id === this.GLOBAL.userInfo.id) {
+            const show = (index >= pageMin && index < pageMax)
             subUsers.push({
               id: this.GLOBAL.userInfo.id,
               displayName: this.GLOBAL.userInfo.nickname,
               mediaStream: this.myVideoStream,
               mirror: this.video,
-              show: false
+              show
             })
+            ++index
           }
         } else {
+          const show = (index >= pageMin && index < pageMax)
           subUsers.push({
             id: user.getPeerInfo().id,
             displayName: user.getPeerInfo().displayName,
-            mediaStream: new MediaStream(user.getTracks()),
+            mediaStream: show ? new MediaStream(user.getTracks()) : new MediaStream(user.getAudioTracks()),
             mirror: false,
-            show: false
+            show
           })
-          user.unsubscribeVideo();
-        }
-      })
-
-      // prevent user exit when click next/previous page button.
-      subUsers.forEach((user, index) => {
-        if (index >= (this.subFollowUserPage - 1) * 4 && index < this.subFollowUserPage * 4) {
-          this.mediaService.getPeerDetailByPeerId(subUsers[index].id).getTracks()
-          subUsers[index].show = true
-        } else {
-          this.mediaService.getPeerDetailByPeerId(subUsers[index].id).unsubscribeVideo()
-          subUsers[index].show = false
+          ++index
         }
       })
 

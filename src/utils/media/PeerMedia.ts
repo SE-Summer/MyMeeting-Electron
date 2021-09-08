@@ -102,7 +102,6 @@ class PeerDetail
 
     public getAudioTracks()
     {
-
         const tracks: MediaStreamTrack[] = [];
         this.consumers.forEach((consumer) => {
             if (consumer.kind === 'audio') {
@@ -111,6 +110,9 @@ class PeerDetail
                     consumer.resume();
                 }
                 tracks.push(consumer.track);
+            } else if (consumer.kind === 'video' && !consumer.paused) {
+                consumer.emit('pause');
+                consumer.pause();
             }
         });
         return tracks;
