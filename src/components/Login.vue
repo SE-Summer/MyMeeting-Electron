@@ -79,7 +79,7 @@ export default {
   },
   data(){
     return{
-      email : "jz2000@sjtu.edu.cn",
+      email : "13122616405@163.com",
       password : "123456",
       loading : false,
       snackText: "",
@@ -87,7 +87,7 @@ export default {
       valid : true,
       emailRules: [
         v => !!v || '请输入邮箱地址',
-        v => /.+@.+\..+/.test(v) || '邮箱地址格式错误',
+        v => /.+@[a-zA-Z0-9]+\..+/.test(v) || '邮箱地址格式错误',
       ],
       passwordRules: [
         v => !!v || '请输入密码',

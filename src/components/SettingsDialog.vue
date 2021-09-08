@@ -170,11 +170,6 @@
     mounted() {
       desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
           sources=>{
-            sources.forEach((source, index) => {
-              if (source.name === 'mymeeting') {
-                sources.splice(index, 1)
-              }
-            })
             this.sources = sources
           })
     },
