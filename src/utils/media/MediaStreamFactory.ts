@@ -20,6 +20,7 @@ export class MediaStreamFactory
         navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia ||
             // @ts-ignore
             navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        // @ts-ignore
         if (!navigator.getUserMedia) {
             console.log('Browser DOES NOT support!')
         }

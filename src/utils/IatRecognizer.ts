@@ -147,7 +147,9 @@ export class IatRecognizer
                 .catch(e => {
                     getMediaFail(e)
                 })
+            // @ts-ignore
         } else if (navigator.getUserMedia) {
+            // @ts-ignore
             navigator.getUserMedia(
                 {
                     audio: true,
