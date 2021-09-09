@@ -9,7 +9,7 @@ const defaultPeerInfo: types.PeerInfo = {
     device: 'defaultDevice'
 }
 
-class PeerDetail
+export class PeerDetail
 {
     private _hasAudio: boolean = null;
     private _hasVideo: boolean = null;
@@ -128,6 +128,16 @@ class PeerDetail
         });
     }
 
+    public unsubscribe()
+    {
+        this.consumers.forEach((consumer) => {
+            if (!consumer.paused) {
+                consumer.emit('pause');
+                consumer.pause();
+            }
+        });
+    }
+
     public unsubscribeVideo()
     {
         this.consumers.forEach((consumer) => {
@@ -239,11 +249,7 @@ export class PeerMedia
 
     public getPeerDetails(): PeerDetail[]
     {
-        const peerDetails = [];
-        this.peerId2Details.forEach((peerDetail) => {
-            peerDetails.push(peerDetail);
-        })
-        return peerDetails;
+        return Array.from(this.peerId2Details.values());
     }
 
     public clear()
@@ -255,9 +261,21 @@ export class PeerMedia
         this.consumerId2Details.clear();
     }
 
+    public getPeerCount()
+    {
+        return this.peerId2Details.size;
+    }
+
     public hasPeer(peerId: number)
     {
         return this.peerId2Details.has(peerId);
+    }
+
+    public forEachPeer(callback)
+    {
+        this.peerId2Details.forEach((peerDetail, peerId) => {
+            callback(peerDetail, peerId);
+        });
     }
 
     public getPeerDetailByPeerId(peerId: number)

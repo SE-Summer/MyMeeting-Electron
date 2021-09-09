@@ -22,7 +22,7 @@ export default {
     },
     baseURL : "http://122.112.175.61:4446",
     defaultPortrait: "http://122.112.175.61:4446/static/portraits/default.png",
-    subPageSize: 4,
+    subPageSize: 6,
     openCameraWhenEnter : false,
     openMicrophoneWhenEnter : false,
     videoConstraint : {
