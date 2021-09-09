@@ -126,6 +126,11 @@
 
 <script>
   import {desktopCapturer} from "electron";
+  import bg1 from "../../public/bg_1.jpg";
+  import bg2 from "../../public/bg_2.jpg";
+  import bg3 from "../../public/bg_3.jpg";
+  import bg4 from "../../public/bg_4.jpg";
+  import bg5 from "../../public/bg_5.jpg";
 
   export default {
     name: "settingDialog",
@@ -178,11 +183,11 @@
         dialog : false,
         tab : null,
         backgroundImgs : [
-          'http://122.112.175.61:4446/static/images/bg_1.jpg',
-          'http://122.112.175.61:4446/static/images/bg_2.jpg',
-          'http://122.112.175.61:4446/static/images/bg_3.jpg',
-          'http://122.112.175.61:4446/static/images/bg_4.jpg',
-          'http://122.112.175.61:4446/static/images/bg_5.jpg'
+          bg1,
+          bg2,
+          bg3,
+          bg4,
+          bg5,
         ],
         blurSwitch : false,
         oldBlurSwitch : false,

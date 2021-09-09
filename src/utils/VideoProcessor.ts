@@ -3,6 +3,8 @@ import '@tensorflow/tfjs-backend-webgl';
 // @ts-ignore
 import MyWorker from 'comlink-loader!./media/BodyPixWorker';
 import {BackgroundProcessType} from "@/utils/Types";
+// @ts-ignore
+import bg1 from "../../public/bg_1.jpg";
 
 const defaultWidth = 640;
 const defaultHeight = 360;
@@ -10,7 +12,7 @@ const maskBlurAmount = 3;
 const backgroundBlurAmount = 3;
 const edgeBlurAmount = 3;
 const flipHorizontal = false;
-const defaultImageSrc = 'http://122.112.175.61:4446/static/images/bg_1.jpg';
+const defaultImageSrc = bg1;
 const bodyPixWorker = new MyWorker();
 
 export class VideoProcessor
