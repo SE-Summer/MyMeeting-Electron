@@ -125,7 +125,7 @@
 </template>
 
 <script>
-  import {desktopCapturer} from "electron";
+  //import {desktopCapturer} from "electron";
 
   export default {
     name: "settingDialog",
@@ -161,28 +161,28 @@
         this.imgIter = (this.imgIter === this.backgroundImgs.length - 1) ? 0 : this.imgIter + 1
       },
       getSources() {
-        desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
-            sources=>{
-              this.sources = sources
-            })
+        // desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
+        //     sources=>{
+        //       this.sources = sources
+        //     })
       }
     },
     mounted() {
-      desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
-          sources=>{
-            this.sources = sources
-          })
+      // desktopCapturer.getSources({ types: ['window', 'screen'] }).then(
+      //     sources=>{
+      //       this.sources = sources
+      //     })
     },
     data () {
       return{
         dialog : false,
         tab : null,
         backgroundImgs : [
-          'http://122.112.175.61:4446/static/images/bg_1.jpg',
-          'http://122.112.175.61:4446/static/images/bg_2.jpg',
-          'http://122.112.175.61:4446/static/images/bg_3.jpg',
-          'http://122.112.175.61:4446/static/images/bg_4.jpg',
-          'http://122.112.175.61:4446/static/images/bg_5.jpg'
+          'https://122.112.175.61:4445/static/images/bg_1.jpg',
+          'https://122.112.175.61:4445/static/images/bg_2.jpg',
+          'https://122.112.175.61:4445/static/images/bg_3.jpg',
+          'https://122.112.175.61:4445/static/images/bg_4.jpg',
+          'https://122.112.175.61:4445/static/images/bg_5.jpg'
         ],
         blurSwitch : false,
         oldBlurSwitch : false,

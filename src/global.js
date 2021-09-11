@@ -20,7 +20,7 @@ export default {
         end_time : "",
         start_time: ""
     },
-    baseURL : "http://122.112.175.61:4446",
+    baseURL : "https://122.112.175.61:4445",
     openCameraWhenEnter : false,
     openMicrophoneWhenEnter : false,
     videoConstraint : {

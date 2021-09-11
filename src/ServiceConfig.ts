@@ -1,8 +1,8 @@
 const config = {
     // serverIp: 'se-summer.cn',
     serverIp: '122.112.175.61',
-    serverPort: 4446,
-    serverUseHttps: false,
+    serverPort: 4445,
+    serverUseHttps: true,
 }
 
 export const SimulcastEncodings: RTCRtpEncodingParameters[] = [

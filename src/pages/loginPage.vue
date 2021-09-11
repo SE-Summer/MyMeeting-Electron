@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import cube from "../components/cube";
+import cube from "../components/cube_web";
 import Main from "../components/Main_Web";
 export default {
   name: 'loginPage',
