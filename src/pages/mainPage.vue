@@ -659,6 +659,12 @@ export default {
       unFollowUserIds : new Set(),
       shouldUpdate: false,
       subFollowUsers : [],
+      mainFollowUser: {
+        id : "",
+        displayName: "",
+        mediaStream : null,
+        mirror: false
+      },
       subFollowUserPage : 1,
       mediaDevice : null,
       myVideoStream : new MediaStream(),
@@ -855,6 +861,7 @@ export default {
     mainVideo (userId) {
       if (this.mainFollowUserId !== userId) {
         this.mainFollowUserId = userId
+        this.updateMainFollowUser()
         if (this.unFollowUserIds.has(userId)) {
           this.unFollowUserIds.delete(userId)
         } else {
@@ -866,6 +873,7 @@ export default {
       let shouldUpdateSub = false
       if (this.mainFollowUserId === userId) {
         this.mainFollowUserId = null
+        this.updateMainFollowUser()
         shouldUpdateSub = true
       }
       if (this.unFollowUserIds.has(userId)) {
@@ -931,6 +939,7 @@ export default {
     },
     removeMainFollowUser () {
       this.mainFollowUserId = null
+      this.updateMainFollowUser()
       this.updateSubFollowUsers()
     },
     async leaveMeeting () {
@@ -1071,6 +1080,41 @@ export default {
         })
       })
     },
+    updateMainFollowUser() {
+      if (this.mainFollowUserId == null) {
+        this.mainFollowUser = {
+          id : "",
+          displayName: "",
+          mediaStream : null,
+          mirror: false
+        }
+      }
+      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
+        this.mainFollowUser = {
+          id : this.mainFollowUserId,
+          displayName : this.GLOBAL.userInfo.nickname,
+          mediaStream : this.myVideoStream,
+          mirror: this.video
+        }
+      } else {
+        const user = this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId)
+        if (user != null) {
+          this.mainFollowUser = {
+            id : this.mainFollowUserId,
+            displayName : user.getPeerInfo().displayName,
+            mediaStream : new MediaStream(user.getTracks()),
+            mirror: false
+          }
+        } else {
+          this.mainFollowUser = {
+            id : "",
+            displayName: "",
+            mediaStream : null,
+            mirror: false
+          }
+        }
+      }
+    },
     updateSubFollowUsers () {
       const subUsers = []
       let index = 0
@@ -1140,6 +1184,7 @@ export default {
         if (this.shouldUpdate) {
           this.shouldUpdate = false
           this.allUsers = this.mediaService.getPeerDetails()
+          this.updateMainFollowUser()
           this.updateSubFollowUsers()
         }
       }, 500)
@@ -1254,42 +1299,6 @@ export default {
           return user.getPeerInfo().displayName.search(this.filterText) !== -1
         })
       }
-    },
-    mainFollowUser () {
-      if (this.mainFollowUserId == null) {
-        return {
-          id : "",
-          displayName: "",
-          mediaStream : null,
-          mirror: false
-        }
-      }
-      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
-        return {
-          id : this.mainFollowUserId,
-          displayName : this.GLOBAL.userInfo.nickname,
-          mediaStream : this.myVideoStream,
-          mirror: this.video
-        }
-      } else {
-        const user = this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId)
-        if (user != null) {
-          return {
-            id : this.mainFollowUserId,
-            displayName : user.getPeerInfo().displayName,
-            mediaStream : new MediaStream(user.getTracks()),
-            mirror: false
-          }
-        } else {
-          return {
-            id : "",
-            displayName: "",
-            mediaStream : null,
-            mirror: false
-          }
-        }
-      }
-
     },
   },
 }
