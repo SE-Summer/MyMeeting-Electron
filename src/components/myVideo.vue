@@ -14,7 +14,6 @@
     watch: {
       srcObject(newValue) {
           this.videoElement.srcObject = newValue
-          console.log(newValue.getVideoTracks())
       },
       mirror(newValue) {
         this.videoElement.style.transform = newValue ? "rotateY(180deg)" : ""

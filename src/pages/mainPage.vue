@@ -719,6 +719,7 @@ export default {
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
       }
+      this.mainFollowUserId === this.GLOBAL.userInfo.id && this.updateMainFollowUser()
       this.updateSubFollowUsers()
     },
     async microSwitch () {
@@ -778,6 +779,7 @@ export default {
         this.screenIcon.icon = 'mdi-laptop'
         this.screenIcon.color = 'teal'
       }
+      this.mainFollowUserId === this.GLOBAL.userInfo.id && this.updateMainFollowUser()
       this.updateSubFollowUsers()
     },
     captionSwitch () {
@@ -1093,7 +1095,7 @@ export default {
         this.mainFollowUser = {
           id : this.mainFollowUserId,
           displayName : this.GLOBAL.userInfo.nickname,
-          mediaStream : this.myVideoStream,
+          mediaStream : (this.video || (this.display && this.displayVideo)) ? this.myVideoStream : null,
           mirror: this.video
         }
       } else {
