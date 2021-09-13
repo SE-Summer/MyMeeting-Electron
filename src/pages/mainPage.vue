@@ -918,7 +918,7 @@ export default {
         let timestamp = moment()
 
         this.allMsgs.push({
-          type : this.MessageType.file,
+          type : this.messageType.file,
           file : this.file,
           broadcast : true,
           fromMyself : true,
