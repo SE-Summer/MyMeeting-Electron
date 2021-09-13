@@ -21,7 +21,7 @@ export default {
         start_time: ""
     },
     baseURL : "http://122.112.175.61:4446",
-    defaultPortrait: "https://122.112.175.61:4445/static/portraits/default.png",
+    defaultPortrait: "http://122.112.175.61:4446/static/portraits/default.png",
     subPageSize: 4,
     openCameraWhenEnter : false,
     openMicrophoneWhenEnter : false,
