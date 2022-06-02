@@ -73,6 +73,7 @@
             <v-btn
                 class="mr-4 teal white--text"
                 @click="back"
+                id="enterBtn"
                 :loading="loading"
                 :disabled="loading"
             >

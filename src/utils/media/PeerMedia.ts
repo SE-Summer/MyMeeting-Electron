@@ -9,7 +9,7 @@ const defaultPeerInfo: types.PeerInfo = {
     device: 'defaultDevice'
 }
 
-class PeerDetail
+export class PeerDetail
 {
     private _hasAudio: boolean = null;
     private _hasVideo: boolean = null;
@@ -102,7 +102,6 @@ class PeerDetail
 
     public getAudioTracks()
     {
-
         const tracks: MediaStreamTrack[] = [];
         this.consumers.forEach((consumer) => {
             if (consumer.kind === 'audio') {
@@ -111,6 +110,9 @@ class PeerDetail
                     consumer.resume();
                 }
                 tracks.push(consumer.track);
+            } else if (consumer.kind === 'video' && !consumer.paused) {
+                consumer.emit('pause');
+                consumer.pause();
             }
         });
         return tracks;
@@ -122,6 +124,16 @@ class PeerDetail
             if (consumer.paused) {
                 consumer.emit('resume');
                 consumer.resume();
+            }
+        });
+    }
+
+    public unsubscribe()
+    {
+        this.consumers.forEach((consumer) => {
+            if (!consumer.paused) {
+                consumer.emit('pause');
+                consumer.pause();
             }
         });
     }
@@ -237,11 +249,7 @@ export class PeerMedia
 
     public getPeerDetails(): PeerDetail[]
     {
-        const peerDetails = [];
-        this.peerId2Details.forEach((peerDetail) => {
-            peerDetails.push(peerDetail);
-        })
-        return peerDetails;
+        return Array.from(this.peerId2Details.values());
     }
 
     public clear()
@@ -253,9 +261,21 @@ export class PeerMedia
         this.consumerId2Details.clear();
     }
 
+    public getPeerCount()
+    {
+        return this.peerId2Details.size;
+    }
+
     public hasPeer(peerId: number)
     {
         return this.peerId2Details.has(peerId);
+    }
+
+    public forEachPeer(callback)
+    {
+        this.peerId2Details.forEach((peerDetail, peerId) => {
+            callback(peerDetail, peerId);
+        });
     }
 
     public getPeerDetailByPeerId(peerId: number)

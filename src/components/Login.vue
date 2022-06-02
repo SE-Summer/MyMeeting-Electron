@@ -79,8 +79,8 @@ export default {
   },
   data(){
     return{
-      email : "13122616405@163.com",
-      password : "123456",
+      email : "",
+      password : "",
       loading : false,
       snackText: "",
       snack : false,

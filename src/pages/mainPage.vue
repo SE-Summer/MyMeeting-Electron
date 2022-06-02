@@ -311,9 +311,10 @@
     >
       <v-list>
         <v-list-item
-            v-for="(user, index) in subFollowUsers"
-            :key="index"
+            v-for="(user) in subFollowUsers"
+            :key="user.id"
             link
+            v-show="user.show"
         >
           <v-list-item-content>
             <v-hover v-slot="{hover}">
@@ -321,7 +322,7 @@
                   height="150px"
                   outlined>
 
-                <my-video :src-object="user.mediaStream" :mirror="user.mirror" :my-id="'sub-video' + index" process-video-type="blur"
+                <my-video :src-object="user.mediaStream" :mirror="user.mirror" :my-id="'sub-video-' + user.id"
                           style="width: 100%; height: 100%"></my-video>
                 <div
                     class="d-flex white black--text v-card--reveal"
@@ -333,12 +334,12 @@
                   </div>
                   <v-fab-transition>
                     <div v-if="hover">
-                      <v-btn icon x-small @click="sub2Main(index)">
+                      <v-btn icon x-small @click="mainVideo(user.id)">
                         <v-icon color="teal">
                           mdi-account-star
                         </v-icon>
                       </v-btn>
-                      <v-btn icon x-small @click="removeSubFollowUser(index)">
+                      <v-btn icon x-small @click="removeSubFollowUser(user.id)">
                         <v-icon color="teal">
                           mdi-close
                         </v-icon>
@@ -351,6 +352,11 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <v-pagination
+              id="sub-pagination"
+              v-model="subFollowUserPage"
+              :length="Math.ceil(subFollowUsers.length / GLOBAL.subPageSize)"
+              total-visible="0"></v-pagination>
     </v-navigation-drawer>
 
     <v-main style="text-align: center" id="main-video-window">
@@ -588,6 +594,7 @@ import {BackgroundProcessType, MessageType} from "@/utils/Types";
 import {MeetingEndReason} from "@/ServiceConfig";
 
 const moment = require("moment");
+moment.locale('zh-cn')
 
 export default {
   name: "mainPage.vue",
@@ -649,7 +656,16 @@ export default {
       allMsgs : [],
       allUsers : [],
       mainFollowUserId : null,
-      subFollowUserIds : [],
+      unFollowUserIds : new Set(),
+      shouldUpdate: false,
+      subFollowUsers : [],
+      mainFollowUser: {
+        id : "",
+        displayName: "",
+        mediaStream : null,
+        mirror: false
+      },
+      subFollowUserPage : 1,
       mediaDevice : null,
       myVideoStream : new MediaStream(),
       myAudioStream : new MediaStream(),
@@ -702,10 +718,9 @@ export default {
         this.mediaService.sendMediaStream(this.myVideoStream)
         this.videoIcon.icon = 'mdi-video-outline'
         this.videoIcon.color = 'teal'
-        if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-          this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
-        }
       }
+      this.mainFollowUserId === this.GLOBAL.userInfo.id && this.updateMainFollowUser()
+      this.updateSubFollowUsers()
     },
     async microSwitch () {
       this.disableMicroButton = true
@@ -763,10 +778,9 @@ export default {
         }
         this.screenIcon.icon = 'mdi-laptop'
         this.screenIcon.color = 'teal'
-        if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-          this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
-        }
       }
+      this.mainFollowUserId === this.GLOBAL.userInfo.id && this.updateMainFollowUser()
+      this.updateSubFollowUsers()
     },
     captionSwitch () {
       setTimeout(() => {
@@ -847,35 +861,28 @@ export default {
       this.privateChatPeerId = userId
     },
     mainVideo (userId) {
-      for (let i = 0; i < this.subFollowUserIds.length; ++i) {
-        if (this.subFollowUserIds[i] === userId) {
-          this.subFollowUserIds.splice(i, 1)
-          break
+      if (this.mainFollowUserId !== userId) {
+        this.mainFollowUserId = userId
+        this.updateMainFollowUser()
+        if (this.unFollowUserIds.has(userId)) {
+          this.unFollowUserIds.delete(userId)
+        } else {
+          this.updateSubFollowUsers()
         }
       }
-
-      this.mainFollowUserId = userId
-      console.log('[Main Video]')
     },
     subVideo (userId) {
+      let shouldUpdateSub = false
       if (this.mainFollowUserId === userId) {
         this.mainFollowUserId = null
+        this.updateMainFollowUser()
+        shouldUpdateSub = true
       }
-
-      if (this.subFollowUserIds.find((subUserId) => {
-        return subUserId === userId
-      })) {
-        return;
+      if (this.unFollowUserIds.has(userId)) {
+        this.unFollowUserIds.delete(userId)
+        shouldUpdateSub = true
       }
-
-      if (userId === this.GLOBAL.userInfo.id) {
-        this.subFollowUserIds.push(userId)
-        return
-      }
-
-      this.subFollowUserIds.push(this.mediaService.getPeerDetailByPeerId(userId).getPeerInfo().id)
-
-      console.log('[Add Sub Video]')
+      shouldUpdateSub && this.updateSubFollowUsers()
     },
     sendMsg () {
       if (this.inputMsg === '') {
@@ -911,7 +918,7 @@ export default {
         let timestamp = moment()
 
         this.allMsgs.push({
-          type : this.MessageType.file,
+          type : this.messageType.file,
           file : this.file,
           broadcast : true,
           fromMyself : true,
@@ -924,23 +931,18 @@ export default {
     selectEmoji (emoji) {
       this.inputMsg += emoji.data
     },
-    sub2Main (index) {
-      let userId = this.subFollowUsers[index].id
-      this.subFollowUserIds.splice(this.subFollowUserIds.indexOf(userId), 1)
-      this.mainFollowUserId = userId
-    },
-    removeSubFollowUser (index) {
-      const id = this.subFollowUserIds[index]
-      if (this.mediaService.hasPeer(id)) {
-        this.mediaService.getPeerDetailByPeerId(id).unsubscribeVideo()
+    removeSubFollowUser (userId) {
+      this.unFollowUserIds.add(userId)
+      const peer = this.mediaService.getPeerDetailByPeerId(userId)
+      if (peer != null) {
+        peer.unsubscribe()
       }
-      this.subFollowUserIds.splice(index, 1)
+      this.updateSubFollowUsers()
     },
     removeMainFollowUser () {
-      if (this.mediaService.hasPeer(this.mainFollowUserId)) {
-        this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId).unsubscribeVideo()
-      }
       this.mainFollowUserId = null
+      this.updateMainFollowUser()
+      this.updateSubFollowUsers()
     },
     async leaveMeeting () {
       if (this.exportMemeCheckBox) {
@@ -1079,6 +1081,80 @@ export default {
           }
         })
       })
+    },
+    updateMainFollowUser() {
+      if (this.mainFollowUserId == null) {
+        this.mainFollowUser = {
+          id : "",
+          displayName: "",
+          mediaStream : null,
+          mirror: false
+        }
+      }
+      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
+        this.mainFollowUser = {
+          id : this.mainFollowUserId,
+          displayName : this.GLOBAL.userInfo.nickname,
+          mediaStream : (this.video || (this.display && this.displayVideo)) ? this.myVideoStream : null,
+          mirror: this.video
+        }
+      } else {
+        const user = this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId)
+        if (user != null) {
+          this.mainFollowUser = {
+            id : this.mainFollowUserId,
+            displayName : user.getPeerInfo().displayName,
+            mediaStream : new MediaStream(user.getTracks()),
+            mirror: false
+          }
+        } else {
+          this.mainFollowUser = {
+            id : "",
+            displayName: "",
+            mediaStream : null,
+            mirror: false
+          }
+        }
+      }
+    },
+    updateSubFollowUsers () {
+      const subUsers = []
+      let index = 0
+      const pageMax = this.subFollowUserPage * this.GLOBAL.subPageSize
+      const pageMin = pageMax - this.GLOBAL.subPageSize
+
+      if ((this.video || this.display) && !this.unFollowUserIds.has(this.GLOBAL.userInfo.id)
+          && this.mainFollowUserId !== this.GLOBAL.userInfo.id) {
+        const show = (index >= pageMin && index < pageMax)
+        subUsers.push({
+          id: this.GLOBAL.userInfo.id,
+          displayName: this.GLOBAL.userInfo.nickname,
+          mediaStream: show ? this.myVideoStream : null,
+          mirror: this.video,
+          show
+        })
+        ++index
+      }
+
+      this.mediaService.forEachPeer((user, id) => {
+        if ((user.hasVideo() || user.hasAudio()) && !this.unFollowUserIds.has(id) && this.mainFollowUserId !== id) {
+          const show = (index >= pageMin && index < pageMax)
+          subUsers.push({
+            id,
+            displayName: user.getPeerInfo().displayName,
+            mediaStream: show ? new MediaStream(user.getTracks()) : new MediaStream(user.getAudioTracks()),
+            mirror: false,
+            show
+          })
+          ++index
+        }
+      })
+      this.subFollowUsers = subUsers
+    }
+  },
+  watch : {
+    subFollowUserPage() {
+      this.updateSubFollowUsers()
     }
   },
   mounted() {
@@ -1097,22 +1173,23 @@ export default {
   async created() {
     this.mediaService.registerPeerUpdateListener('updateListener', () => {
       console.log('[User Update] HOST: ', this.mediaService.getHostPeerId())
-      this.allUsers = this.mediaService.getPeerDetails()
-
-      // this.subFollowUserIds.forEach((id, index) => {
-      //   if ((id !== this.GLOBAL.userInfo.id) && (!this.allUsers.find((user) => {
-      //     return user.id = id
-      //   }))) {
-      //     this.subFollowUserIds.splice(index, 1)
-      //   }
-      // })
 
       if(this.mediaService.getHostPeerId() !== this.GLOBAL.roomInfo.host){
         this.GLOBAL.roomInfo.host = this.mediaService.getHostPeerId();
         this.snackText = "主持人变更";
         this.snack = true;
       }
-      this.isHost = this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id;
+      this.isHost = this.GLOBAL.roomInfo.host === this.GLOBAL.userInfo.id
+
+      this.shouldUpdate = true
+      setTimeout(() => {
+        if (this.shouldUpdate) {
+          this.shouldUpdate = false
+          this.allUsers = this.mediaService.getPeerDetails()
+          this.updateMainFollowUser()
+          this.updateSubFollowUsers()
+        }
+      }, 500)
     })
 
     this.mediaService.registerNewMessageListener('updateListener', (newMsg) => {
@@ -1186,11 +1263,12 @@ export default {
       setTimeout(() => {
         this.disableVideoButton = false
       }, 1000)
-      this.myVideoStream.addTrack(await this.mediaStreamFactory.getProcessedCameraTrack(BackgroundProcessType.disable, false))
-      this.mediaService.sendMediaStream(this.myVideoStream)
-      if (this.mainFollowUserId !== this.GLOBAL.userInfo.id && this.subFollowUserIds.indexOf(this.GLOBAL.userInfo.id) === -1) {
-        this.subFollowUserIds.push(this.GLOBAL.userInfo.id)
-      }
+      this.mediaStreamFactory.getProcessedCameraTrack(BackgroundProcessType.disable, false)
+          .then((track) => {
+            this.myVideoStream.addTrack(track)
+            this.mediaService.sendMediaStream(this.myVideoStream)
+          })
+
     } else {
       this.videoIcon.icon = 'mdi-video-off'
       this.videoIcon.color = 'gray'
@@ -1202,18 +1280,20 @@ export default {
         this.disableMicroButton = false
       }, 1000)
       this.mediaService.speechRecognition.start()
-      this.myAudioStream.addTrack(await this.mediaStreamFactory.getMicrophoneTrack())
-      this.mediaService.sendMediaStream(this.myAudioStream)
+      this.mediaStreamFactory.getMicrophoneTrack()
+          .then((track) => {
+            this.myAudioStream.addTrack(track)
+            this.mediaService.sendMediaStream(this.myAudioStream)
+          })
+
     } else {
       this.microIcon.icon = 'mdi-microphone-off'
       this.microIcon.color = 'gray'
     }
-
-    moment.locale('zh-cn')
   },
   computed : {
     filteredUsers () {
-      if (this.filterText === '') {
+      if (!this.filterText || this.filterText.length === 0) {
         return this.allUsers
       }
       else {
@@ -1222,67 +1302,6 @@ export default {
         })
       }
     },
-    mainFollowUser () {
-      if (this.mainFollowUserId == null) {
-        return {
-          id : "",
-          displayName: "",
-          mediaStream : null,
-          mirror: false
-        }
-      }
-      if (this.mainFollowUserId === this.GLOBAL.userInfo.id) {
-        return {
-          id : this.mainFollowUserId,
-          displayName : this.GLOBAL.userInfo.nickname,
-          mediaStream : this.myVideoStream,
-          mirror: this.video
-        }
-      } else {
-        const user = this.mediaService.getPeerDetailByPeerId(this.mainFollowUserId)
-        if (user != null) {
-          return {
-            id : this.mainFollowUserId,
-            displayName : user.getPeerInfo().displayName,
-            mediaStream : new MediaStream(user.getTracks()),
-            mirror: false
-          }
-        } else {
-          return {
-            id : "",
-            displayName: "",
-            mediaStream : null,
-            mirror: false
-          }
-        }
-      }
-
-    },
-    subFollowUsers () {
-      const subUsers = []
-      this.subFollowUserIds.forEach((id) => {
-        const user = this.mediaService.getPeerDetailByPeerId(id);
-        if (user == null) {
-          if (id === this.GLOBAL.userInfo.id) {
-            subUsers.push({
-              id: this.GLOBAL.userInfo.id,
-              displayName: this.GLOBAL.userInfo.nickname,
-              mediaStream: this.myVideoStream,
-              mirror: this.video
-            })
-          }
-        } else {
-          subUsers.push({
-            id: user.getPeerInfo().id,
-            displayName: user.getPeerInfo().displayName,
-            mediaStream: new MediaStream(user.getTracks()),
-            mirror: false
-          })
-        }
-      })
-
-      return subUsers
-    }
   },
 }
 </script>
@@ -1430,5 +1449,12 @@ export default {
 }
 .item-avatar.has-audio{
   border: 1px solid green;
+}
+
+#sub-pagination {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 </style>

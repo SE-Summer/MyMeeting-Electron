@@ -12,7 +12,7 @@ import {
     TransportType
 } from "../ServiceConfig";
 import {SignalingService} from "./SignalingService";
-import {PeerMedia} from "../utils/media/PeerMedia";
+import {PeerMedia, PeerDetail} from "../utils/media/PeerMedia";
 import {timeoutCallback} from "../utils/media/MediaUtils";
 import * as events from "events"
 import {Moment} from "moment";
@@ -135,6 +135,16 @@ export class MediaService
     public getPeerDetailByPeerId(peerId: number)
     {
         return this.peerMedia.getPeerDetailByPeerId(peerId);
+    }
+
+    public forEachPeer(callback: (peerDetail: PeerDetail, peerId: number) => void)
+    {
+        this.peerMedia.forEachPeer(callback);
+    }
+
+    public getPeerCount(): number
+    {
+        return this.peerMedia.getPeerCount();
     }
 
     public getHostPeerId()
